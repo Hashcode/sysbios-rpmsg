@@ -201,6 +201,11 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf);
  */
 Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 token);
 
+/*!
+ *  @brief      Post crash message to host mailbox
+ */
+Void VirtQueue_postCrashToMailbox(Void);
+
 
 #if defined (__cplusplus)
 }

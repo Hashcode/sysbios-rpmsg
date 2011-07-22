@@ -500,10 +500,9 @@ Void VirtQueue_startup()
 }
 
 /*!
- * ======== postCrashToMailbox ========
+ * ======== VirtQueue_postCrashToMailbox ========
  */
-Void postCrashToMailbox(Error_Block * eb)
+Void VirtQueue_postCrashToMailbox(Void)
 {
-    Error_print(eb);
     InterruptM3_intSend(0, (UInt)RP_MSG_MBOX_CRASH);
 }
