@@ -35,7 +35,7 @@
  *  Linux trace debug driver, plus provides better performance.
  */
 var System      = xdc.useModule('xdc.runtime.System');
-var SysMin      = xdc.useModule('xdc.runtime.SysMin');
+var SysMin      = xdc.useModule('ti.trace.SysMin');
 System.SupportProxy = SysMin;
 SysMin.bufSize  = 0x8000;
 
