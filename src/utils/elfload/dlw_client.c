@@ -60,6 +60,7 @@
 
 extern FILE * out_file;
 extern unsigned int tag_addr[];
+extern unsigned int tag_size[];
 extern char *tag_name[];
 extern int num_tags;
 
@@ -125,8 +126,10 @@ static void patchup_resources(struct rproc_fw_resource *res,
                 if (!strncmp(tag_name[i], "trace", 5)) {
                     if (res->da == atoi(&tag_name[i][5])) {
                         printf("...found tag %s\n", tag_name[i]);
-                        printf("patching address 0x%x\n", tag_addr[i]);
+                        printf("patching address:0x%x and length 0x%x\n",
+                                tag_addr[i], tag_size[i]);
                         res->da = tag_addr[i];
+                        res->len = tag_size[i];
                         break;
                     }
                 }

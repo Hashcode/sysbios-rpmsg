@@ -42,6 +42,7 @@ FILE * out_file;
 
 #define MAXTAGS 128
 unsigned int tag_addr[MAXTAGS];
+unsigned int tag_size[MAXTAGS];
 char *tag_name[MAXTAGS];
 int num_tags;
 
@@ -79,8 +80,14 @@ int main(int argc, char * argv[])
         }
         argv[i][k] = '\0';
         tag_addr[j] = strtoll(&argv[i][k+1], NULL, 16);
-        printf("found tag %d: name '%s' addr 0x%x\n", j, tag_name[j],
-                tag_addr[j]);
+
+        while (argv[i][k] != ':') {
+            k++;
+        }
+        tag_size[j] = strtoll(&argv[i][k+1], NULL, 16);
+
+        printf("found tag %d: name '%s' addr 0x%x size %d\n", j, tag_name[j],
+                tag_addr[j], tag_size[j]);
     }
 
     loader = DLOAD_create(NULL);

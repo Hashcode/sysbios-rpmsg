@@ -221,21 +221,38 @@ else
 	entry1="entry1:$entryaddr1"
 fi
 
+if [[ -f $core0file ]]
+then
+	t0Size=`readelf -S $core0file | \
+	  awk '{if ($2==".tracebuf") printf("%s", $6)}'`
+else
+	t0Size=0
+fi
+
+if [[ -f $core1file ]]
+then
+	t1Size=`readelf -S $core1file | \
+	  awk '{if ($2==".tracebuf") printf("%s", $6)}'`
+else
+	t1Size=0
+fi
 
 if [[ -f $core0file ]]
 then
 	resource_tab=`readelf -S $core0file | \
 	  awk '{if ($2==".resource_table") printf("%s", $4)}'`
+	r_size=`readelf -S $core0file | \
+	  awk '{if ($2==".resource_table") printf("%s", $6)}'`
 	if [[ $resource_tab == "" ]]
 	then
 		echo no .resource_tab section found in $core0file
 		echo genbase $core0file $tmp $*
 		genbase $core0file $tmp $*
 	else
-		echo genbase $core0file $tmp $* restab:$resource_tab \
-		  $trace0 $trace1 $entry0 $entry1
-		genbase $core0file $tmp $* restab:$resource_tab \
-		  $trace0 $trace1 $entry0 $entry1
+		echo genbase $core0file $tmp $* restab:$resource_tab:$r_size \
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
+		genbase $core0file $tmp $* restab:$resource_tab:$r_size \
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
 	fi
 
 	cat $tmp >> $outfile
@@ -247,16 +264,18 @@ if [[ -f $core1file ]]
 then
 	resource_tab=`readelf -S $core1file | \
 	  awk '{if ($2==".resource_table") printf("%s", $4)}'`
+	r_size=`readelf -S $core1file | \
+	  awk '{if ($2==".resource_table") printf("%s", $6)}'`
 	if [[ $resource_tab == "" ]]
 	then
 		echo no .resource_tab section found in $core1file
 		echo genbase $core1file $tmp $*
 		genbase $core1file $tmp $*
 	else
-		echo genbase $core1file $tmp $* restab:$resource_tab \
-		  $trace0 $trace1 $entry0 $entry1
-		genbase $core1file $tmp $* restab:$resource_tab \
-		  $trace0 $trace1 $entry0 $entry1
+		echo genbase $core1file $tmp $* restab:$resource_tab:$r_size \
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
+		genbase $core1file $tmp $* restab:$resource_tab:$r_size \
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
 	fi
 
 	cat $tmp >> $outfile

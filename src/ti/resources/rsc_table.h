@@ -126,8 +126,8 @@ struct resource {
 #pragma DATA_SECTION(resources, ".resource_table")
 #pragma DATA_ALIGN(resources, 4096)
 struct resource resources[] = {
-    { TYPE_TRACE, 0, 0, 0, 0, 0x8000, 0, "0" },
-    { TYPE_TRACE, 1, 0, 0, 0, 0x8000, 0, "1" },
+    { TYPE_TRACE, 0, 0, 0, 0, 0, 0, "0" },
+    { TYPE_TRACE, 1, 0, 0, 0, 0, 0, "1" },
     { TYPE_ENTRYPOINT, 0, 0, 0, 0, 0, 0, "0" },
     { TYPE_ENTRYPOINT, 1, 0, 0, 0, 0, 0, "1" },
     { TYPE_DEVMEM, IPU_TILER_MODE_0_1, 0, L3_TILER_MODE_0_1, 0, SZ_256M,
