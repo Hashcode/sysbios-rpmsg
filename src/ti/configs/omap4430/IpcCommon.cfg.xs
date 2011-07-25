@@ -100,7 +100,9 @@ Main.common$.diags_ASSERT = Diags.ALWAYS_ON;
 Main.common$.diags_INTERNAL = Diags.ALWAYS_ON;
 
 var Hwi = xdc.useModule('ti.sysbios.family.arm.m3.Hwi');
+var Deh = xdc.useModule('ti.deh.Deh');
 Hwi.enableException = true;
+Hwi.nvicCCR.DIV_0_TRP = 1;
 
 var dmTimer = xdc.useModule('ti.sysbios.timers.dmtimer.Timer');
 /* dmTimer 0 mapped to GPT3 */
