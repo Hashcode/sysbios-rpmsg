@@ -51,6 +51,18 @@
 #include <ti/ipc/rpmsg/VirtQueue.h>
 #include <xdc/cfg/global.h>
 #include <ti/ipc/MultiProc.h>
+#include <ti/sysbios/interfaces/ITimer.h>
+#include <ti/sysbios/timers/dmtimer/Timer.h>
+
+
+/*---- watchdog timer ----*/
+#define DEH_WDT_ISR     ((Core_getId() == 0) ? Deh_WDT_ISR_0 : Deh_WDT_ISR_1)
+#define DEH_WDT_BASE    ((Core_getId() == 0) ? Deh_WDT_CORE0 : Deh_WDT_CORE1)
+#define DEH_WDT_CLKCTRL ((Core_getId() == 0) ? Deh_WDT_CLKCTRL_CORE0 : \
+                          Deh_WDT_CLKCTRL_CORE1)
+#define DEH_WDT_CLKCTRL_IDELST_MASK    (3 << 16)
+
+#define REG32(A)   (*(volatile UInt32 *) (A))
 
 /*
  *  ======== Deh_Module_startup ========
@@ -58,9 +70,113 @@
 Int Deh_Module_startup(Int phase)
 {
     if (AMMU_Module_startupDone() == TRUE) {
+        Deh_watchdog_init();
         return Startup_DONE;
     }
     return Startup_NOTDONE;
+}
+
+/*
+ *  ======== Deh_idleBegin ========
+ */
+Void Deh_idleBegin(Void)
+{
+    Deh_timerRegs *base = module->wdt_base;
+
+    if (base) {
+        base->tclr |= 1;
+        base->tcrr = (UInt32) Deh_WDT_TIME;
+    }
+
+}
+
+/*
+ *  ======== Deh_swiPrehook ========
+ */
+Void Deh_swiPrehook(Swi_Handle swi)
+{
+    Deh_watchdog_kick();
+}
+
+/*
+ *  ======== Deh_taskSwitch ========
+ */
+Void Deh_taskSwitch(Task_Handle p, Task_Handle n)
+{
+    Deh_watchdog_kick();
+}
+
+/*
+ *  ======== Deh_watchdog_init ========
+ */
+Void Deh_watchdog_init(Void)
+{
+    Hwi_Params      hp;
+    UInt            key;
+    Deh_timerRegs  *base = (Deh_timerRegs *) DEH_WDT_BASE;
+
+    if (REG32(DEH_WDT_CLKCTRL) & DEH_WDT_CLKCTRL_IDELST_MASK) {
+        System_printf("DEH: Watchdog disabled\n");
+        return;
+    }
+
+    module->wdt_base = (Deh_timerRegs *) DEH_WDT_BASE;
+    base->tisr = ~0;
+    base->tier = 2;
+    base->twer = 2;
+    base->tldr = Deh_WDT_TIME;
+    /* Booting can take more time, so set CRR to WDT_TIME_BOOT */
+    base->tcrr = Deh_WDT_TIME_BOOT;
+    key = Hwi_disable();
+    Hwi_Params_init(&hp);
+    hp.priority = 1;
+    hp.maskSetting = Hwi_MaskingOption_LOWER;
+    Hwi_create(DEH_WDT_ISR,
+        (Hwi_FuncPtr)ti_sysbios_family_arm_m3_Hwi_excHandlerAsm__I,
+        &hp, NULL);
+    Hwi_enableInterrupt(DEH_WDT_ISR);
+    Hwi_restore(key);
+    Deh_watchdog_start();
+    System_printf("DEH: Watchdog started\n");
+
+}
+
+/*
+ *  ======== Deh_watchdog_stop ========
+ */
+Void Deh_watchdog_stop(Void)
+{
+    Deh_timerRegs *base = module->wdt_base;
+
+    if (base) {
+        base->tclr &= ~1;
+    }
+}
+
+/*
+ *  ======== Deh_watchdog_start ========
+ */
+Void Deh_watchdog_start(Void)
+{
+    Deh_timerRegs *base = module->wdt_base;
+
+    if (base) {
+        base->tclr |= 1;
+    }
+}
+
+/*
+ *  ======== Deh_watchdog_kick ========
+ *  can be called from isr conext
+ */
+Void Deh_watchdog_kick(Void)
+{
+    Deh_timerRegs *base = module->wdt_base;
+
+    if (base) {
+        Deh_watchdog_start();
+        base->ttgr = 0;
+    }
 }
 
 /* write buffer to the crash-dump buffer */
@@ -83,6 +199,7 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     Hwi_ExcContext  exc;
     Char           *ttype;
     UInt            excNum;
+    Char           *etype;
     UInt8          *pc;
 
     /* copy registers from stack to excContext */
@@ -146,16 +263,27 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     /* Force MAIN threadtype So we can safely call System_printf */
     BIOS_setThreadType(BIOS_ThreadType_Main);
 
+    excNum = Hwi_nvic.ICSR & 0xff;
+    if (excNum == (DEH_WDT_ISR)) {
+        etype = "Watchdog fired";
+    }
+    else {
+        VirtQueue_postCrashToMailbox();
+        etype = "Exception occurred";
+    }
+
+    System_printf("%s at (PC) = %08x\n", etype, exc.pc);
+
     switch (lr) {
         case 0xfffffff1:
-            System_printf("Exception occurred. Core in ISR context.\n");
+            System_printf("CPU context: ISR\n");
             break;
         case 0xfffffff9:
         case 0xfffffffd:
-            System_printf("Exception occurred. Core in thread context\n");
+            System_printf("CPU context: thread\n");
             break;
         default:
-            System_printf("Unknown Exception occurred. LR: %08x.\n", lr);
+            System_printf("CPU context: unknown. LR: %08x\n", lr);
             break;
     }
 
@@ -181,13 +309,12 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
             break;
     }
 
-    System_printf("Exception occurred in BIOS ThreadType_%s.\n", ttype);
+    System_printf("BIOS ThreadType:%s.\n", ttype);
     System_printf("BIOS %s handle: 0x%x.\n", ttype, exc.threadHandle);
     System_printf("BIOS %s stack base: 0x%x.\n", ttype, exc.threadStack);
-    System_printf("BIOS %s stack size: 0x%x.\n\n", ttype,
+    System_printf("BIOS %s stack size: 0x%x.\n", ttype,
         exc.threadStackSize);
 
-    excNum = Hwi_nvic.ICSR & 0xff;
     switch (excNum) {
         case 2:
             System_printf("Hwi_E_NMI\n");
@@ -219,11 +346,13 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
             System_printf("Hwi_E_reserved: Num:%d\n", excNum);
             break;
         default:
-            System_printf("Hwi_E_noIsr: Num:%d PC:%d\n", excNum, exc.pc);
+            if (excNum != (DEH_WDT_ISR)) {
+                System_printf("Hwi_E_noIsr: Num:%d\n", excNum);
+            }
             break;
     }
 
-    System_printf ("\nR0 = 0x%08x  R8  = 0x%08x\n", exc.r0, exc.r8);
+    System_printf ("R0 = 0x%08x  R8  = 0x%08x\n", exc.r0, exc.r8);
     System_printf ("R1 = 0x%08x  R9  = 0x%08x\n", exc.r1, exc.r9);
     System_printf ("R2 = 0x%08x  R10 = 0x%08x\n", exc.r2, exc.r10);
     System_printf ("R3 = 0x%08x  R11 = 0x%08x\n", exc.r3, exc.r11);
@@ -241,7 +370,8 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     System_printf ("MMAR = 0x%08x\n", Hwi_nvic.MMAR);
     System_printf ("BFAR = 0x%08x\n", Hwi_nvic.BFAR);
     System_printf ("AFSR = 0x%08x\n", Hwi_nvic.AFSR);
-    Deh_writeBuf ("Core crashed.\nSee TraceBuffer for register-dump.\n");
+    Deh_writeBuf (etype);
+    Deh_writeBuf ("\nSee TraceBuffer for register-dump.\n");
     System_abort("Terminating execution...\n");
 
 }

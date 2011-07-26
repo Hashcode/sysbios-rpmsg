@@ -59,8 +59,8 @@ Power.loadSegment = "PM_DATA";
 /* Idle function that periodically flushes the unicache */
 var Idle = xdc.useModule('ti.sysbios.knl.Idle');
 Idle.addFunc('&VirtQueue_cacheWb');
-/* IpcPower idle function must be at the end */
-Idle.addFunc('&IpcPower_idle');
+Idle.addFunc('&ti_deh_Deh_idleBegin'); /* must be placed before pwr mgmt */
+Idle.addFunc('&IpcPower_idle');        /* IpcPower_idle must be at the end */
 
 var HeapBuf   = xdc.useModule('ti.sysbios.heaps.HeapBuf');
 var List      = xdc.useModule('ti.sdo.utils.List');

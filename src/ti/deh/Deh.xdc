@@ -36,6 +36,8 @@
  */
 
 import ti.sysbios.family.arm.m3.Hwi;
+import ti.sysbios.knl.Task;
+import ti.sysbios.knl.Swi;
 
 /*!
  *  ======== Deh ========
@@ -63,6 +65,52 @@ module Deh {
     /*! The test function to plug into the hook exposed by BIOS */
     Void excHandler(UInt *excStack, UInt lr);
 
+    readonly config Int WDT_TIME = (0 - (38400000 * 5));
+    readonly config Int WDT_TIME_BOOT = (0 - 38400000 * 10);
+    readonly config UInt WDT_CORE0 = 0xA803E000;
+    readonly config UInt WDT_CORE1 = 0xA8088000;
+    readonly config UInt WDT_CLKCTRL_CORE0 = 0xAA009450;
+    readonly config UInt WDT_CLKCTRL_CORE1 = 0xAA009430;
+    readonly config UInt WDT_ISR_0 = 55;
+    readonly config UInt WDT_ISR_1 = 56;
+
+    /*! timer registers */
+    struct timerRegs {
+        UInt tidr;
+        UInt empty[3];
+        UInt tiocpCfg;
+        UInt empty1[3];
+        UInt irq_eoi;
+        UInt irqstat_raw;
+        UInt tisr;      /* irqstat   */
+        UInt tier;      /* irqen_set */
+        UInt irqen_clr;
+        UInt twer;      /* irqwaken; */
+        UInt tclr;
+        Int  tcrr;
+        Int  tldr;
+        UInt ttgr;
+        UInt twps;
+        UInt tmar;
+        UInt tcar1;
+        UInt tsicr;
+        UInt tcar2;
+    }
+
+    /*! function called when entering idle */
+    Void idleBegin();
+
+    /*! function called when leaving idle */
+    Void idleEnd();
+
+    /*! watchdog functions */
+    Void watchdog_init();
+    Void watchdog_stop();
+    Void watchdog_start();
+    Void watchdog_kick();
+    Void taskSwitch(Task.Handle p, Task.Handle n);
+    Void swiPrehook(Swi.Handle swi);
+
 internal:
     /*! Functions for decoding exceptions */
     Void excMemFault();
@@ -71,9 +119,10 @@ internal:
     Void excHardFault();
 
     struct Module_State {
-        Char  outbuf[];  /* the output buffer */
-        Int   index;
-        SizeT isrStackSize;  /* stack info for ISR/SWI */
-        Ptr   isrStackBase;
+        Char        outbuf[];      /* the output buffer */
+        Int         index;
+        SizeT       isrStackSize;  /* stack info for ISR/SWI */
+        Ptr         isrStackBase;
+        timerRegs   *wdt_base;
     }
 }

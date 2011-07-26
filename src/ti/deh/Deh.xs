@@ -37,11 +37,19 @@
 
 var Deh;
 var d_hwi;
+var d_task = null;
+var d_swi  = null;
+var d_task_hook = null;
+var d_swi_hook  = null;
 
 function module$use()
 {
     xdc.useModule('xdc.runtime.System');
     d_hwi = xdc.useModule('ti.sysbios.family.arm.m3.Hwi');
+    d_task = xdc.useModule('ti.sysbios.knl.Task');
+    d_swi  = xdc.useModule('ti.sysbios.knl.Swi');
+    d_task_hook = new d_task.HookSet;
+    d_swi_hook  = new d_swi.HookSet;
     Deh = this;
 
 }
@@ -54,9 +62,15 @@ function module$static$init(obj, params)
         Memory.staticPlace(obj.outbuf, 0x1000, params.sectionName);
     }
 
-    obj.index = 0;
+    d_swi_hook.beginFxn = Deh.swiPrehook;
+    d_swi.addHookSet(d_swi_hook);
 
+    d_task_hook.switchFxn = Deh.taskSwitch;
+    d_task.addHookSet(d_task_hook);
+
+    obj.index = 0;
     d_hwi.excHandlerFunc = Deh.excHandler;
     obj.isrStackSize = Program.stack;
     obj.isrStackBase = $externPtr('__TI_STACK_BASE');
+    obj.wdt_base = null;
 }
