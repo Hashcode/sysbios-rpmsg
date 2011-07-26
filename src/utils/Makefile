@@ -37,7 +37,7 @@ ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_s
 	# ensure that ducati's core0 program is listed before ducati's core1
 	# program, the Linux FW loader expects such.
 	#
-	./genrprc --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 $@
+	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A  ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A --d1=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 $@
 
 CFLAGS = -Wall -m32
 RPRCOBJ = readrprc.o

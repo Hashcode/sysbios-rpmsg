@@ -67,6 +67,7 @@ enum rproc_fw_resource_type {
     RSC_IRQ         = 3,
     RSC_TRACE       = 4,
     RSC_BOOTADDR    = 5,
+    RSC_CRASHDUMP   = 6,
 };
 
 enum rproc_fw_section_type {

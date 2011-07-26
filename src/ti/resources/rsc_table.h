@@ -111,6 +111,7 @@
 #define TYPE_IRQ         3
 #define TYPE_TRACE       4
 #define TYPE_ENTRYPOINT  5
+#define TYPE_CRASHDUMP   6
 
 struct resource {
     u32 type;
@@ -130,6 +131,8 @@ struct resource resources[] = {
     { TYPE_TRACE, 1, 0, 0, 0, 0, 0, "1" },
     { TYPE_ENTRYPOINT, 0, 0, 0, 0, 0, 0, "0" },
     { TYPE_ENTRYPOINT, 1, 0, 0, 0, 0, 0, "1" },
+    { TYPE_CRASHDUMP, 0, 0, 0, 0, 0, 0, "0" },
+    { TYPE_CRASHDUMP, 1, 0, 0, 0, 0, 0, "1" },
     { TYPE_DEVMEM, IPU_TILER_MODE_0_1, 0, L3_TILER_MODE_0_1, 0, SZ_256M,
        0, "IPU_TILER_MODE_0_1" },
     { TYPE_DEVMEM, IPU_TILER_MODE_2, 0, L3_TILER_MODE_2, 0, SZ_128M,

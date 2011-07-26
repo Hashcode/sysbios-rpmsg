@@ -34,6 +34,7 @@
 #
 # Usage: genrprc [--e0=core0 entry point] [--e1=core1 entry point]
 #          [--t0=core0 trace buffer symbol] [--t1=core1 trace buffer symbol]
+#          [--d0=core0 error buffer symbol] [--d1=core1 error buffer symbol]
 #          core0_filename [core1_filename] output_filename
 #
 # Default values for:
@@ -43,12 +44,15 @@
 #                      'readelf -h core1_filename'
 #   core0 trace buffer symbol: SysMin_Module_State_0_outbuf__A
 #   core1 trace buffer symbol: SysMin_Module_State_0_outbuf__A
+#   core0 error buffer symbol: Deh_Module_State_0_outbuf__A
+#   core1 error buffer symbol: Deh_Module_State_0_outbuf__A
 #
 #===============================================================================
 
 usage=\
 "Usage: genrprc [--e0=core0 entry point] [--e1=core1 entry point]
         [--t0=core0 trace buffer symbol] [--t1=core1 trace buffer symbol]
+        [--d0=core0 error buffer symbol] [--d1=core1 error buffer symbol]
         core0_filename [core1_filename] output_filename"
 
 PATH=$PATH:.
@@ -57,8 +61,10 @@ tracename0=SysMin_Module_State_0_outbuf__A
 tracename1=SysMin_Module_State_0_outbuf__A
 entryname0=
 entryname1=
+errbufname0=Deh_Module_State_0_outbuf__A
+errbufname1=Deh_Module_State_0_outbuf__A
 
-cmdline=`getopt -o "" --long e0:,e1:,t0:,t1: --name $0 -- "$@"`
+cmdline=`getopt -o "" --long e0:,e1:,t0:,t1:,d0:,d1: --name $0 -- "$@"`
 err=$?
 if [[ $err != 0 ]]
 then
@@ -75,6 +81,8 @@ while true ; do
 	--e1) entryname1=$2; shift 2;;
 	--t0) tracename0=$2; shift 2;;
 	--t1) tracename1=$2; shift 2;;
+	--d0) errbufname0=$2; shift 2;;
+	--d1) errbufname1=$2; shift 2;;
 	--) shift; break;;
     esac
 done
@@ -88,6 +96,8 @@ then
 
 	traceaddr0=`nm $core0file | grep $tracename0 | cut -d ' ' -f 1`
 	traceaddr1=`nm $core1file | grep $tracename1 | cut -d ' ' -f 1`
+	errbufaddr0=`nm $core0file | grep $errbufname0 | cut -d ' ' -f 1`
+	errbufaddr1=`nm $core1file | grep $errbufname1 | cut -d ' ' -f 1`
 	if [[ $entryname0 == "" ]]
 	then
 		entryaddr0=`readelf -h $core0file | \
@@ -112,6 +122,7 @@ else
 	shift 2
 
 	traceaddr0=`nm $core0file | grep $tracename0 | cut -d ' ' -f 1`
+	errbufaddr0=`nm $core0file | grep $errbufname0 | cut -d ' ' -f 1`
 	if [[ $entryname0 == "" ]]
 	then
 		entryaddr0=`readelf -h $core0file | \
@@ -142,6 +153,15 @@ if [[ $traceaddr1 == "" ]]
 then
 	echo warning: null trace buffer address for core 1
 fi
+if [[ $errbufaddr0 == "" ]]
+then
+	echo warning: null error buffer address for core 0
+fi
+if [[ $errbufaddr1 == "" ]]
+then
+	echo warning: null error buffer address for core 1
+fi
+
 
 file_info=`file $outfile`
 foo=`echo $file_info | grep executable`
@@ -172,6 +192,7 @@ fi
 # command invocation.  Today, the supported tags are:
 #	restab:<hex-addr>
 #	trace[0-9]:<hex-addr>
+#	errbuf[0-9]:<hex-addr>
 #	entry[0-9]:<hex-addr>
 # where <hex-addr> is an address in hexadecimal form w/ or w/o leading "0x",
 # and the [0-9] field specifies a "core number".
@@ -187,6 +208,13 @@ fi
 # that resource's "base" element to the value of key trace[0-9] (the 1st
 # type TRACE resource gets the value of trace0, the 2nd type TRACE resource
 # gets the value of trace1, etc.).
+#
+# errbuf[0-9] is the key name for core 0's executable file's crash-dump buffer,
+# and its value is the crash-dump buffer's address.  When genbase encounters
+# a resource (from the .resource_table table) of type ERRBUF it assigns
+# that resource's "base" element to the value of key errbuf[0-9] (the 1st
+# type ERRBUF resource gets the value of errbuf0, the 2nd type ERRBUF resource
+# gets the value of errbuf1, etc.).
 #
 # entry[0-9] is the key name for core 0's executable file's entry point,
 # and its value is the entry point's address.  When genbase encounters
@@ -207,6 +235,18 @@ then
 	trace1=
 else
 	trace1="trace1:$traceaddr1"
+fi
+if [[ $errbufaddr0 == "" ]]
+then
+	errbuf0=
+else
+	errbuf0="errbuf0:$errbufaddr0"
+fi
+if [[ $errbufaddr1 == "" ]]
+then
+	errbuf1=
+else
+	errbuf1="errbuf1:$errbufaddr1"
 fi
 if [[ $entryaddr0 == "" ]]
 then
@@ -239,6 +279,22 @@ fi
 
 if [[ -f $core0file ]]
 then
+	d0Size=`readelf -S $core0file | \
+	  awk '{if ($2==".errorbuf") printf("%s", $6)}'`
+else
+	d0Size=0
+fi
+
+if [[ -f $core1file ]]
+then
+	d1Size=`readelf -S $core1file | \
+	  awk '{if ($2==".errorbuf") printf("%s", $6)}'`
+else
+	d1Size=0
+fi
+
+if [[ -f $core0file ]]
+then
 	resource_tab=`readelf -S $core0file | \
 	  awk '{if ($2==".resource_table") printf("%s", $4)}'`
 	r_size=`readelf -S $core0file | \
@@ -250,9 +306,11 @@ then
 		genbase $core0file $tmp $*
 	else
 		echo genbase $core0file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
+		  $errbuf0:$d0Size $errbuf1:$d1Size
 		genbase $core0file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
+		  $errbuf0:$d0Size $errbuf1:$d1Size
 	fi
 
 	cat $tmp >> $outfile
@@ -273,9 +331,11 @@ then
 		genbase $core1file $tmp $*
 	else
 		echo genbase $core1file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
+		  $errbuf0:$d0Size $errbuf1:$d1Size
 		genbase $core1file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0
+		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
+		  $errbuf0:$d0Size $errbuf1:$d1Size
 	fi
 
 	cat $tmp >> $outfile

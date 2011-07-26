@@ -140,6 +140,28 @@ static void patchup_resources(struct rproc_fw_resource *res,
             }
             break;
 
+        case RSC_CRASHDUMP:
+            printf("found CRASHDUMP resource, looking for corresponding "
+                   "tag...\n");
+
+            for (i = 0; i < num_tags; i++) {
+                if (!strncmp(tag_name[i], "errbuf", 6)) {
+                    if (res->da == atoi(&tag_name[i][6])) {
+                        printf("...found tag %s\n", tag_name[i]);
+                        printf("patching address 0x%x and length 0x0%x\n",
+                               tag_addr[i], tag_size[i]);
+                        res->da = tag_addr[i];
+                        res->len = tag_size[i];
+                        break;
+                    }
+                }
+            }
+
+            if (i == num_tags) {
+                printf("...no tag found, ignoring resource\n");
+            }
+            break;
+
         case RSC_BOOTADDR:
             printf("found ENTRYPOINT resource, looking for corresponding tag...\n");
 
