@@ -130,7 +130,8 @@ typedef enum {
     IpcResource_TYPE_GPIO,
     IpcResource_TYPE_SDMA,
     IpcResource_TYPE_IPU,
-    IpcResource_TYPE_DSP
+    IpcResource_TYPE_DSP,
+    IpcResource_TYPE_I2C
 } IpcResource_Type;
 
 
@@ -160,6 +161,10 @@ typedef struct {
     UInt32 numCh;
     Int32 channels[MAX_NUM_SDMA_CHANNELS];
 } IpcResource_Sdma;
+
+typedef struct {
+    UInt32 id;
+} IpcResource_I2c;
 
 typedef struct {
     Int32 mask;

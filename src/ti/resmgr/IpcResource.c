@@ -65,6 +65,8 @@ static UInt16 IpcResource_resLen(IpcResource_Type type)
         return sizeof(IpcResource_Gpio);
     case IpcResource_TYPE_SDMA:
         return sizeof(IpcResource_Sdma);
+    case IpcResource_TYPE_I2C:
+        return sizeof(IpcResource_I2c);
     }
     return 0;
 }
