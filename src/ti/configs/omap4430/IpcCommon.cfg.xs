@@ -101,3 +101,17 @@ Main.common$.diags_INTERNAL = Diags.ALWAYS_ON;
 
 var Hwi = xdc.useModule('ti.sysbios.family.arm.m3.Hwi');
 Hwi.enableException = true;
+
+var dmTimer = xdc.useModule('ti.sysbios.timers.dmtimer.Timer');
+/* dmTimer 0 mapped to GPT3 */
+dmTimer.timerSettings[0].baseAddr = 0xA8034000;
+/* dmTimer 1 mapped to GPT4 */
+dmTimer.timerSettings[1].baseAddr = 0xA8036000;
+/* dmTimer 2 mapped to GPT9 */
+dmTimer.timerSettings[2].baseAddr = 0xA803E000;
+/* dmTimer 3 mapped to GPT11 */
+dmTimer.timerSettings[3].baseAddr = 0xA8088000;
+
+/* Override the internal sysTick timer with dmTimer for Bios Timer */
+var halTimer = xdc.useModule('ti.sysbios.hal.Timer');
+halTimer.TimerProxy = dmTimer;
