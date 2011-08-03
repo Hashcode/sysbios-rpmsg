@@ -74,6 +74,8 @@
 /* Legacy function to allow Linux side rpmsg sample tests to work: */
 extern void start_ping_tasks();
 extern void start_resmgr_task();
+extern void start_hwSpinlock_task();
+
 
 /*
  *  ======== fxnDouble used by omx_benchmark test app ========
@@ -258,6 +260,11 @@ Int main(Int argc, char* argv[])
 #if 0  /* CORE0 */
     /* Run a background task to test rpmsg_resmgr service */
     start_resmgr_task();
+#endif
+
+#if 0  /* CORE0 */
+    /* Run a background task to test hwspinlock */
+    start_hwSpinlock_task();
 #endif
 
     BIOS_start();

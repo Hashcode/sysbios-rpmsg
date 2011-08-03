@@ -53,8 +53,8 @@ Pkg.attrs.exportAll = true;
  */
 
 var testArray = [
-    {name: 'test_omx_sysm3', sources: ["test_omx", "ping_tasks", "resmgr_task"], config: "test_omx_core0", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
-    {name: 'test_omx_appm3', sources: ["test_omx", "ping_tasks", "resmgr_task"], config: "test_omx_core1", copts: "-D CORE1", buildPlatforms: ["ti.platform.omap4430.core1"]},
+    {name: 'test_omx_sysm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
+    {name: 'test_omx_appm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core1", copts: "-D CORE1", buildPlatforms: ["ti.platform.omap4430.core1"]},
 ];
 
 arguments = ["profile=debug platform=all"];
