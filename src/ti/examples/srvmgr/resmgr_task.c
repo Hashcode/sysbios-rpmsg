@@ -97,7 +97,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
 
     Task_sleep(1000);
 
-    gpt.id = 3;
+    gpt.id = 9;
     gpt.srcClk = 0;
 
     System_printf("Requesting GPT  %d\n", gpt.id);
