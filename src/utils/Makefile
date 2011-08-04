@@ -30,7 +30,7 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-all: readrprc wrints genbase ducati-m3.bin
+all: readrprc wrints genbase genextbin ducati-m3.bin
 
 ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 wrints genbase
 	#
@@ -42,6 +42,7 @@ ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_s
 CFLAGS = -Wall -m32
 RPRCOBJ = readrprc.o
 WRNTOBJ = wrints.o
+GBINOBJ = genextbin.o
 
 readrprc: $(RPRCOBJ)
 	gcc $(CFLAGS) -o $@ $(RPRCOBJ)
@@ -55,6 +56,12 @@ wrints: $(WRNTOBJ)
 wrints.o: wrints.c
 	gcc $(CFLAGS) -c -o $@ $<
 
+genextbin: $(GBINOBJ)
+	 gcc $(CFLAGS) -o $@ $(GBINOBJ)
+
+genextbin.o: genextbin.c
+	 gcc $(CFLAGS) -c -o $@ $<
+
 genbase: elfload/genbase
 	cp $^ .
 
@@ -62,5 +69,5 @@ elfload/genbase:
 	cd elfload; make
 
 clean:
-	@rm -f genbase readrprc wrints *.o ducati-m3.bin
+	@rm -f genbase readrprc wrints genextbin *.o ducati-m3.bin
 	cd elfload; make clean
