@@ -69,6 +69,9 @@ M3.rootDir = arm_cgtools_rootdir;
 M3.ccOpts.suffix += " --embed_inline_assembly -ms -pds=71";
 M3.lnkOpts.prefix += " --retain=.resource_table";
 M3.lnkOpts.prefix += " --cinit_compression=off";
+/* Helps boot times, plus unmasks issues w/ uninit'd vars */
+M3.lnkOpts.prefix +=  " --zero_init=off";
+
 /* Set default platform and list of all interested platforms for M3 */
 M3.platforms = [
                   "ti.platform.omap4430.core0",
