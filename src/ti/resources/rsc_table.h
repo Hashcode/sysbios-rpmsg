@@ -79,17 +79,18 @@
 #define IPU_IVAHD_SL2           0xBB000000
 
 #define IPU_MEM_TEXT            0x0
-
 #define IPU_MEM_DATA            0x80000000
-
+#define IPU_MEM_IOBUFS          0x88000000
 #define IPU_MEM_IPC             0xA0000000
 
-
-/* TODO:
- * Remove hardcoded RAM Addresses once we have the PA->VA lookup integrated.
- * IPC region should not be hard-coded. Text area is also not hard-coded since
- * VA to PA translation is not required. */
-#define PHYS_MEM_DATA           0xB9800000
+/*
+ * Assign fixed RAM addresses to facilitate a fixed MMU table.
+ * TODO: The PA->VA lookup needs to be based on this table.
+ */
+#define PHYS_MEM_IPC            0xB7800000
+#define PHYS_MEM_TEXT           0xB7A00000
+#define PHYS_MEM_DATA           0xB7F00000
+#define PHYS_MEM_IOBUFS         0xBDF00000
 
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_1M                           0x00100000
@@ -143,11 +144,15 @@ struct resource resources[] = {
        0, "IPU_IVAHD_CONFIG" },
     { TYPE_DEVMEM, IPU_IVAHD_SL2, 0, L3_IVAHD_SL2, 0, SZ_16M,
        0, "IPU_IVAHD_SL2" },
-    /* IPU_MEM_IPC needs to be first for dynamic carveout */
-    { TYPE_CARVEOUT, IPU_MEM_IPC,  0, 0, 0, SZ_1M, 0, "IPU_MEM_IPC"  },
-    { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, 0, 0, SZ_4M, 0, "IPU_MEM_TEXT" },
+    /* IPU_MEM_IPC should be first irrespective of static or dynamic carveout */
+    { TYPE_CARVEOUT, IPU_MEM_IPC,  0, PHYS_MEM_IPC, 0, SZ_2M,
+       0, "IPU_MEM_IPC"  },
+    { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, SZ_4M,
+       0, "IPU_MEM_TEXT" },
     { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 96,
        0, "IPU_MEM_DATA" },
+    { TYPE_CARVEOUT, IPU_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, SZ_1M * 30,
+       0, "IPU_MEM_IOBUFS" },
 };
 
 #endif /* _RSC_TABLE_H_ */
