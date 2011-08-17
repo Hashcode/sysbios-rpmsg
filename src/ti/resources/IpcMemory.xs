@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,14 +35,14 @@
  *
  */
 var IpcMemory;
-var Core;
+var MultiProc;
 
 /*
  *  ======== module$meta$init ========
  */
 function module$use()
 {
-    Core = xdc.useModule('ti.sysbios.family.arm.ducati.Core');
+    MultiProc = xdc.module('ti.sdo.utils.MultiProc');
     IpcMemory = this;
 
     var memmap = Program.cpu.memoryMap;
@@ -61,7 +61,8 @@ function module$use()
         addr = segment.base;
     }
 
-    if (Core.id == 0) {
+    if (MultiProc.id == MultiProc.getIdMeta("CORE0") ||
+        MultiProc.id == MultiProc.getIdMeta("DSP")) {
         /* The .resource_size section should always be at the segment base */
         Program.sectMap[".resource_size"] = new Program.SectionSpec();
         Program.sectMap[".resource_size"].type = "NOINIT";

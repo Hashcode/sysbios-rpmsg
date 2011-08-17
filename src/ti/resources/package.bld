@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,11 +83,6 @@ for (var i = 0; i < libArray.length; i++) {
     /* ==== loop over all targets in build array ==== */
     for (var j = 0; j < Build.targets.length; j++) {
         var targ = Build.targets[j];
-
-        /* invoke user supplied target predicate function */
-        if (this.skipTarget != undefined)  {
-            continue;
-        }
 
         /* skip target if not compatible with source code */
         if ("icw" in lib) {
