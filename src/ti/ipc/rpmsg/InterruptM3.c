@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,6 +90,36 @@ static UInt16 appm3ProcId;
 static UInt16 hostProcId;
 static UInt16 dspProcId;
 
+
+/*
+ *************************************************************************
+ *                      Proxy functions
+ *************************************************************************
+ */
+Void InterruptProxy_intEnable()
+{
+    InterruptM3_intEnable();
+}
+
+Void InterruptProxy_intDisable()
+{
+    InterruptM3_intDisable();
+}
+
+Void InterruptProxy_intRegister(Hwi_FuncPtr fxn)
+{
+    InterruptM3_intRegister(fxn);
+}
+
+Void InterruptProxy_intSend(UInt16 remoteProcId, UArg arg)
+{
+    InterruptM3_intSend(remoteProcId, arg);
+}
+
+UInt InterruptProxy_intClear()
+{
+    return InterruptM3_intClear();
+}
 
 /*
  *************************************************************************

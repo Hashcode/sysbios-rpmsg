@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,6 +77,37 @@
 Hwi_FuncPtr userFxn = NULL;
 
 Void InterruptDsp_isr(UArg arg);
+
+
+/*
+ *************************************************************************
+ *                      Proxy functions
+ *************************************************************************
+ */
+Void InterruptProxy_intEnable()
+{
+    InterruptDsp_intEnable();
+}
+
+Void InterruptProxy_intDisable()
+{
+    InterruptDsp_intDisable();
+}
+
+Void InterruptProxy_intRegister(Hwi_FuncPtr fxn)
+{
+    InterruptDsp_intRegister(fxn);
+}
+
+Void InterruptProxy_intSend(UInt16 remoteProcId, UArg arg)
+{
+    InterruptDsp_intSend(remoteProcId, arg);
+}
+
+UInt InterruptProxy_intClear()
+{
+    return InterruptDsp_intClear();
+}
 
 /*
  *************************************************************************

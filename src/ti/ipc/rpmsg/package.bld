@@ -53,7 +53,8 @@ Pkg.makePrologue =
 /* add custom files to all releases */
 Pkg.attrs.exportSrc = false;
 Pkg.otherFiles = [
-    "MessageQCopy.h"
+    "MessageQCopy.h",
+    "InterruptProxy.h",
 ];
 
 /* list of libraries to build */
