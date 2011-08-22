@@ -138,10 +138,10 @@ enum {
 /* The total IPC space needed to communicate with a remote processor */
 #define RPMSG_IPC_MEM   (RP_MSG_BUFS_SPACE + 2 * RP_MSG_RING_SIZE)
 
-#define ID_A9_TO_SYSM3      0
-#define ID_SYSM3_TO_A9      1
-#define ID_A9_TO_APPM3      2
-#define ID_APPM3_TO_A9      3
+#define ID_SYSM3_TO_A9      0
+#define ID_A9_TO_SYSM3      1
+#define ID_APPM3_TO_A9      2
+#define ID_A9_TO_APPM3      3
 
 typedef struct VirtQueue_Object {
     /* Id for this VirtQueue_Object */
@@ -442,21 +442,21 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     }
 
     switch (vq->id) {
-        case ID_A9_TO_SYSM3:
-            /* A9 -> SYSM3 */
+        case ID_SYSM3_TO_A9:
+            /* SYSM3 -> A9 */
             vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE);
             break;
-        case ID_SYSM3_TO_A9:
+        case ID_A9_TO_SYSM3:
             /* SYSM3 */
             vring_phys = (struct vring *)((UInt)buf_addr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
             break;
-        case ID_A9_TO_APPM3:
-            /* A9 -> APPM3 */
+        case ID_APPM3_TO_A9:
+            /* APPM3 -> A9 */
             vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE +
                     RPMSG_IPC_MEM);
             break;
-        case ID_APPM3_TO_A9:
+        case ID_A9_TO_APPM3:
             /* APPM3 */
             vring_phys = (struct vring *)((UInt)buf_addr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE + RPMSG_IPC_MEM);
