@@ -87,8 +87,8 @@
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
  * TODO: The PA->VA lookup needs to be based on this table.
  */
-#define PHYS_MEM_IPC            0xB7800000
-#define PHYS_MEM_TEXT           0xB7A00000
+#define PHYS_MEM_IPC            0xB7600000
+#define PHYS_MEM_TEXT           0xB7800000
 #define PHYS_MEM_DATA           0xB7F00000
 #define PHYS_MEM_IOBUFS         0xBDF00000
 
@@ -147,7 +147,7 @@ struct resource resources[] = {
     /* IPU_MEM_IPC should be first irrespective of static or dynamic carveout */
     { TYPE_CARVEOUT, IPU_MEM_IPC,  0, PHYS_MEM_IPC, 0, SZ_2M,
        0, "IPU_MEM_IPC"  },
-    { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, SZ_4M,
+    { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, SZ_1M * 6,
        0, "IPU_MEM_TEXT" },
     { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 96,
        0, "IPU_MEM_DATA" },
