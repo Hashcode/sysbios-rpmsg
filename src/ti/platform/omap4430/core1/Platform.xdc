@@ -42,7 +42,7 @@ metaonly module Platform inherits xdc.platform.IPlatform {
             catalogName:    "ti.catalog.arm.cortexm3",
             deviceName:     "OMAP4430",
             externalMemoryMap: [
-                ["EXT_CODE", {name: "EXT_CODE", base: 0x00100000, len: 0x00300000, space: "code", access: "RWX"}],
+                ["EXT_CODE", {name: "EXT_CODE", base: 0x00100000, len: 0x00500000, space: "code", access: "RWX"}],
                 ["EXT_DATA", {name: "EXT_DATA", base: 0x80100000, len: 0x00500000, space: "data", access: "RW"}],
                 ["EXT_HEAP", {name: "EXT_HEAP", base: 0x80600000, len: 0x05A00000, space: "data", access: "RW"}],
                 ["PM_DATA",  {name: "PM_DATA",  base: 0x800e0000, len: 0x00020000, space: "data", access: "RW"}],
