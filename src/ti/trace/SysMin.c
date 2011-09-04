@@ -19,10 +19,9 @@
 #include <ti/sysbios/knl/Clock.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "package/internal/SysMin.xdc.h"
-
-static const Char ti_trace_SysMin_lookup[] = "0123456789ABCDEF";
 
 /*
  *  ======== SysMin_Module_startup ========
@@ -32,6 +31,8 @@ Int SysMin_Module_startup(Int phase)
     if (SysMin_bufSize != 0) {
         memset(module->outbuf, 0, SysMin_bufSize);
     }
+    /* Initialize to TRUE so the first line get the timestamp */
+    module->getTime = TRUE;
     return (Startup_DONE);
 }
 
@@ -74,7 +75,8 @@ Void SysMin_exit(Int stat)
 static inline Void SysMin_output(Char ch)
 {
     module->outbuf[module->outidx++] = ch;
-    if (module->outidx == SysMin_bufSize) {
+    /* Last 8 bytes are used for writeIdx/readIdx fields */
+    if (module->outidx == SysMin_bufSize - 8) {
         module->outidx = 0;
     }
 }
@@ -88,7 +90,8 @@ Void SysMin_putch(Char ch)
 {
     IArg   key;
     UInt32 tick;
-    Int shift, index;
+    Int    index;
+    Char   timestamp[50];
 
     if (SysMin_bufSize != 0) {
 
@@ -97,16 +100,18 @@ Void SysMin_putch(Char ch)
         if (module->getTime == TRUE) {
             tick = Clock_getTicks();
             SysMin_output('[');
-
-            /* convert 32-bit timestamp -> 8 chars */
-            shift = 28; /* 32 bit timestamp - 4 */
-            do {
-                index = (tick >> shift) & 0x0F; /* 4 bits */
-                /* use lookup to convert to char */
-                SysMin_output(ti_trace_SysMin_lookup[index]);
-                shift -= 4; /* for next 4 bits */
-            } while (shift >= 0);
-
+            sprintf(timestamp, "%12d\0", tick);
+            for (index = 0; index < 12; index++) {
+                if(timestamp[index] == ' ' && index > 2) {
+                    SysMin_output('0');
+                }
+                else {
+                    SysMin_output(timestamp[index]);
+                }
+                if (index == 8) {
+                    SysMin_output('.');
+                }
+            }
             SysMin_output(']');
             SysMin_output(' ');
             module->getTime = FALSE;
@@ -115,6 +120,7 @@ Void SysMin_putch(Char ch)
         SysMin_output(ch);
         if (ch == '\n') {
             module->getTime = TRUE;
+            module->writeidx[0] =  module->outidx;
         }
 
         Gate_leaveSystem(key);

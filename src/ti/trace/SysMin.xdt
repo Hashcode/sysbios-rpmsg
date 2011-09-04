@@ -36,5 +36,7 @@
 %if (SysMin.bufSize != 0) {
 
 #pragma DATA_SECTION(ti_trace_SysMin_Module_State_0_outbuf__A, ".tracebuf");
+#pragma DATA_SECTION(ti_trace_SysMin_Module_State_0_readidx__A, ".tracebuf");
+#pragma DATA_SECTION(ti_trace_SysMin_Module_State_0_writeidx__A, ".tracebuf");
 
 %} /* bufSize != 0 */

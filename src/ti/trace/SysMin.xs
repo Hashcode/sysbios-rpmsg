@@ -19,10 +19,14 @@
  */
 function module$static$init(obj, params)
 {
-    obj.outbuf.length = params.bufSize;
+    obj.outbuf.length = params.bufSize - 8;
+    obj.writeidx.length = 0x1;
+    obj.readidx.length = 0x1;
     if (params.bufSize != 0) {
         var Memory = xdc.module('xdc.runtime.Memory');
         Memory.staticPlace(obj.outbuf, 0x1000, params.sectionName);
+        Memory.staticPlace(obj.writeidx, 0x0, params.sectionName);
+        Memory.staticPlace(obj.readidx, 0x0, params.sectionName);
     }
 
     obj.outidx = 0;

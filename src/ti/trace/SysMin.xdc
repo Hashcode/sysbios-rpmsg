@@ -184,9 +184,11 @@ module SysMin inherits xdc.runtime.ISystemSupport {
 internal:
 
     struct Module_State {
-        Char outbuf[];  /* the output buffer */
-        UInt outidx;    /* index within outbuf to next Char to write */
-        Bool getTime;   /* set to true for each new trace */
-        Bool wrapped;   /* has the index (outidx) wrapped */
+        Char outbuf[];   /* the output buffer */
+        UInt outidx;     /* index within outbuf to next Char to write */
+        Bool getTime;    /* set to true for each new trace */
+        Bool wrapped;    /* has the index (outidx) wrapped */
+        UInt writeidx[]; /* index to the last "\n" char */
+        UInt readidx[];  /* index to the last  char read by external observer */
     }
 }
