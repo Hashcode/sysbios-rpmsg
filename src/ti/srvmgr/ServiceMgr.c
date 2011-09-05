@@ -333,7 +333,15 @@ void serviceMgrTaskFxn(UArg arg0, UArg arg1)
 
     System_printf("serviceMgr: started on port: %d\n", SERVICE_MGR_PORT);
 
-    NameMap_register("rpmsg-omx", SERVICE_MGR_PORT);
+    if (MultiProc_self() == MultiProc_getId("CORE0")) {
+        NameMap_register("rpmsg-omx0", SERVICE_MGR_PORT);
+    }
+    if (MultiProc_self() == MultiProc_getId("CORE1")) {
+        NameMap_register("rpmsg-omx1", SERVICE_MGR_PORT);
+    }
+    if (MultiProc_self() == MultiProc_getId("DSP")) {
+        NameMap_register("rpmsg-omx2", SERVICE_MGR_PORT);
+    }
 
     while (1) {
        MessageQCopy_recv(msgq, (Ptr)msg, &len, &remote, MessageQCopy_FOREVER);
