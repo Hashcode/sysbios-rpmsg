@@ -90,6 +90,20 @@ Void IpcPower_exit();
  */
 Void IpcPower_suspend();
 
+/*!
+ *  @brief      Disable the deep sleep mode in the core
+ *
+ *  @sa         IpcPower_wakeUnlock
+ */
+Void IpcPower_wakeLock();
+
+/*!
+ *  @brief      Enable the core to go to deep sleep mode
+ *
+ *  @sa         IpcPower_wakeLock
+ */
+Void IpcPower_wakeUnlock();
+
 
 #if defined (__cplusplus)
 }

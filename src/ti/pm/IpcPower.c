@@ -50,6 +50,7 @@
 #include <xdc/runtime/Diags.h>
 
 #include <ti/sysbios/knl/Swi.h>
+#include <ti/sysbios/hal/Hwi.h>
 #include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
 
 #include <ti/ipc/MultiProc.h>
@@ -66,9 +67,48 @@ static Swi_Params swiParams;
 static Swi_Handle suspendResumeSwi;
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
+static Int32 refWakeLockCnt;
 
 /* Module ref count: */
 static Int curInit = 0;
+
+typedef enum IpcPower_SleepMode {
+    IpcPower_SLEEP_MODE_DEEPSLEEP,
+    IpcPower_SLEEP_MODE_WAKELOCK,
+    IpcPower_SLEEP_MODE_WAKEUNLOCK
+} IpcPower_SleepMode;
+
+static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
+{
+    IArg hwiKey, swiKey;
+
+    /* Set/Restore the DeepSleep bit if no timer already in use */
+    hwiKey = Hwi_disable();
+    swiKey = Swi_disable();
+    switch (opt) {
+        case IpcPower_SLEEP_MODE_WAKEUNLOCK:
+            if(refWakeLockCnt) {
+                refWakeLockCnt--;
+            }
+        case IpcPower_SLEEP_MODE_DEEPSLEEP:
+            if (!refWakeLockCnt) {
+                REG32(M3_SCR_REG) |= 1 << DEEPSLEEP_BIT;
+            }
+            break;
+        case IpcPower_SLEEP_MODE_WAKELOCK:
+            refWakeLockCnt++;
+            REG32(M3_SCR_REG) &= ~(1 << DEEPSLEEP_BIT);
+            break;
+        default:
+    }
+    Swi_restore(swiKey);
+    Hwi_restore(hwiKey);
+}
+
+static inline Void IpcPower_setWugen()
+{
+    REG32(WUGEN_MEVT1) |= WUGEN_INT_MASK;
+}
 
 /*
  *  ======== IpcPower_suspendSwi ========
@@ -83,7 +123,12 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
         Log_print0(Diags_INFO, FXNN":Core1 Hibernation Swi");
         PowerSuspArgs.pmMasterCore = NO_MASTERCORE;
     }
+    if (refWakeLockCnt) {
+        System_printf("Warning: Wake locks in use\n");
+    }
     Power_suspend(&PowerSuspArgs);
+    IpcPower_sleepMode(IpcPower_SLEEP_MODE_DEEPSLEEP);
+    IpcPower_setWugen();
     Log_print0(Diags_INFO, FXNN":Resume");
 }
 #undef FXNN
@@ -104,7 +149,6 @@ Void IpcPower_init()
     if (curInit++) {
         return;
     }
-
     Swi_Params_init(&swiParams);
     swiParams.priority = Swi_numPriorities - 1; /* Max Priority Swi */
     suspendResumeSwi = Swi_create(IpcPower_suspendSwi, &swiParams, NULL);
@@ -115,6 +159,8 @@ Void IpcPower_init()
     PowerSuspArgs.intMask31_0 = 0x0;
     PowerSuspArgs.intMask63_32 = 0x0;
     PowerSuspArgs.intMask79_64 = 0x0;
+    IpcPower_sleepMode(IpcPower_SLEEP_MODE_DEEPSLEEP);
+    IpcPower_setWugen();
 }
 
 /*
@@ -140,7 +186,21 @@ Void IpcPower_suspend()
  */
 Void IpcPower_idle()
 {
-    REG32(M3_SCR_REG) |= 1 << DEEPSLEEP_BIT;
-    REG32(WUGEN_MEVT1) |= WUGEN_INT_MASK;
     asm(" wfi");
+}
+
+/*
+ *  ======== IpcPower_wakeLock ========
+ */
+Void IpcPower_wakeLock()
+{
+    IpcPower_sleepMode(IpcPower_SLEEP_MODE_WAKELOCK);
+}
+
+/*
+ *  ======== IpcPower_wakeUnlock ========
+ */
+Void IpcPower_wakeUnlock()
+{
+    IpcPower_sleepMode(IpcPower_SLEEP_MODE_WAKEUNLOCK);
 }
