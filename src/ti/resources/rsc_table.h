@@ -87,10 +87,10 @@
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
  * TODO: The PA->VA lookup needs to be based on this table.
  */
-#define PHYS_MEM_IPC            0xB7600000
-#define PHYS_MEM_TEXT           0xB7800000
-#define PHYS_MEM_DATA           0xB7F00000
-#define PHYS_MEM_IOBUFS         0xBDF00000
+#define PHYS_MEM_IPC            0xB3A00000
+#define PHYS_MEM_TEXT           0xB3C00000
+#define PHYS_MEM_DATA           0xB4300000
+#define PHYS_MEM_IOBUFS         0xBA300000
 
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_1M                           0x00100000
@@ -151,7 +151,7 @@ struct resource resources[] = {
        0, "IPU_MEM_TEXT" },
     { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 96,
        0, "IPU_MEM_DATA" },
-    { TYPE_CARVEOUT, IPU_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, SZ_1M * 30,
+    { TYPE_CARVEOUT, IPU_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, SZ_1M * 90,
        0, "IPU_MEM_IOBUFS" },
 };
 
