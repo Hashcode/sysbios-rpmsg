@@ -67,6 +67,9 @@
 #define  MAX_TUPLES        256
 #define  FREE_TUPLE_KEY    0xFFFFFFFF
 
+/* ServiceMgr disconnect hook function */
+static ServiceMgr_disconnectFuncPtr ServiceMgr_disconnectUserFxn = NULL;
+
 struct ServiceDef {
     Char                   name[MAX_NAMELEN];
     RcmServer_Params       rcmServerParams;
@@ -154,6 +157,20 @@ Void ServiceMgr_send(Service_Handle srvc, Ptr data, UInt16 len)
     MessageQCopy_send(dstProc, remote, local, data, HDRSIZE+len);
 }
 
+Bool ServiceMgr_registerDisconnectFxn(Service_Handle srvc, Ptr data,
+                                      ServiceMgr_disconnectFuncPtr func)
+{
+    if (func == NULL) {
+        System_printf("ServiceMgr_registerDisconnectFxn: Invalid function.\n");
+        return FALSE;
+    }
+
+    /* Register the user-supplied function */
+    if (!ServiceMgr_disconnectUserFxn) {
+        ServiceMgr_disconnectUserFxn = func;
+    }
+    return TRUE;
+}
 
 /* Tuple store/retrieve fxns:  */
 
@@ -265,6 +282,14 @@ static UInt32 deleteService(UInt32 addr)
        System_printf("deleteService: could not find service instance at"
                      " address: 0x%x\n", addr);
        return OMX_FAIL;
+    }
+
+    /* Notify a ServiceMgr client of disconnection.
+     * rcmSrvHandle is same as the ServiceMgr handle
+     */
+    if (ServiceMgr_disconnectUserFxn) {
+        /* Pass NULL data for the moment */
+        ServiceMgr_disconnectUserFxn(rcmSrvHandle, NULL);
     }
 
     /* Destroy the RcmServer instance. */

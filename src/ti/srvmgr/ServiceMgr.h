@@ -48,6 +48,11 @@
  */
 typedef RcmServer_Handle  Service_Handle;
 
+/*!
+ *  @brief Service disconnect notifier hook function type definition
+ */
+typedef Void (*ServiceMgr_disconnectFuncPtr)(Service_Handle srvc, Ptr data);
+
 /*
  *  ======== ServiceMgr_init ========
  */
@@ -98,3 +103,19 @@ Bool ServiceMgr_register(String name, RcmServer_Params  *rcmServerParams);
  *
  */
 Void ServiceMgr_send(Service_Handle srvc, Ptr data, UInt16 len);
+
+/*
+ *  ======== ServiceMgr_registerdisconnectFxn =======
+ */
+/*!
+ *  @brief Registers a application-specific service disconnect callback function
+ *
+ *  @param[in]  srvc           Handle to a service, passed into every service
+ *                             function
+ *  @param[in]  data           Pointer to application-specific data passed back
+ *                             to the disconnect hook function
+ *  @param[in]  func           Hook function to be called on a service disconnect
+ *
+ */
+Bool ServiceMgr_registerDisconnectFxn(Service_Handle srvc, Ptr data,
+                                      ServiceMgr_disconnectFuncPtr func);
