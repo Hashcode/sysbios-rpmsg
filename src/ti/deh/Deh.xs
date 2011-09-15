@@ -56,6 +56,16 @@ function module$use()
 
 function module$static$init(obj, params)
 {
+    var segname = Program.sectMap[".errorbuf"];
+    var segment = Program.cpu.memoryMap[segname];
+
+    if (params.bufSize > segment.len) {
+        this.$logError("bufSize 0x" + Number(params.bufSize).toString(16) +
+                       " configured is too large, maximum bufSize allowed is " +
+                       "0x" + Number(segment.len).toString(16) + ". Decrement" +
+                       " the bufSize appropriately.", this);
+    }
+
     obj.outbuf.length = params.bufSize;
     if (params.bufSize != 0) {
         var Memory = xdc.module('xdc.runtime.Memory');
