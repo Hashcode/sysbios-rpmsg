@@ -38,6 +38,7 @@
 #include <ti/ipc/MultiProc.h>
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
+#include <ti/sysbios/knl/Semaphore.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -109,6 +110,7 @@ IpcResource_Handle IpcResource_connect(UInt timeout)
                       timeout;
 
     dstProc = MultiProc_getId("HOST");
+    handle->sem = Semaphore_create(1, NULL, NULL);
 
     MessageQCopy_init(dstProc);
     handle->msgq= MessageQCopy_create(MessageQCopy_ASSIGN_ANY,
@@ -171,6 +173,8 @@ Int IpcResource_disconnect(IpcResource_Handle handle)
         return status;
     }
 
+    Semaphore_delete(&handle->sem);
+
     Memory_free(NULL, handle, sizeof(*handle));
 
     return 0;
@@ -205,9 +209,11 @@ Int IpcResource_request(IpcResource_Handle handle,
     req->reqType = IpcResource_REQ_TYPE_ALLOC;
 
     memcpy(req->resParams, resParams, rlen);
+    Semaphore_pend(handle->sem, BIOS_WAIT_FOREVER);
     status = MessageQCopy_send(MultiProc_getId("HOST"), IpcResource_server,
                         handle->endPoint, req, hlen + rlen);
     if (status) {
+        Semaphore_post(handle->sem);
         System_printf("IpcResource_request: MessageQCopy_send "
                       "failed status %d\n", status);
         status = IpcResource_E_FAIL;
@@ -216,6 +222,7 @@ Int IpcResource_request(IpcResource_Handle handle,
 
     status = MessageQCopy_recv(handle->msgq, ack, &len, &remote,
                                handle->timeout);
+    Semaphore_post(handle->sem);
     if (status) {
         System_printf("IpcResource_request: MessageQCopy_recv "
                       "failed status %d\n", status);
@@ -267,20 +274,25 @@ Int IpcResource_setConstraints(IpcResource_Handle handle,
     req->resHandle = resHandle;
 
     memcpy(req->resParams, constraints, rlen);
+    Semaphore_pend(handle->sem, BIOS_WAIT_FOREVER);
     status = MessageQCopy_send(MultiProc_getId("HOST"), IpcResource_server,
                         handle->endPoint, req, sizeof(*req) + rlen);
     if (status) {
+        Semaphore_post(handle->sem);
         System_printf("IpcResource_setConstraints: MessageQCopy_send "
                       "failed status %d\n", status);
         status = IpcResource_E_FAIL;
         goto end;
     }
 
-    if (action == IpcResource_REQ_TYPE_REL_CONSTRAINTS)
+    if (action == IpcResource_REQ_TYPE_REL_CONSTRAINTS) {
+        Semaphore_post(handle->sem);
         goto end;
+    }
 
     status = MessageQCopy_recv(handle->msgq, ack, &len, &remote,
                                handle->timeout);
+    Semaphore_post(handle->sem);
     if (status) {
         System_printf("IpcResource_setConstraints: MessageQCopy_recv "
                       "failed status %d\n", status);

@@ -86,6 +86,7 @@ typedef struct {
 struct IpcResource_Object {
     UInt32 endPoint;
     UInt timeout;
+    Semaphore_Handle sem;
     MessageQCopy_Handle msgq;
 };
 
