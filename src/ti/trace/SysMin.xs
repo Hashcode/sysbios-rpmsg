@@ -19,6 +19,16 @@
  */
 function module$static$init(obj, params)
 {
+    var segname = Program.sectMap[".tracebuf"];
+    var segment = Program.cpu.memoryMap[segname];
+
+    if (params.bufSize > segment.len) {
+        this.$logError("bufSize 0x" + Number(params.bufSize).toString(16) +
+                       " configured is too large, maximum bufSize allowed is " +
+                       "0x" + Number(segment.len).toString(16) + ". Decrement" +
+                       " the bufSize appropriately.", this);
+    }
+
     obj.outbuf.length = params.bufSize - 8;
     obj.writeidx.length = 0x1;
     obj.readidx.length = 0x1;
