@@ -53,8 +53,39 @@ import ti.sysbios.knl.Swi;
 @Template("./Deh.xdt")
 @ModuleStartup
 module Deh {
-    /*! crash-dump buffer size */
-    config SizeT bufSize = 2048;
+
+    /*! Exception Registers */
+    struct excRegs {
+        Ptr  r0;    /* CPU registers */
+        Ptr  r1;
+        Ptr  r2;
+        Ptr  r3;
+        Ptr  r4;
+        Ptr  r5;
+        Ptr  r6;
+        Ptr  r7;
+        Ptr  r8;
+        Ptr  r9;
+        Ptr  r10;
+        Ptr  r11;
+        Ptr  r12;
+        Ptr  sp;
+        Ptr  lr;
+        Ptr  pc;
+        Ptr  psr;
+        Ptr  ICSR;  /* NVIC registers */
+        Ptr  MMFSR;
+        Ptr  BFSR;
+        Ptr  UFSR;
+        Ptr  HFSR;
+        Ptr  DFSR;
+        Ptr  MMAR;
+        Ptr  BFAR;
+        Ptr  AFSR;
+    }
+
+    /*! Crash dump buffer size */
+    config SizeT bufSize = 0x200;
 
     /*!
      *  ======== sectionName ========

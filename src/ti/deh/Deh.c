@@ -179,47 +179,37 @@ Void Deh_watchdog_kick(Void)
     }
 }
 
-/* write buffer to the crash-dump buffer */
-Void Deh_writeBuf(char *t)
-{
-    while (*t != '\0') {
-        module->outbuf[module->index++] = *t++;
-        if (module->index == Deh_bufSize) {
-            module->index = 0;
-        }
-    }
-
-    module->outbuf[module->index] = '\0';
-}
-
 /* read data from HWI exception handler and print it to crash dump */
 /* buffer. Notify host exception has occurred                      */
 Void Deh_excHandler(UInt *excStack, UInt lr)
 {
     Hwi_ExcContext  exc;
+    Deh_excRegs    *excRegs;
     Char           *ttype;
     UInt            excNum;
     Char           *etype;
     UInt8          *pc;
 
+    excRegs = (Deh_excRegs *) module->outbuf;
+
     /* copy registers from stack to excContext */
-    exc.r0 = (Ptr)excStack[8];      /* r0 */
-    exc.r1 = (Ptr)excStack[9];      /* r1 */
-    exc.r2 = (Ptr)excStack[10];     /* r2 */
-    exc.r3 = (Ptr)excStack[11];     /* r3 */
-    exc.r4 = (Ptr)excStack[0];      /* r4 */
-    exc.r5 = (Ptr)excStack[1];      /* r5 */
-    exc.r6 = (Ptr)excStack[2];      /* r6 */
-    exc.r7 = (Ptr)excStack[3];      /* r7 */
-    exc.r8 = (Ptr)excStack[4];      /* r8 */
-    exc.r9 = (Ptr)excStack[5];      /* r9 */
-    exc.r10 = (Ptr)excStack[6];     /* r10 */
-    exc.r11 = (Ptr)excStack[7];     /* r11 */
-    exc.r12 = (Ptr)excStack[12];    /* r12 */
-    exc.sp  = (Ptr)(Uint32)(excStack+16); /* sp */
-    exc.lr  = (Ptr)excStack[13];    /* lr */
-    exc.pc  = (Ptr)excStack[14];    /* pc */
-    exc.psr = (Ptr)excStack[15];    /* psr */
+    excRegs->r0  = exc.r0 = (Ptr)excStack[8];      /* r0 */
+    excRegs->r1  = exc.r1 = (Ptr)excStack[9];      /* r1 */
+    excRegs->r2  = exc.r2 = (Ptr)excStack[10];     /* r2 */
+    excRegs->r3  = exc.r3 = (Ptr)excStack[11];     /* r3 */
+    excRegs->r4  = exc.r4 = (Ptr)excStack[0];      /* r4 */
+    excRegs->r5  = exc.r5 = (Ptr)excStack[1];      /* r5 */
+    excRegs->r6  = exc.r6 = (Ptr)excStack[2];      /* r6 */
+    excRegs->r7  = exc.r7 = (Ptr)excStack[3];      /* r7 */
+    excRegs->r8  = exc.r8 = (Ptr)excStack[4];      /* r8 */
+    excRegs->r9  = exc.r9 = (Ptr)excStack[5];      /* r9 */
+    excRegs->r10 = exc.r10 = (Ptr)excStack[6];     /* r10 */
+    excRegs->r11 = exc.r11 = (Ptr)excStack[7];     /* r11 */
+    excRegs->r12 = exc.r12 = (Ptr)excStack[12];    /* r12 */
+    excRegs->sp  = exc.sp  = (Ptr)(Uint32)(excStack+16); /* sp */
+    excRegs->lr  = exc.lr  = (Ptr)excStack[13];    /* lr */
+    excRegs->pc  = exc.pc  = (Ptr)excStack[14];    /* pc */
+    excRegs->psr = exc.psr = (Ptr)excStack[15];    /* psr */
 
     exc.threadType = BIOS_getThreadType();
     switch (exc.threadType) {
@@ -250,15 +240,15 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
             break;
     }
 
-    exc.ICSR = (Ptr)Hwi_nvic.ICSR;
-    exc.MMFSR = (Ptr)Hwi_nvic.MMFSR;
-    exc.BFSR = (Ptr)Hwi_nvic.BFSR;
-    exc.UFSR = (Ptr)Hwi_nvic.UFSR;
-    exc.HFSR = (Ptr)Hwi_nvic.HFSR;
-    exc.DFSR = (Ptr)Hwi_nvic.DFSR;
-    exc.MMAR = (Ptr)Hwi_nvic.MMAR;
-    exc.BFAR = (Ptr)Hwi_nvic.BFAR;
-    exc.AFSR = (Ptr)Hwi_nvic.AFSR;
+    excRegs->ICSR  = exc.ICSR  = (Ptr)Hwi_nvic.ICSR;
+    excRegs->MMFSR = exc.MMFSR = (Ptr)Hwi_nvic.MMFSR;
+    excRegs->BFSR  = exc.BFSR  = (Ptr)Hwi_nvic.BFSR;
+    excRegs->UFSR  = exc.UFSR  = (Ptr)Hwi_nvic.UFSR;
+    excRegs->HFSR  = exc.HFSR  = (Ptr)Hwi_nvic.HFSR;
+    excRegs->DFSR  = exc.DFSR  = (Ptr)Hwi_nvic.DFSR;
+    excRegs->MMAR  = exc.MMAR  = (Ptr)Hwi_nvic.MMAR;
+    excRegs->BFAR  = exc.BFAR  = (Ptr)Hwi_nvic.BFAR;
+    excRegs->AFSR  = exc.AFSR  = (Ptr)Hwi_nvic.AFSR;
 
     /* Force MAIN threadtype So we can safely call System_printf */
     BIOS_setThreadType(BIOS_ThreadType_Main);
@@ -370,8 +360,6 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     System_printf ("MMAR = 0x%08x\n", Hwi_nvic.MMAR);
     System_printf ("BFAR = 0x%08x\n", Hwi_nvic.BFAR);
     System_printf ("AFSR = 0x%08x\n", Hwi_nvic.AFSR);
-    Deh_writeBuf (etype);
-    Deh_writeBuf ("\nSee TraceBuffer for register-dump.\n");
     System_abort("Terminating execution...\n");
 
 }
