@@ -81,13 +81,16 @@
 #define IPU_MEM_TEXT            0x0
 #define IPU_MEM_DATA            0x80000000
 #define IPU_MEM_IOBUFS          0x88000000
-#define IPU_MEM_IPC             0xA0000000
+#define IPU_MEM_IPC_VRING       0xA0000000
+#define IPU_MEM_IPC_DATA        0x9F000000
 
 /*
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
+ * PHYS_MEM_IPC_VRING & PHYS_MEM_IPC_DATA MUST be together.
  * TODO: The PA->VA lookup needs to be based on this table.
  */
-#define PHYS_MEM_IPC            0xB3A00000
+#define PHYS_MEM_IPC_VRING      0xB3A00000
+#define PHYS_MEM_IPC_DATA       0xB3B00000
 #define PHYS_MEM_TEXT           0xB3C00000
 #define PHYS_MEM_DATA           0xB4300000
 #define PHYS_MEM_IOBUFS         0xBA300000
@@ -147,9 +150,12 @@ struct resource resources[] = {
        0, "IPU_IVAHD_CONFIG" },
     { TYPE_DEVMEM, IPU_IVAHD_SL2, 0, L3_IVAHD_SL2, 0, SZ_16M,
        0, "IPU_IVAHD_SL2" },
-    /* IPU_MEM_IPC should be first irrespective of static or dynamic carveout */
-    { TYPE_CARVEOUT, IPU_MEM_IPC,  0, PHYS_MEM_IPC, 0, SZ_2M,
-       0, "IPU_MEM_IPC"  },
+    /* IPU_MEM_IPC_VRING should be first irrespective of static or dynamic
+     * carveout. */
+    { TYPE_CARVEOUT, IPU_MEM_IPC_VRING, 0, PHYS_MEM_IPC_VRING, 0, SZ_1M,
+       0, "IPU_MEM_IPC_VRING"  },
+    { TYPE_CARVEOUT, IPU_MEM_IPC_DATA, 0, PHYS_MEM_IPC_DATA, 0, SZ_1M,
+       0, "IPU_MEM_IPC_DATA"  },
     { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, SZ_1M * 6,
        0, "IPU_MEM_TEXT" },
     { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 96,
