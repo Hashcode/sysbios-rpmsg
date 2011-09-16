@@ -34,14 +34,23 @@ package.mak
 *.xe64T
 *.xe674
 *.o
-genbase
 *.sw*
 .tests*
 .nfs*
 *.bin
-readrprc
-wrints
 *.patch
 *.tar
 *.zip
 *patch*
+
+# Utilities & Script Files
+genbase
+readrprc
+wrints
+genextbin
+mmu_ttb_dump.log
+sign_toc.log
+
+# Generated header files from XDC modules
+Deh.h
+SysMin.h
