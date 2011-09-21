@@ -34,7 +34,7 @@
 REPO		= /usr/local
 
 # Edit Dependency Versions:
-XDCROOTVER	= xdctools_3_22_01_21
+XDCROOTVER	= xdctools_3_22_03_41
 BIOSPRODVER	= bios_6_32_01_38
 IPCPRODVER	= ipc_1_23_01_26
 

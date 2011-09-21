@@ -23,7 +23,8 @@ CLONE
 
 
 TOOLS
-    o Gollum build requires the following tools to be installed at the minimum:
+    o SYS/BIOS RPMSG build requires the following tools to be installed at the
+      minimum:
         - SYS/BIOS: RTOS running on the target slave processor
         - XDC: RTSC tools used for building and configuration of images
         - IPC: Base Inter-Processor Communication Package
@@ -47,13 +48,13 @@ TOOLS
             Linux:   http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
             Windows: http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
 
-       2) XDC: 3.22.01.21
+       2) XDC: 3.22.03.41
           Public Links:-
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_01_21/exports/xdctools_setuplinux_3_22_01_21.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_01_21/exports/xdctools_setupwin32_3_22_01_21.exe
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_03_41/exports/xdctools_setuplinux_3_22_03_41.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_03_41/exports/xdctools_setupwin32_3_22_03_41.exe
           TI Internal Links:-
-            Linux:   http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_01_21/exports/xdctools_setuplinux_3_22_01_21.bin
-            Windows: http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_01_21/exports/xdctools_setupwin32_3_22_01_21.exe
+            Linux:   http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_03_41/exports/xdctools_setuplinux_3_22_03_41.bin
+            Windows: http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_03_41/exports/xdctools_setupwin32_3_22_03_41.exe
 
        3) CGT TMS470: 4.9.0
           Public Links:-
@@ -93,7 +94,7 @@ BUILD (Linux Environment)
        entire tree plus sample applications
 
     5) A default firmware binary, ducati-m3.bin is generated in the src/utils
-       directory, using two of the sample baseimages in Gollum tree.
+       directory, using two of the sample baseimages in sysbios-rpmsg tree.
 
 CLEAN (Linux Environment)
     1) Type 'make clean' to clean the generated libraries and executables
