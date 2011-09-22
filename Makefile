@@ -31,10 +31,16 @@
 #
 
 # Repo
-REPO		= /usr/local
+REPO		= $(shell if [ "$$BIOSTOOLSROOT" != "" ]; \
+			  then echo $$BIOSTOOLSROOT; \
+			  else echo "/usr/local"; \
+			  fi)
 
 # Edit Dependency Versions:
-XDCROOTVER	= xdctools_3_22_03_41
+XDCROOTVER	= $(shell if [ "$$XDCVERSION" != "" ]; \
+			  then echo $$XDCVERSION; \
+			  else echo "xdctools_3_22_03_41"; \
+			  fi)
 BIOSPRODVER	= bios_6_32_01_38
 IPCPRODVER	= ipc_1_23_01_26
 
@@ -56,3 +62,10 @@ clean:
 	cd src/utils/elfload; make clean
 	cd src/utils; make clean
 	cd ../..
+
+info: tools
+tools:
+	@echo "REPO := $(REPO)"
+	@echo "XDC  := $(XDCDIST_TREE)"
+	@echo "BIOS := $(BIOSPROD)"
+	@echo "IPC  := $(IPCPROD)"

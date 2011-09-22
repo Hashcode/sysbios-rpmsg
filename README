@@ -78,22 +78,32 @@ BUILD (Linux Environment)
            export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
            export C6000CGTOOLPATH=/data/omapts/linux/dsp-tc/cgt6x-7.2.0
 
-    2) Edit Makefile to point the REPO variable to the correct local installation
-       path (if different from the default installation path). All the above
-       tools are expected to be installed in the same path.
+    2) Export the proper environment variable to point to your installation path
+       for all the BIOS-side tools (optional, MUST set if your installation path
+       is different from the default install location - /usr/local). All the
+       above tools are expected to be installed in the same path. Note that the
+       path should not end with a trailing '/'.
        Eg:
-          REPO          = /data/omapts/linux/dsp-tc
+           export BIOSTOOLSROOT=/data/omapts/linux/dsp-tc
 
-    3) Edit Makefile so that the following variables are pointing to the correct
-       tools versions
+    3) Export the proper environment variable to choose your own version of XDC
+       tools (optional, need to set only if different from default is desired)
+       Eg:
+           export XDCVERSION=xdctools_3_22_01_21
+
+    4) Edit Makefile (optional) so that the following variables are pointing to
+       the correct tools versions. The XDCROOTVER and REPO variables are
+       automatically set based on the exported variables in steps #2 & #3.
        - BIOSPRODVER
        - IPCPRODVER
-       - XDCROOTVER
 
-    4) From the top-level sysbios-rpmsg directory, type in 'make' to build the
+    5) From the top-level sysbios-rpmsg directory, type in 'make' to build the
        entire tree plus sample applications
 
-    5) A default firmware binary, ducati-m3.bin is generated in the src/utils
+    6) Type 'make tools' or 'make info' to get your current tools location and
+       versions.
+
+    7) A default firmware binary, ducati-m3.bin is generated in the src/utils
        directory, using two of the sample baseimages in sysbios-rpmsg tree.
 
 CLEAN (Linux Environment)
