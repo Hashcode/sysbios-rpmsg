@@ -88,28 +88,60 @@ static inline Void SysMin_output(Char ch)
  */
 Void SysMin_putch(Char ch)
 {
-    IArg   key;
-    UInt32 tick;
-    Int    index;
-    Char   timestamp[50];
+    IArg        key;
+    Int         index;
+    UInt64      uSec;
+    static Bool configure = FALSE;
+    static UInt startIdx;
+    static UInt endIdx;
+    static UInt timeStampSecCharLen;
+    const  UInt minSecCharLen   = 4;  /* for 1 us tick period */
+    const  UInt maxuSecCharLen  = 6; /* for 1 us tick period */
+    /* Max characters for seconds would be 10 assuming 1 sec tick period,
+     * so decimal point index will be 11, and maximum time stamp buffer
+     * length would be 18 accounting maxuSecCharLen and a trailing NULL */
+    const  UInt decPtIdx        = 11;
+    const  UInt timeStampBufLen = 18;
+    const  UInt leftSpaceIdx    = 10;
+    Char        timeStamp[18]   = {"                 \0"};
+
+    /* Configure the trace timestamp format */
+    if (!configure) {
+        Int i = 0, mod = 10;
+
+        /* Find number of characters needes for seconds and sub-seconds,
+         * tick periods are specified in microseconds */
+        for (; i < maxuSecCharLen; i++) {
+            if (Clock_tickPeriod % mod) {
+                break;
+            }
+            mod = mod * 10;
+        }
+        timeStampSecCharLen = minSecCharLen + i;
+        startIdx = decPtIdx - timeStampSecCharLen;
+        endIdx = timeStampBufLen - (i + 1); /* Account for null character too */
+        configure = TRUE;
+    }
 
     if (SysMin_bufSize != 0) {
 
         key = Gate_enterSystem();
 
         if (module->getTime == TRUE) {
-            tick = Clock_getTicks();
+            uSec  = Clock_getTicks() * Clock_tickPeriod;
             SysMin_output('[');
-            sprintf(timestamp, "%12d\0", tick);
-            for (index = 0; index < 12; index++) {
-                if(timestamp[index] == ' ' && index > 2) {
+            if (uSec) {
+                sprintf(timeStamp, "%17llu\0", uSec);
+            }
+            for (index = startIdx; index < endIdx; index++) {
+                if (index == decPtIdx) {
+                    SysMin_output('.');
+                }
+                if (timeStamp[index] == ' ' && index >= leftSpaceIdx) {
                     SysMin_output('0');
                 }
                 else {
-                    SysMin_output(timestamp[index]);
-                }
-                if (index == 8) {
-                    SysMin_output('.');
+                    SysMin_output(timeStamp[index]);
                 }
             }
             SysMin_output(']');
