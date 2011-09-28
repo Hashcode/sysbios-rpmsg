@@ -53,6 +53,7 @@
 #include <ti/ipc/MultiProc.h>
 #include <ti/sysbios/interfaces/ITimer.h>
 #include <ti/sysbios/timers/dmtimer/Timer.h>
+#include <ti/trace/StackDbg.h>
 
 
 /*---- watchdog timer ----*/
@@ -194,6 +195,27 @@ static Void dump_hex(UInt base, UInt len, UInt start)
     }
 }
 
+static Bool printStackEntry(struct StackDbg_StackEntry *entry, Void *user)
+{
+    UInt *cnt = (UInt *)user;
+
+    if (entry->bogus) {
+        System_printf(" -- [op %08x] %08x\n", entry->op, entry->ret);
+    }
+    else {
+        if (entry->target) {
+            System_printf(" %02d [op %08x] %08x (ret from call to %08x)\n",
+                            (*cnt)++, entry->op, entry->ret, entry->target);
+        }
+        else {
+            System_printf(" %02d [op %08x] %08x\n", (*cnt)++, entry->op,
+                            entry->sp);
+        }
+    }
+
+    return TRUE;
+}
+
 /* read data from HWI exception handler and print it to crash dump */
 /* buffer. Notify host exception has occurred                      */
 Void Deh_excHandler(UInt *excStack, UInt lr)
@@ -205,6 +227,7 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     Char           *etype;
     UInt8          *pc;
     Char           *name;
+    UInt           sCnt = 0;
 
     excRegs = (Deh_excRegs *) module->outbuf;
 
@@ -385,6 +408,10 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     System_printf ("MMAR = 0x%08x\n", Hwi_nvic.MMAR);
     System_printf ("BFAR = 0x%08x\n", Hwi_nvic.BFAR);
     System_printf ("AFSR = 0x%08x\n", Hwi_nvic.AFSR);
+
+    System_printf ("Stack trace\n");
+    StackDbg_walkStack((UInt)exc.threadStack, (UInt)exc.threadStackSize,
+                       (UInt)exc.sp, printStackEntry, &sCnt);
 
     System_printf ("Stack dump base %08x size %ld sp %08x:\n", exc.threadStack,
                    exc.threadStackSize, exc.sp);

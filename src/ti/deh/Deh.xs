@@ -50,8 +50,9 @@ function module$use()
     d_swi  = xdc.useModule('ti.sysbios.knl.Swi');
     d_task_hook = new d_task.HookSet;
     d_swi_hook  = new d_swi.HookSet;
-    Deh = this;
 
+    xdc.useModule('ti.trace.StackDbg');
+    Deh = this;
 }
 
 function module$static$init(obj, params)

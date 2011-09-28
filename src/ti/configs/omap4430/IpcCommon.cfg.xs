@@ -107,6 +107,9 @@ var Deh = xdc.useModule('ti.deh.Deh');
 Hwi.enableException = true;
 Hwi.nvicCCR.DIV_0_TRP = 1;
 
+/* Include stack debug helper */
+var StackDbg = xdc.useModule('ti.trace.StackDbg');
+
 var dmTimer = xdc.useModule('ti.sysbios.timers.dmtimer.Timer');
 /* dmTimer 0 mapped to GPT3 */
 dmTimer.timerSettings[0].baseAddr = 0xA8034000;
