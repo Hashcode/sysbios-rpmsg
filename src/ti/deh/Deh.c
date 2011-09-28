@@ -179,6 +179,21 @@ Void Deh_watchdog_kick(Void)
     }
 }
 
+static Void dump_hex(UInt base, UInt len, UInt start)
+{
+    UInt top;
+
+    len = (len + 7) & ~7;
+    top = base + len * sizeof(UInt);
+    start = start & ~31;
+    for (; start < top; start += 8 * sizeof(UInt)) {
+        System_printf("%08x: %08x %08x %08x %08x  %08x %08x %08x %08x\n",
+               start, ((UInt *)start)[0], ((UInt *)start)[1],
+               ((UInt *)start)[2], ((UInt *)start)[3], ((UInt *)start)[4],
+               ((UInt *)start)[5], ((UInt *)start)[6], ((UInt *)start)[7]);
+    }
+}
+
 /* read data from HWI exception handler and print it to crash dump */
 /* buffer. Notify host exception has occurred                      */
 Void Deh_excHandler(UInt *excStack, UInt lr)
@@ -189,6 +204,7 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     UInt            excNum;
     Char           *etype;
     UInt8          *pc;
+    Char           *name;
 
     excRegs = (Deh_excRegs *) module->outbuf;
 
@@ -206,7 +222,7 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     excRegs->r10 = exc.r10 = (Ptr)excStack[6];     /* r10 */
     excRegs->r11 = exc.r11 = (Ptr)excStack[7];     /* r11 */
     excRegs->r12 = exc.r12 = (Ptr)excStack[12];    /* r12 */
-    excRegs->sp  = exc.sp  = (Ptr)(Uint32)(excStack+16); /* sp */
+    excRegs->sp  = exc.sp  = (Ptr)(UInt32)(excStack+16); /* sp */
     excRegs->lr  = exc.lr  = (Ptr)excStack[13];    /* lr */
     excRegs->pc  = exc.pc  = (Ptr)excStack[14];    /* pc */
     excRegs->psr = exc.psr = (Ptr)excStack[15];    /* psr */
@@ -299,11 +315,20 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
             break;
     }
 
-    System_printf("BIOS ThreadType:%s.\n", ttype);
-    System_printf("BIOS %s handle: 0x%x.\n", ttype, exc.threadHandle);
+    if (exc.threadHandle) {
+        name = Task_Handle_name(exc.threadHandle);
+        if (!name) {
+            name = "(unnamed)";
+        }
+    }
+    else {
+        name = "(null task)";
+    }
+    System_printf("BIOS %s name: %s handle: 0x%x.\n", ttype, name,
+                  exc.threadHandle);
+
     System_printf("BIOS %s stack base: 0x%x.\n", ttype, exc.threadStack);
-    System_printf("BIOS %s stack size: 0x%x.\n", ttype,
-        exc.threadStackSize);
+    System_printf("BIOS %s stack size: 0x%x.\n", ttype, exc.threadStackSize);
 
     switch (excNum) {
         case 2:
@@ -360,6 +385,12 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     System_printf ("MMAR = 0x%08x\n", Hwi_nvic.MMAR);
     System_printf ("BFAR = 0x%08x\n", Hwi_nvic.BFAR);
     System_printf ("AFSR = 0x%08x\n", Hwi_nvic.AFSR);
+
+    System_printf ("Stack dump base %08x size %ld sp %08x:\n", exc.threadStack,
+                   exc.threadStackSize, exc.sp);
+    dump_hex((UInt)exc.threadStack, exc.threadStackSize / sizeof(UInt),
+             (UInt)exc.sp);
+
     System_abort("Terminating execution...\n");
 
 }
