@@ -53,7 +53,8 @@ Pkg.makePrologue =
 /* add custom files to all releases */
 Pkg.attrs.exportSrc = false;
 Pkg.otherFiles = [
-    "SysMin.h"
+    "SysMin.h",
+    "StackDbg.h",
 ];
 
 /* list of libraries to build */
@@ -63,7 +64,8 @@ libArray.push(
     {
         name: "SysMin",
         sources: [
-            "SysMin.c"
+            "SysMin.c",
+            "StackDbg.c",
         ],
     }
 );

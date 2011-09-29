@@ -28,15 +28,27 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 /*
- *  ======== package.xdc ========
- *
+ *  ======== StackDbg.xs ========
  */
 
-package ti.trace [0,0,0,0] {
-    module SysMin;
-    module StackDbg;
-};
+/*
+ *  ======== module$static$init ========
+ */
+function module$static$init(obj, params)
+{
+    /* The EXT_CODE is assumed to have the .text region */
+    var segment = Program.cpu.memoryMap["EXT_CODE"];
+
+    obj.codeBegin = segment.base;
+    obj.codeEnd = segment.base + segment.len;
+}
+
+/*
+ *  ======== module$use ========
+ */
+function module$use(obj, params)
+{
+}
