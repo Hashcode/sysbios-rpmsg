@@ -37,10 +37,12 @@
  *  1.02 - Fixed addresses in TOC table
  *  1.03 - Updated extended section locations
  *  1.04 - Added TOC offset at EOF, Version traces
+ *  1.05 - Check for presigned input binary, generate an optional output binary
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <string.h>
 
@@ -59,7 +61,9 @@
 #define FW_MMU_BASE_PA        0xB4200000
 #define FW_SIGNATURE_BASE_PA  (FW_MMU_BASE_PA + 0x80000)
 
-#define VERSION               "1.04"
+#define VERSION               "1.05"
+
+static int check_image(void * data, int size);
 
 static int process_image(FILE *iofp, void * data, int size);
 
@@ -79,42 +83,118 @@ typedef struct {
 va_pa_entry va_pa_table[RPROC_MAX_MEM_ENTRIES];
 u32 mmu_l1_table[RPROC_L1_ENTRIES];
 
+static void print_help(void)
+{
+    fprintf(stderr, "\nInvalid arguments!\n"
+                  "Usage: ./genextbin <[-i] <Unsigned input ducati binary>> "
+                  "[<[-o] <Presigned output ducati binary>>]\n"
+                  "Rules: - Output binary file is optional, if not given,\n"
+                  "         input binary file will be modified in place.\n"
+                  "       - Arguments can be specified in any order as long\n"
+                  "         as the corresponding option is specified.\n"
+                  "       - All arguments not preceded by an option are \n"
+                  "         applied as input binary and output binary in \n"
+                  "         that order.\n");
+    exit(1);
+}
+
 /*
  *  ======== main ========
  */
 int main(int argc, char * argv[])
 {
-    FILE * iofp;
+    FILE * ifp;
+    FILE * ofp;
     struct stat st;
     char * infile;
+    char * outfile;
     void * data;
     int size;
-    int status;
+    int status = 0;
+    int i, o;
+    char *bin_files[] = {NULL, NULL};
+    int num_files = sizeof(bin_files) / sizeof(bin_files[0]);
 
     printf("#######################################\n");
     printf("            GENEXTBIN : %s    \n", VERSION);
     printf("#######################################\n");
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <ducati binary>\n", argv[0]);
-        exit(1);
+
+    /* Determine args */
+    while ((o = getopt (argc, argv, ":i:o:")) != -1) {
+        switch (o) {
+        case 'i':
+            bin_files[0] = optarg;
+            break;
+        case 'o':
+            bin_files[1] = optarg;
+            break;
+        case ':':
+            status = -1;
+            printf("Option -%c requires an operand\n", optopt);
+            break;
+        case '?':
+            status = -1;
+            printf("Unrecognized option: -%c\n", optopt);
+            break;
+        }
     }
 
-    infile = argv[1];
-    if ((iofp = fopen(infile, "a+b")) == NULL) {
+    for (i = 0; optind < argc; optind++) {
+        while (i < num_files && bin_files[i]) i++;
+        if (i == num_files) {
+            print_help();
+        }
+        bin_files[i++] = argv[optind];
+    }
+
+    if (status || !bin_files[0] ||
+            (bin_files[1] && (!strcmp(bin_files[0], bin_files[1])))) {
+        print_help();
+    }
+
+    printf("Input Binary = %s, Output Binary = %s\n",
+                                            bin_files[0], bin_files[1]);
+    infile = bin_files[0];
+    if ((ifp = fopen(infile, "a+b")) == NULL) {
         fprintf(stderr, "%s: could not open: %s\n", argv[0], infile);
         exit(2);
     }
 
-    fstat(fileno(iofp), &st);
+    fstat(fileno(ifp), &st);
     size = st.st_size;
+    if (!size) {
+        fprintf(stderr, "%s: %s size is invalid.\n", argv[0], infile);
+        fclose(ifp);
+        exit(3);
+    }
+
+    outfile = bin_files[1];
+    if (outfile && ((ofp = fopen(outfile, "w+b")) == NULL)) {
+        fprintf(stderr, "%s: could not open: %s\n", argv[0], outfile);
+        fclose(ifp);
+        exit(2);
+    }
+
     printf("Preparing binary: %s of size: 0x%x\n", infile, size);
     data = malloc(size);
-    fread(data, 1, size, iofp);
+    fread(data, 1, size, ifp);
 
-    status = process_image(iofp, data, size);
+    status = check_image(data, size);
+    if (status == 0) {
+        if (outfile) {
+            fwrite(data, 1, size, ofp);
+        }
+        else {
+            ofp = ifp;
+        }
+        status = process_image(ofp, data, size);
+    }
 
     free(data);
-    fclose(iofp);
+    if (outfile) {
+        fclose(ofp);
+    }
+    fclose(ifp);
 
     return status;
 }
@@ -284,6 +364,45 @@ static void process_resources(struct rproc_fw_section * s)
         }
     }
     printf("resource table processed...\n");
+}
+
+/*
+ *  ======== check_image ========
+ */
+static int check_image(void * data, int size)
+{
+    struct rproc_fw_header *hdr;
+    struct rproc_fw_section *s;
+    int f_offset = 0;
+
+    printf("\nChecking header....");
+    hdr = (struct rproc_fw_header *)data;
+
+    /* check that magic is what we expect */
+    if (memcmp(hdr->magic, RPROC_FW_MAGIC, sizeof(hdr->magic))) {
+        fprintf(stderr, "invalid magic number: %.4s\n", hdr->magic);
+        return -1;
+    }
+    printf("done.\n");
+
+    printf("Checking sections....");
+    /* get the first section */
+    s = (struct rproc_fw_section *)(hdr->header + hdr->header_len);
+    f_offset += (u8 *)s - (u8 *)data;
+    /* check all the sections for processed sections */
+    while ((u8 *)s < (u8 *)(data + size)) {
+        f_offset += (u8 *)s->content - (u8 *)s;
+        if (s->type == FW_MMU || s->type == FW_SIGNATURE) {
+            printf("binary is already processed!!\n");
+            return -2;
+        }
+
+        f_offset += s->len;
+        s = ((void *)s->content) + s->len;
+    }
+    printf("done.\n");
+
+    return 0;
 }
 
 /*
