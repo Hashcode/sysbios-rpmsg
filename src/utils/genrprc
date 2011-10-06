@@ -55,7 +55,7 @@ usage=\
         [--d0=core0 error buffer symbol] [--d1=core1 error buffer symbol]
         core0_filename [core1_filename] output_filename"
 
-PATH=$PATH:.
+dir=`dirname $0`
 
 tracename0=SysMin_Module_State_0_outbuf__A
 tracename1=SysMin_Module_State_0_outbuf__A
@@ -178,8 +178,8 @@ fi
 
 tmp=/tmp/genrprc-$$
 
-echo mkheader $core0file $core1file $outfile
-mkheader $core0file $core1file $outfile
+echo $dir/mkheader $core0file $core1file $outfile
+$dir/mkheader $core0file $core1file $outfile
 if [[ $? != 0 ]]
 then
 	echo mkheader failed
@@ -302,13 +302,13 @@ then
 	if [[ $resource_tab == "" ]]
 	then
 		echo no .resource_tab section found in $core0file
-		echo genbase $core0file $tmp $*
-		genbase $core0file $tmp $*
+		echo $dir/genbase $core0file $tmp $*
+		$dir/genbase $core0file $tmp $*
 	else
-		echo genbase $core0file $tmp $* restab:$resource_tab:$r_size \
+		echo $dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size \
 		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
 		  $errbuf0:$d0Size $errbuf1:$d1Size
-		genbase $core0file $tmp $* restab:$resource_tab:$r_size \
+		$dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size \
 		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
 		  $errbuf0:$d0Size $errbuf1:$d1Size
 	fi
@@ -327,13 +327,13 @@ then
 	if [[ $resource_tab == "" ]]
 	then
 		echo no .resource_tab section found in $core1file
-		echo genbase $core1file $tmp $*
-		genbase $core1file $tmp $*
+		echo $dir/genbase $core1file $tmp $*
+		$dir/genbase $core1file $tmp $*
 	else
-		echo genbase $core1file $tmp $* restab:$resource_tab:$r_size \
+		echo $dir/genbase $core1file $tmp $* restab:$resource_tab:$r_size \
 		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
 		  $errbuf0:$d0Size $errbuf1:$d1Size
-		genbase $core1file $tmp $* restab:$resource_tab:$r_size \
+		$dir/genbase $core1file $tmp $* restab:$resource_tab:$r_size \
 		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
 		  $errbuf0:$d0Size $errbuf1:$d1Size
 	fi

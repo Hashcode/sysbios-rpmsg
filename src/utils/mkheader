@@ -49,19 +49,19 @@ else
   fi
 fi
 
-
+dir=`dirname $0`
 tmp=/tmp/singlebin-$$
-if [[ ! -f version.txt ]]
+if [[ ! -f $dir/version.txt ]]
 then
-	echo no version.txt file
+	echo no $dir/version.txt file
 	exit 1
 fi
 
-version=`cat version.txt`
-echo header version $version
+version=`cat $dir/version.txt`
+echo header version $dir/$version
 
 echo -n RPRC > $outfile
-./wrints $version 1012 >> $outfile
+$dir/wrints $version 1012 >> $outfile
 
 if [[ -f $corefile0 ]]
 then
