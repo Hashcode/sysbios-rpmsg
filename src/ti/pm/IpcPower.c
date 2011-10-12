@@ -63,7 +63,6 @@
 #define REG32(A)   (*(volatile UInt32 *) (A))
 
 static Power_SuspendArgs PowerSuspArgs;
-static Swi_Params swiParams;
 static Swi_Handle suspendResumeSwi;
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
@@ -87,7 +86,7 @@ static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
     swiKey = Swi_disable();
     switch (opt) {
         case IpcPower_SLEEP_MODE_WAKEUNLOCK:
-            if(refWakeLockCnt) {
+            if (refWakeLockCnt) {
                 refWakeLockCnt--;
             }
         case IpcPower_SLEEP_MODE_DEEPSLEEP:
@@ -99,7 +98,6 @@ static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
             refWakeLockCnt++;
             REG32(M3_SCR_REG) &= ~(1 << DEEPSLEEP_BIT);
             break;
-        default:
     }
     Swi_restore(swiKey);
     Hwi_restore(hwiKey);
@@ -143,12 +141,16 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
  */
 Void IpcPower_init()
 {
-    sysm3ProcId     = MultiProc_getId("CORE0");
-    appm3ProcId     = MultiProc_getId("CORE1");
+    Swi_Params swiParams;
 
     if (curInit++) {
         return;
     }
+
+    sysm3ProcId = MultiProc_getId("CORE0");
+    appm3ProcId = MultiProc_getId("CORE1");
+    refWakeLockCnt = 0;
+
     Swi_Params_init(&swiParams);
     swiParams.priority = Swi_numPriorities - 1; /* Max Priority Swi */
     suspendResumeSwi = Swi_create(IpcPower_suspendSwi, &swiParams, NULL);
