@@ -291,10 +291,6 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
 
         return (-1);
     }
-
-    /* No need to know be kicked about added buffers anymore */
-    vq->vring.used->flags |= VRING_USED_F_NO_NOTIFY;
-
     /*
      * Grab the next descriptor number they're advertising, and increment
      * the index we've seen.
