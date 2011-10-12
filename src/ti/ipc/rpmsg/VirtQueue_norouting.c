@@ -158,7 +158,7 @@ static Ptr buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
 static Semaphore_Handle semHandle = NULL;
 
 static UInt numQueues = 0;
-static struct VirtQueue_Object *queueRegistry[NUM_QUEUES];
+static struct VirtQueue_Object *queueRegistry[NUM_QUEUES] = {NULL};
 
 static UInt16 hostProcId;
 static UInt16 dspProcId;
