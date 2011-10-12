@@ -49,7 +49,7 @@
 #include "_HwSpinlock.h"
 
 
-static HwSpinlock_Module_State HwSpinlock_module;
+static HwSpinlock_Module_State HwSpinlock_module = { 0 };
 
 /*
  *************************************************************************
