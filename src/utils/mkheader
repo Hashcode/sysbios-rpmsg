@@ -63,11 +63,16 @@ echo header version $dir/$version
 echo -n RPRC > $outfile
 $dir/wrints $version 1012 >> $outfile
 
+rpmsgversion=$(git describe --dirty)
+
 if [[ -f $corefile0 ]]
 then
 	md5sum $corefile0 >> $outfile
 	stat -c "%s %z" $corefile0 >> $outfile
 	nm $corefile0 | grep SysMin_Module_State_0_outbuf__A | cut -d ' ' -f 1 >> $outfile
+	cd $(dirname $corefile0)
+	core0version=$(git describe --dirty)
+	cd $OLDPWD
 fi
 
 if [[ -f $corefile1 ]]
@@ -75,7 +80,15 @@ then
 	md5sum $corefile1 >> $outfile
 	stat -c "%s %z" $corefile1 >> $outfile
 	nm $corefile1 | grep SysMin_Module_State_0_outbuf__A | cut -d ' ' -f 1 >> $outfile
+	cd $(dirname $corefile1)
+	core1version=$(git describe --dirty)
+	cd $OLDPWD
 fi
+
+echo version: >> $outfile
+echo rpmsg: $rpmsgversion >> $outfile
+echo core0: $core0version >> $outfile
+echo core1: $core1version >> $outfile
 
 (( numbytesneeded = 1024 - $(stat -c "%s" $outfile) ))
 dd if=/dev/zero of=$tmp bs=$numbytesneeded count=1 > /dev/null 2>&1
