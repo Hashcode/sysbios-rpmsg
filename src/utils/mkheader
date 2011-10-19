@@ -58,12 +58,14 @@ then
 fi
 
 version=`cat $dir/version.txt`
-echo header version $dir/$version
+echo header version $version
 
 echo -n RPRC > $outfile
 $dir/wrints $version 1012 >> $outfile
 
+cd $dir
 rpmsgversion=$(git describe --dirty)
+cd $OLDPWD
 
 if [[ -f $corefile0 ]]
 then
