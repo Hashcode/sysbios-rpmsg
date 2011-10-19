@@ -178,6 +178,9 @@ static UInt16 dspProcId;
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
 
+extern Void OffloadM3_init();
+extern Int OffloadM3_processSysM3Tasks(UArg msg);
+
 static inline Void * mapPAtoVA(UInt pa)
 {
     return (Void *)((pa & 0x000fffffU) | 0xa0000000U);
@@ -365,6 +368,10 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             default:
+                /* Check and process any Inter-M3 Offload messages */
+                if (OffloadM3_processSysM3Tasks(msg))
+                    return;
+
                 /*
                  *  If the message isn't one of the above, it's either part of the
                  *  2-message synchronization sequence or it a virtqueue message
@@ -517,6 +524,8 @@ Void VirtQueue_startup()
 
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
         System_printf("VirtQueue_startup: buf_addr address of 0x%x received\n", buf_addr);
+
+        OffloadM3_init();
     }
     else if (MultiProc_self() == appm3ProcId) {
         InterruptM3_intRegister(VirtQueue_isr);

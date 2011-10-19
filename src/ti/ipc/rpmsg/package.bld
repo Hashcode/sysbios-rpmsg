@@ -61,6 +61,7 @@ var objList_m3 = [
       "MessageQCopy",
       "VirtQueue",
       "InterruptM3",
+      "OffloadM3",
 ];
 
 var trgFilter_m3 = {
