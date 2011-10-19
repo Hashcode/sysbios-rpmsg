@@ -89,8 +89,16 @@ fi
 
 echo version: >> $outfile
 echo rpmsg: $rpmsgversion >> $outfile
-echo core0: $core0version >> $outfile
-echo core1: $core1version >> $outfile
+if [[ -f $corefile0 ]]
+then
+	echo core0: $core0version >> $outfile
+	$dir/xdep $(readlink -f $corefile0) >> $outfile
+fi
+if [[ -f $corefile1 ]]
+then
+	echo core1: $core1version >> $outfile
+	$dir/xdep $(readlink -f $corefile1) >> $outfile
+fi
 
 (( numbytesneeded = 1024 - $(stat -c "%s" $outfile) ))
 dd if=/dev/zero of=$tmp bs=$numbytesneeded count=1 > /dev/null 2>&1

@@ -48,6 +48,7 @@ genbase
 readrprc
 wrints
 genextbin
+xdep
 mmu_ttb_dump.log
 sign_toc.log
 
