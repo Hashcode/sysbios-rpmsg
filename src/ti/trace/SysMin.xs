@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008 Texas Instruments. All rights reserved.
+ *  Copyright (c) 2008-2012 Texas Instruments. All rights reserved.
  *  This program and the accompanying materials are made available under the
  *  terms of the Eclipse Public License v1.0 and Eclipse Distribution License
  *  v. 1.0 which accompanies this distribution. The Eclipse Public License is
@@ -35,8 +35,8 @@ function module$static$init(obj, params)
     if (params.bufSize != 0) {
         var Memory = xdc.module('xdc.runtime.Memory');
         Memory.staticPlace(obj.outbuf, 0x1000, params.sectionName);
-        Memory.staticPlace(obj.writeidx, 0x0, params.sectionName);
-        Memory.staticPlace(obj.readidx, 0x0, params.sectionName);
+        Memory.staticPlace(obj.writeidx, 0x4, params.sectionName);
+        Memory.staticPlace(obj.readidx, 0x4, params.sectionName);
     }
 
     obj.outidx = 0;
