@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,6 @@
  *
  */
 
-import ti.sysbios.family.arm.m3.Hwi;
 import ti.sysbios.knl.Task;
 import ti.sysbios.knl.Swi;
 
@@ -96,14 +95,20 @@ module Deh {
     /*! The test function to plug into the hook exposed by BIOS */
     Void excHandler(UInt *excStack, UInt lr);
 
+    /*! Exception handler function for DSP to be plugged into the BIOS hook */
+    Void excHandlerDsp();
+
     readonly config Int WDT_TIME = (0 - (38400000 * 5));
     readonly config Int WDT_TIME_BOOT = (0 - 38400000 * 10);
     readonly config UInt WDT_CORE0 = 0xA803E000;
     readonly config UInt WDT_CORE1 = 0xA8088000;
+    readonly config UInt WDT_DSP = 0x01D3A000 ;
     readonly config UInt WDT_CLKCTRL_CORE0 = 0xAA009450;
     readonly config UInt WDT_CLKCTRL_CORE1 = 0xAA009430;
+    readonly config UInt WDT_CLKCTRL_DSP = 0x4A004570;
     readonly config UInt WDT_ISR_0 = 55;
     readonly config UInt WDT_ISR_1 = 56;
+    readonly config UInt WDT_ISR_DSP = 15;
 
     /*! timer registers */
     struct timerRegs {

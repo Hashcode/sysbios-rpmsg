@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,17 +41,27 @@ var d_task = null;
 var d_swi  = null;
 var d_task_hook = null;
 var d_swi_hook  = null;
+var Exception = null;
 
 function module$use()
 {
+    var Settings = xdc.module("ti.sysbios.family.Settings");
+
     xdc.useModule('xdc.runtime.System');
-    d_hwi = xdc.useModule('ti.sysbios.family.arm.m3.Hwi');
+    d_hwi = xdc.useModule(Settings.getDefaultHwiDelegate());
     d_task = xdc.useModule('ti.sysbios.knl.Task');
     d_swi  = xdc.useModule('ti.sysbios.knl.Swi');
     d_task_hook = new d_task.HookSet;
     d_swi_hook  = new d_swi.HookSet;
 
-    xdc.useModule('ti.trace.StackDbg');
+    if (Program.build.target.name.match(/C64T/)) {
+        Exception = xdc.useModule("ti.sysbios.family.c64p.Exception");
+        Exception.exceptionHook = this.excHandlerDsp;
+    }
+    else {
+        xdc.useModule('ti.trace.StackDbg');
+    }
+
     Deh = this;
 }
 
@@ -80,8 +90,14 @@ function module$static$init(obj, params)
     d_task.addHookSet(d_task_hook);
 
     obj.index = 0;
-    d_hwi.excHandlerFunc = Deh.excHandler;
-    obj.isrStackSize = Program.stack;
-    obj.isrStackBase = $externPtr('__TI_STACK_BASE');
+    if (Program.build.target.name.match(/C64T/)) {
+        obj.isrStackSize = null;
+        obj.isrStackBase = null;
+    }
+    else {
+        obj.isrStackSize = Program.stack;
+        obj.isrStackBase = $externPtr('__TI_STACK_BASE');
+        d_hwi.excHandlerFunc = Deh.excHandler;
+    }
     obj.wdt_base = null;
 }
