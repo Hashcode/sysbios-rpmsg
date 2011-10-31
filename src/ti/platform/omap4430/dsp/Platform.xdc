@@ -46,6 +46,7 @@ metaonly module Platform inherits xdc.platform.IPlatform {
                 ["EXT_DATA",  {name: "EXT_DATA",  base: 0x90000000, len: 0x00080000, space: "data", access: "RW"}],
                 ["EXT_HEAP",  {name: "EXT_HEAP",  base: 0x90100000, len: 0x00200000, space: "data", access: "RW"}],
                 ["TRACE_BUF", {name: "TRACE_BUF", base: 0x9F000000, len: 0x00060000, space: "data", access: "RW"}],
+                ["EXC_DATA",  {name: "EXC_DATA",  base: 0x9F060000, len: 0x00010000, space: "data", access: "RW"}],
                 ["PM_DATA",   {name: "PM_DATA",   base: 0x9F070000, len: 0x00020000, space: "data", access: "RWX"}],
             ],
     });
