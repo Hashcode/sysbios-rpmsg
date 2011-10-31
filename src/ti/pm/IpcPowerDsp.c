@@ -60,6 +60,7 @@
 #define PDCCMD_REG      0x01810000
 #define SLEEP_MODE      0x15555
 #define GPT5_IRQ        51
+#define GPT6_IRQ        52
 #define MBX_DSP_IRQ     55
 
 static Swi_Handle suspendResumeSwi;
@@ -74,6 +75,7 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
 {
     /* Disable wakeup events */
     Wugen_disableEvent(GPT5_IRQ);
+    Wugen_disableEvent(GPT6_IRQ);
     Wugen_disableEvent(MBX_DSP_IRQ);
 
     /* Invoke the BIOS suspend routine */
@@ -81,6 +83,7 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
 
     /* Re-enable wakeup events */
     Wugen_enableEvent(GPT5_IRQ);
+    Wugen_enableEvent(GPT6_IRQ);
     Wugen_enableEvent(MBX_DSP_IRQ);
 }
 
@@ -134,6 +137,7 @@ Void IpcPower_idle()
 
     /* Enable wakeup events */
     Wugen_enableEvent(GPT5_IRQ);
+    Wugen_enableEvent(GPT6_IRQ);
     Wugen_enableEvent(MBX_DSP_IRQ);
 
     asm(" idle");
