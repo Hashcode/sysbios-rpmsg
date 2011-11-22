@@ -64,7 +64,6 @@
  * twice for ducati-m3.bin!)
  */
 #if CORE0
-//#include <ti/resources.mmap/rsc_table.h>
 #include <ti/resources/rsc_table.h>
 #endif
 
@@ -76,6 +75,18 @@ extern void start_ping_tasks();
 extern void start_resmgr_task();
 extern void start_hwSpinlock_task();
 
+/*
+ * OMX packet expected to have its data payload start with a payload of
+ * this value. Need to export this properly in a meaningful header file on
+ * both HLOS and RTOS sides
+ */
+typedef enum {
+    RPC_OMX_MAP_INFO_NONE       = 0,
+    RPC_OMX_MAP_INFO_ONE_BUF    = 1,
+    RPC_OMX_MAP_INFO_TWO_BUF    = 2,
+    RPC_OMX_MAP_INFO_THREE_BUF  = 3,
+    RPC_OMX_MAP_INFO_MAX        = 0x7FFFFFFF
+} map_info_type;
 
 /*
  *  ======== fxnDouble used by omx_benchmark test app ========
@@ -150,6 +161,7 @@ static RPC_OMX_ERRORTYPE RPC_SKEL_GetHandle(Void *srvc, UInt32 size,
     char              cComponentName[128] = {0};
     OMX_HANDLETYPE    hComp;
     Char              cb_data[HDRSIZE + OMXPACKETSIZE + PAYLOAD_SIZE] =  {0};
+
     /*
      * Note: Currently, rpmsg_omx linux driver expects an omx_msg_hdr in front
      * of the omx_packet data, so we allow space for this:
@@ -162,7 +174,7 @@ static RPC_OMX_ERRORTYPE RPC_SKEL_GetHandle(Void *srvc, UInt32 size,
     //>--cComponentName--|>--CallingCorercmServerName--|
     //<hComp]
 
-    strcpy(cComponentName, (char *)data);
+    strcpy(cComponentName, (char *)data + sizeof(map_info_type));
 
 #if CHATTER
     System_printf("RPC_SKEL_GetHandle: Component Name received: %s\n",
