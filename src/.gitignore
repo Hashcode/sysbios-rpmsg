@@ -54,5 +54,6 @@ sign_toc.log
 
 # Generated header files from XDC modules
 Deh.h
+IpcMemory.h
 SysMin.h
 StackDbg.h
