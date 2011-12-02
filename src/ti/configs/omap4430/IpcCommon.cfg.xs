@@ -51,6 +51,9 @@ xdc.loadPackage('ti.ipc.rpmsg');
 xdc.loadPackage('ti.srvmgr');
 xdc.loadPackage('ti.resmgr');
 
+/* Enable Memory Translation module that operates on the BIOS Resource Table */
+var IpcMemory = xdc.useModule('ti.resources.IpcMemory');
+
 /* HwSpinlock Module */
 xdc.loadPackage('ti.gates.hwspinlock');
 
