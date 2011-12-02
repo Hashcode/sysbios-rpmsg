@@ -30,16 +30,46 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *  ======== package.xdc ========
+ *  ======== package.xs ========
  *
  */
 
-/*!
- *  ======== ti.resources ========
- *  Common config files.
- *
- */
 
-package ti.resources [1,0,0,0] {
-    module IpcMemory;
+/*
+ *  ======== getLibs ========
+ */
+function getLibs(prog)
+{
+    var suffix;
+    var file;
+    var libAry = [];
+    var profile = this.profile;
+
+    suffix = prog.build.target.findSuffix(this);
+    if (suffix == null) {
+        return "";  // nothing to contribute
+    }
+
+    // make sure the library exists, else fallback to a built library
+    file = "lib/" + profile + "/IpcMemory" + ".a" + suffix;
+    if (java.io.File(this.packageBase + file).exists()) {
+        libAry.push(file);
+    }
+    else {
+        file = "lib/release/IpcMemory" + ".a" + suffix;
+        if (java.io.File(this.packageBase + file).exists()) {
+            libAry.push(file);
+        }
+        else {
+            // fallback to a compatible library built by this package
+            for (var p in this.build.libDesc) {
+                if (suffix == this.build.libDesc[p].suffix) {
+                    libAry.push(p);
+                    break;
+                }
+            }
+        }
+    }
+
+    return libAry.join(";");
 }
