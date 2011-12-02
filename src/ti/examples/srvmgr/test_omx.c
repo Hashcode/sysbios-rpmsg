@@ -59,14 +59,6 @@
 #include <ti/srvmgr/rpmsg_omx.h>
 #include <ti/srvmgr/omx_packet.h>
 
-/*
- * Only compile the resource table in for Core0 build (so we don't build
- * twice for ducati-m3.bin!)
- */
-#if CORE0
-#include <ti/resources/rsc_table.h>
-#endif
-
 /* Turn on/off printf's */
 #define CHATTER 0
 
@@ -231,11 +223,6 @@ Int main(Int argc, char* argv[])
     RcmServer_Params  rcmServerParams;
 
     System_printf("%s starting..\n", MultiProc_getName(MultiProc_self()));
-
-#if CORE0
-    System_printf("%d resources at 0x%x\n",
-                  sizeof(resources) / sizeof(struct resource), resources);
-#endif
 
     /*
      * Enable use of runtime Diags_setMask per module:
