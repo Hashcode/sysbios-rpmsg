@@ -48,6 +48,11 @@
 
 #include <ti/resmgr/IpcResource.h>
 
+
+/* Delay in between different IPC Resource requests */
+#define SLEEP_TICKS  1000
+
+
 void IpcResourceTaskFxn(UArg arg0, UArg arg1)
 {
     UInt32 status;
@@ -76,7 +81,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     while (1) {
         ipcResHandle = IpcResource_connect(0);
         if (ipcResHandle) break;
-        Task_sleep(1000);
+        Task_sleep(SLEEP_TICKS);
     }
     System_printf("...connected to resmgr server.\n");
 
@@ -85,7 +90,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_IPU, NULL);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     ipuConstraints.mask = IpcResource_C_LAT | IpcResource_C_BW;
     ipuConstraints.latency = 10;
@@ -95,7 +100,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     status = IpcResource_requestConstraints(ipcResHandle, ipuId, &ipuConstraints);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     gpt.id = 9;
     gpt.srcClk = 0;
@@ -105,12 +110,12 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_GPTIMER, &gpt);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing GPT  %d\n", gpt.id);
     IpcResource_release(ipcResHandle, gptId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     auxclk.clkId = 3;
     auxclk.clkRate = 24;
@@ -122,12 +127,12 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_AUXCLK, &auxclk);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing Aux  %d\n", auxclk.clkId);
     IpcResource_release(ipcResHandle, auxClkId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     auxclk.clkId = 1;
     auxclk.clkRate = 24;
@@ -140,12 +145,12 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_AUXCLK, &auxclk);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing Aux  %d\n", auxclk.clkId);
     IpcResource_release(ipcResHandle, auxClkId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     regulator.regulatorId = 1;
     regulator.minUV = 2000000;
@@ -156,12 +161,12 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_REGULATOR, &regulator);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing regulator  %d\n", regulator.regulatorId);
     IpcResource_release(ipcResHandle, regulatorId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     gpio.gpioId = 50;
 
@@ -170,12 +175,12 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_GPIO, &gpio);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing gpio  %d\n", gpio.gpioId);
     IpcResource_release(ipcResHandle, gpioId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     sdma.numCh = 5;
 
@@ -184,40 +189,40 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_SDMA, &sdma);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing %d sdma channels\n", sdma.numCh);
     IpcResource_release(ipcResHandle, sdmaId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Requesting IVAHD\n");
     status = IpcResource_request(ipcResHandle, &ivaId,
                                  IpcResource_TYPE_IVAHD, NULL);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Requesting IVASEQ0\n");
     status = IpcResource_request(ipcResHandle, &ivasq0Id,
                                  IpcResource_TYPE_IVASEQ0, NULL);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Requesting IVASEQ1\n");
     status = IpcResource_request(ipcResHandle, &ivasq1Id,
                                  IpcResource_TYPE_IVASEQ1, NULL);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Requesting SL2IF\n");
     status = IpcResource_request(ipcResHandle, &sl2ifId,
                                  IpcResource_TYPE_SL2IF, NULL);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     ivaConstraints.mask = IpcResource_C_FREQ | IpcResource_C_LAT | IpcResource_C_BW;
     ivaConstraints.frequency = 266100000;
@@ -228,34 +233,34 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     status = IpcResource_requestConstraints(ipcResHandle, ivaId, &ivaConstraints);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing IVASEQ1\n");
     IpcResource_release(ipcResHandle, ivasq1Id);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing IVASEQ0\n");
     IpcResource_release(ipcResHandle, ivasq0Id);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing SL2IF\n");
     IpcResource_release(ipcResHandle, sl2ifId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing IVAHD\n");
     IpcResource_release(ipcResHandle, ivaId);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Requesting ISS\n");
     status = IpcResource_request(ipcResHandle, &issId,
                                  IpcResource_TYPE_ISS, NULL);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     issConstraints.mask = IpcResource_C_LAT | IpcResource_C_BW;
     issConstraints.latency = 10;
@@ -265,7 +270,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     status = IpcResource_requestConstraints(ipcResHandle, issId, &issConstraints);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     issConstraints.mask = IpcResource_C_FREQ | IpcResource_C_LAT | IpcResource_C_BW;
     issConstraints.frequency = 400000000;
@@ -276,7 +281,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     status = IpcResource_requestConstraints(ipcResHandle, issId, &issConstraints);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing ISS\n");
     IpcResource_release(ipcResHandle, issId);
@@ -286,7 +291,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
                                  IpcResource_TYPE_FDIF, NULL);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     fdifConstraints.mask = IpcResource_C_BW;
     fdifConstraints.bandwidth = 1000;
@@ -295,7 +300,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     status = IpcResource_requestConstraints(ipcResHandle, fdifId, &fdifConstraints);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     fdifConstraints.mask = IpcResource_C_LAT;
     fdifConstraints.latency = 1000;
@@ -304,7 +309,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     status = IpcResource_requestConstraints(ipcResHandle, fdifId, &fdifConstraints);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     fdifConstraints.mask = IpcResource_C_LAT;
     fdifConstraints.latency = -1;
@@ -313,7 +318,7 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
     status = IpcResource_requestConstraints(ipcResHandle, fdifId, &fdifConstraints);
     System_printf("status %d\n", status);
 
-    Task_sleep(1000);
+    Task_sleep(SLEEP_TICKS);
 
     System_printf("Releasing FDIF\n");
     IpcResource_release(ipcResHandle, fdifId);
