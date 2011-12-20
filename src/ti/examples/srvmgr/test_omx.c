@@ -212,7 +212,7 @@ Int32 fxnDouble(UInt32 size, UInt32 *data)
     System_printf("fxnDouble: Executing fxnDouble \n");
 #endif
 
-    args = (FxnDoubleArgs *)data;
+    args = (FxnDoubleArgs *)((UInt32)data + sizeof(map_info_type));
     a = args->a;
 
     return a * 2;
