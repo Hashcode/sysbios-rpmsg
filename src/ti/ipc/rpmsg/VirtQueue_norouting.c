@@ -97,6 +97,11 @@
  * as we progress and experiment with those design ideas.
  *
  * @RP_MSG_MBOX_CRASH: this message indicates that the BIOS side is unhappy
+ *
+ * @RP_MBOX_BOOTINIT_DONE: this message indicates the BIOS side has reached a
+ * certain state during the boot process. This message is used to inform the
+ * host that the basic BIOS initialization is done, and lets the host use this
+ * notification to perform certain actions.
  */
 enum {
     RP_MSG_MBOX_READY           = (Int)0xFFFFFF00,
@@ -104,7 +109,10 @@ enum {
     RP_MSG_MBOX_CRASH           = (Int)0xFFFFFF02,
     RP_MBOX_ECHO_REQUEST        = (Int)0xFFFFFF03,
     RP_MBOX_ECHO_REPLY          = (Int)0xFFFFFF04,
-    RP_MBOX_ABORT_REQUEST       = (Int)0xFFFFFF05
+    RP_MBOX_ABORT_REQUEST       = (Int)0xFFFFFF05,
+    RP_MSG_FLUSH_CACHE          = (Int)0xFFFFFF06,
+    RP_MSG_HIBERNATION          = (Int)0xFFFFFF07,
+    RP_MSG_BOOTINIT_DONE        = (Int)0xFFFFFF08
 };
 
 #define DIV_ROUND_UP(n,d)   (((n) + (d) - 1) / (d))
@@ -505,4 +513,12 @@ Void VirtQueue_startup()
 Void VirtQueue_postCrashToMailbox(Void)
 {
     InterruptProxy_intSend(0, (UInt)RP_MSG_MBOX_CRASH);
+}
+
+/*!
+ * ======== VirtQueue_postInitDone ========
+ */
+Void VirtQueue_postInitDone(Void)
+{
+    InterruptProxy_intSend(0, (UInt)RP_MSG_BOOTINIT_DONE);
 }

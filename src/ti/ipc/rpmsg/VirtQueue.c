@@ -109,6 +109,11 @@
  * is received.
  *
  * @RP_MBOX_ABORT_REQUEST:  tells the M3 to crash on demand
+ *
+ * @RP_MBOX_BOOTINIT_DONE: this message indicates the BIOS side has reached a
+ * certain state during the boot process. This message is used to inform the
+ * host that the basic BIOS initialization is done, and lets the host use this
+ * notification to perform certain actions.
  */
 enum {
     RP_MSG_MBOX_READY           = (Int)0xFFFFFF00,
@@ -118,7 +123,8 @@ enum {
     RP_MBOX_ECHO_REPLY          = (Int)0xFFFFFF04,
     RP_MBOX_ABORT_REQUEST       = (Int)0xFFFFFF05,
     RP_MSG_FLUSH_CACHE          = (Int)0xFFFFFF06,
-    RP_MSG_HIBERNATION          = (Int)0xFFFFFF07
+    RP_MSG_HIBERNATION          = (Int)0xFFFFFF07,
+    RP_MSG_BOOTINIT_DONE        = (Int)0xFFFFFF08
 };
 
 #define DIV_ROUND_UP(n,d)   (((n) + (d) - 1) / (d))
@@ -548,6 +554,14 @@ Void VirtQueue_startup()
 Void VirtQueue_postCrashToMailbox(Void)
 {
     InterruptProxy_intSend(0, (UInt)RP_MSG_MBOX_CRASH);
+}
+
+/*!
+ * ======== VirtQueue_postInitDone ========
+ */
+Void VirtQueue_postInitDone(Void)
+{
+    InterruptProxy_intSend(0, (UInt)RP_MSG_BOOTINIT_DONE);
 }
 
 #define CACHE_WB_TICK_PERIOD    5
