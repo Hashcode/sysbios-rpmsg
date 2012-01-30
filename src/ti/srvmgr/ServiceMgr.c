@@ -54,6 +54,7 @@
 
 
 #include <ti/ipc/rpmsg/MessageQCopy.h>
+#include <ti/ipc/rpmsg/VirtQueue.h>
 #include "rpmsg_omx.h"
 #include "NameMap.h"
 #include "ServiceMgr.h"
@@ -341,6 +342,13 @@ void serviceMgrTaskFxn(UArg arg0, UArg arg1)
     }
     if (MultiProc_self() == MultiProc_getId("DSP")) {
         NameMap_register("rpmsg-omx2", SERVICE_MGR_PORT);
+    }
+
+    if ((MultiProc_self() == MultiProc_getId("CORE1")) ||
+        (MultiProc_self() == MultiProc_getId("DSP"))) {
+        System_printf("serviceMgr: Proc#%d sending BOOTINIT_DONE\n",
+                        MultiProc_self());
+        VirtQueue_postInitDone();
     }
 
     while (1) {
