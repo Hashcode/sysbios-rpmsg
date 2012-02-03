@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,35 +29,40 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*
- *  ======== package.bld ========
- */
 
-var testBld = xdc.loadCapsule("ti/sdo/ipc/build/test.bld");
-var commonBld = xdc.loadCapsule("ti/sdo/ipc/build/common.bld");
+var HdmiWa    = null;
 
 /*
- *  Export everything necessary to build this package with (almost) no
- *  generated files.
+ *  ======== module$meta$init ========
  */
-Pkg.attrs.exportAll = true;
+function module$meta$init()
+{
+   /* Only process during "cfg" phase */
+   if (xdc.om.$name != "cfg") {
+       return;
+   }
+
+   HdmiWa = this;
+}
 
 /*
- *  ======== testArray ========
- *
- *  Example:
- *    var testArray = [
- *        {name: Test1},
- *        {name: Test2, sources: ["Test"], config: "Test", refOutput: "Test", timeout: "15", buildTargets: ["C64", "C28_large"]}
- *    ];
+ *  ======== module$use ========
  */
+function module$use()
+{
+    HdmiWa = this;
+}
 
-var testArray = [
-    {name: 'test_omx_sysm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
-    {name: 'test_omx_sysm3_hdmi', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0_hdmi", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
-    {name: 'test_omx_appm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core1", copts: "-D CORE1", buildPlatforms: ["ti.platform.omap4430.core1"]},
-];
-
-arguments = ["profile=debug platform=all"];
-
-testBld.buildTests(testArray, arguments);
+/*
+ * ======== module$static$init ========
+ */
+function module$static$init(mod, params)
+{
+    mod.waEnable = false;
+    mod.matchTmrEnable = false;
+    mod.acrOff = true;
+    mod.gptTcrrHalfCts = 0;
+    mod.gptTcrrFullCts = 0;
+    mod.ctsIntervalDelta = 0;
+    mod.pTmr = HdmiWa.timerAddr;
+}

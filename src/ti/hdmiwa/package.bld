@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,27 @@
  */
 /*
  *  ======== package.bld ========
- */
-
-var testBld = xdc.loadCapsule("ti/sdo/ipc/build/test.bld");
-var commonBld = xdc.loadCapsule("ti/sdo/ipc/build/common.bld");
-
-/*
- *  Export everything necessary to build this package with (almost) no
- *  generated files.
- */
-Pkg.attrs.exportAll = true;
-
-/*
- *  ======== testArray ========
  *
- *  Example:
- *    var testArray = [
- *        {name: Test1},
- *        {name: Test2, sources: ["Test"], config: "Test", refOutput: "Test", timeout: "15", buildTargets: ["C64", "C28_large"]}
- *    ];
  */
 
-var testArray = [
-    {name: 'test_omx_sysm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
-    {name: 'test_omx_sysm3_hdmi', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0_hdmi", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
-    {name: 'test_omx_appm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core1", copts: "-D CORE1", buildPlatforms: ["ti.platform.omap4430.core1"]},
+var commonBld = xdc.loadCapsule("ti/sdo/ipc/build/common.bld");
+var name = Pkg.name;
+
+var objList = [
+      "HdmiWa.c",
 ];
 
-arguments = ["profile=debug platform=all"];
+var trgFilter = {
+        field: "isa",
+        list: [ "v7M" ]
+};
 
-testBld.buildTests(testArray, arguments);
+/* generate makefiles */
+arguments = ["profile=debug platform=all"];
+commonBld.buildLibs(objList, undefined, trgFilter, arguments);
+
+arguments = ["profile=release platform=all"];
+commonBld.buildLibs(objList, undefined, trgFilter, arguments);
+/* include source files in the release package */
+Pkg.attrs.exportSrc = false;
+Pkg.attrs.exportCfg = true;

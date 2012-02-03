@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,34 +30,46 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *  ======== package.bld ========
- */
-
-var testBld = xdc.loadCapsule("ti/sdo/ipc/build/test.bld");
-var commonBld = xdc.loadCapsule("ti/sdo/ipc/build/common.bld");
-
-/*
- *  Export everything necessary to build this package with (almost) no
- *  generated files.
- */
-Pkg.attrs.exportAll = true;
-
-/*
- *  ======== testArray ========
+ *  ======== package.xs ========
  *
- *  Example:
- *    var testArray = [
- *        {name: Test1},
- *        {name: Test2, sources: ["Test"], config: "Test", refOutput: "Test", timeout: "15", buildTargets: ["C64", "C28_large"]}
- *    ];
  */
 
-var testArray = [
-    {name: 'test_omx_sysm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
-    {name: 'test_omx_sysm3_hdmi', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0_hdmi", copts: "-D CORE0", buildPlatforms: ["ti.platform.omap4430.core0"]},
-    {name: 'test_omx_appm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core1", copts: "-D CORE1", buildPlatforms: ["ti.platform.omap4430.core1"]},
-];
 
-arguments = ["profile=debug platform=all"];
+/*
+ *  ======== getLibs ========
+ */
+function getLibs(prog)
+{
+    var suffix;
+    var file;
+    var libAry = [];
+    var profile = this.profile;
 
-testBld.buildTests(testArray, arguments);
+    suffix = prog.build.target.findSuffix(this);
+    if (suffix == null) {
+        return "";  /* nothing to contribute */
+    }
+
+    /* make sure the library exists, else fallback to a built library */
+    file = "lib/" + profile + "/ti.hdmiwa" + ".a" + suffix;
+    if (java.io.File(this.packageBase + file).exists()) {
+        libAry.push(file);
+    }
+    else {
+        file = "lib/release/ti.hdmiwa" + ".a" + suffix;
+        if (java.io.File(this.packageBase + file).exists()) {
+            libAry.push(file);
+        }
+        else {
+            /* fallback to a compatible library built by this package */
+            for (var p in this.build.libDesc) {
+                if (suffix == this.build.libDesc[p].suffix) {
+                    libAry.push(p);
+                    break;
+                }
+            }
+        }
+    }
+
+    return libAry.join(";");
+}
