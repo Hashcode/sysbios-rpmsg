@@ -32,13 +32,15 @@
 
 ifdef TMS470CGTOOLPATH
 	DUCATI = ducati-m3.bin
+	IPU = omap5-ducati-m3.bin
 endif
 
 ifdef C6000CGTOOLPATH
 	TESLA = tesla-dsp.bin
+	DSP = omap5-tesla-dsp.bin
 endif
 
-all: readrprc wrints genbase genextbin xdep $(DUCATI) $(TESLA)
+all: readrprc wrints genbase genextbin xdep $(DUCATI) $(TESLA) $(IPU) $(DSP)
 
 ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 wrints genbase
 	#
@@ -50,6 +52,17 @@ ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_s
 tesla-dsp.bin: ../ti/examples/srvmgr/ti_platform_omap4430_dsp/debug/test_omx_dsp.xe64T wrints genbase
 	# Generating tesla-dsp-bin...
 	./genrprc --e0=ti_sysbios_family_c64p_Hwi0 --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_dsp/debug/test_omx_dsp.xe64T $@
+
+omap5-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap54xx_core1/debug/test_omx_appm3.xem3 wrints genbase
+	#
+	# ensure that ipu's core0 program is listed before ipu's core1
+	# program, the Linux FW loader expects such.
+	#
+	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A  ../ti/examples/srvmgr/ti_platform_omap54xx_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A --d1=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_core1/debug/test_omx_appm3.xem3 $@
+
+omap5-tesla-dsp.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T wrints genbase
+	# Generating omap5-dsp-bin...
+	./genrprc --e0=ti_sysbios_family_c64p_Hwi0 --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T $@
 
 CFLAGS = -Wall -m32
 RPRCOBJ = readrprc.o
@@ -88,5 +101,5 @@ elfload/genbase:
 	cd elfload; make
 
 clean:
-	@rm -f genbase readrprc wrints genextbin *.o $(DUCATI) $(TESLA)
+	@rm -f genbase readrprc wrints genextbin *.o $(DUCATI) $(TESLA) $(IPU) $(DSP)
 	cd elfload; make clean
