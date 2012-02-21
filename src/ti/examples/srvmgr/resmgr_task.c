@@ -91,10 +91,10 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
 
     Task_sleep(SLEEP_TICKS);
     System_printf("\nConnecting to resmgr server...\n");
-    while (1) {
-        ipcResHandle = IpcResource_connect(0);
-        if (ipcResHandle) break;
-        Task_sleep(SLEEP_TICKS);
+    ipcResHandle = IpcResource_connect(0);
+    if (!ipcResHandle) {
+        System_printf("Failed to connect to the resmgr server\n");
+        return;
     }
     System_printf("...connected to resmgr server\n");
 
