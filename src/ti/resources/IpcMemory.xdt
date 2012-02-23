@@ -32,6 +32,11 @@
  */
 %%}
 
+%var prog = xdc.om['xdc.cfg.Program'];
+%if (prog.platformName.match(/omap54xx/)) {
+#define OMAP5
+%}
+
 %var MultiProc = xdc.module('ti.sdo.utils.MultiProc');
 %if (MultiProc.id == MultiProc.getIdMeta("CORE0")) {
 
@@ -74,7 +79,13 @@
 
 #define IPU_MEM_TEXT            0x0
 #define IPU_MEM_DATA            0x80000000
+
+#ifdef OMAP5
+#define IPU_MEM_IOBUFS          0x90000000
+#else
 #define IPU_MEM_IOBUFS          0x88000000
+#endif
+
 #define IPU_MEM_IPC_VRING       0xA0000000
 #define IPU_MEM_IPC_DATA        0x9F000000
 
@@ -82,10 +93,18 @@
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
  * PHYS_MEM_IPC_VRING & PHYS_MEM_IPC_DATA MUST be together.
  */
+#ifdef OMAP5
+#define PHYS_MEM_IPC_VRING      0xAFE00000
+#define PHYS_MEM_IPC_DATA       0xAFF00000
+#define PHYS_MEM_TEXT           0xB0000000
+#define PHYS_MEM_DATA           0xB0700000
+#else
 #define PHYS_MEM_IPC_VRING      0xB3A00000
 #define PHYS_MEM_IPC_DATA       0xB3B00000
 #define PHYS_MEM_TEXT           0xB3C00000
 #define PHYS_MEM_DATA           0xB4300000
+#endif
+
 #define PHYS_MEM_IOBUFS         0xBA300000
 
 #pragma DATA_SECTION(resourcesLen, ".resource_size")
@@ -120,8 +139,13 @@ ti_resources_IpcMemory_Resource resources[] = {
        0, "IPU_MEM_IPC_DATA" },
     { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, SZ_1M * 6,
        0, "IPU_MEM_TEXT" },
+#ifdef OMAP5
+    { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 156,
+       0, "IPU_MEM_DATA" },
+#else
     { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 96,
        0, "IPU_MEM_DATA" },
+#endif
     { TYPE_CARVEOUT, IPU_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, SZ_1M * 90,
        0, "IPU_MEM_IOBUFS" },
 };
@@ -174,8 +198,12 @@ UInt32 resourcesLen = sizeof(resources) / sizeof(*resources);
 /*
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
  */
-/* This address is derived from current Ducati & ION carveouts */
+/* This address is derived from current IPU & ION carveouts */
+#ifdef OMAP5
+#define PHYS_MEM_IPC_VRING      (0xA9E00000 - DSP_MEM_SIZE)
+#else
 #define PHYS_MEM_IPC_VRING      (0xADA00000 - DSP_MEM_SIZE)
+#endif
 #define PHYS_MEM_IPC_DATA       (PHYS_MEM_IPC_VRING + DSP_MEM_IPC_VRING_SIZE)
 #define PHYS_MEM_TEXT           (PHYS_MEM_IPC_DATA + DSP_MEM_IPC_DATA_SIZE)
 #define PHYS_MEM_DATA           (PHYS_MEM_TEXT + DSP_MEM_TEXT_SIZE)
