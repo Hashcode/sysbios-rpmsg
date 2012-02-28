@@ -91,11 +91,13 @@ BUILD (Linux Environment)
        Eg:
            export XDCVERSION=xdctools_3_22_01_21
 
-    4) Edit Makefile (optional) so that the following variables are pointing to
-       the correct tools versions. The XDCROOTVER and REPO variables are
-       automatically set based on the exported variables in steps #2 & #3.
-       - BIOSPRODVER
-       - IPCPRODVER
+    4) Export the proper environment variable(s) to choose your own versions of
+       BIOS and/or IPC tools (optional, need to set only if different from
+       default is desired)
+       Eg:
+           export BIOSVERSION=bios_6_32_01_38
+                     - and/or -
+           export IPCVERSION=ipc_1_23_01_26
 
     5) From the top-level sysbios-rpmsg directory, type in 'make' to build the
        entire tree plus sample applications

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, Texas Instruments Incorporated
+# Copyright (c) 2011-2012, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,14 @@ XDCROOTVER	= $(shell if [ "$$XDCVERSION" != "" ]; \
 			  then echo $$XDCVERSION; \
 			  else echo "xdctools_3_22_03_41"; \
 			  fi)
-BIOSPRODVER	= bios_6_32_01_38
-IPCPRODVER	= ipc_1_23_01_26
+BIOSPRODVER	= $(shell if [ "$$BIOSVERSION" != "" ]; \
+			  then echo $$BIOSVERSION; \
+			  else echo "bios_6_32_01_38"; \
+			  fi)
+IPCPRODVER	= $(shell if [ "$$IPCVERSION" != "" ]; \
+			  then echo $$IPCVERSION; \
+			  else echo "ipc_1_23_01_26"; \
+			  fi)
 
 BIOSPROD	= $(REPO)/$(BIOSPRODVER)
 IPCPROD		= $(REPO)/$(IPCPRODVER)
