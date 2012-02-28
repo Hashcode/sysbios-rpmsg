@@ -36,7 +36,7 @@ REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
 XDCVERSION      ?= xdctools_3_23_03_53
-BIOSVERSION     ?= bios_6_32_01_38
+BIOSVERSION     ?= bios_6_33_06_50
 IPCVERSION      ?= ipc_1_24_02_27
 
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))

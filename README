@@ -42,9 +42,9 @@ TOOLS
 
     o The following are the current versions and download instructions for these
       tools.
-       1) BIOS: 6.32.01.38
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
+       1) BIOS: 6.33.06.50
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_33_06_50/exports/bios_setuplinux_6_33_06_50.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_33_06_50/exports/bios_setupwin32_6_33_06_50.exe
 
        2) SMP/BIOS: 1.00.00.23_eng
             SMP/BIOS is currently not available for public download.
