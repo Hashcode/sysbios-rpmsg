@@ -137,31 +137,39 @@ else
     fi
 fi
 
-if [[ $entryaddr0 == "" ]]
+if [[ -f $core0file ]]
 then
-	echo warning: null entry point for core 0
-fi
-if [[ $entryaddr1 == "" ]]
-then
-	echo warning: null entry point for core 1
-fi
-if [[ $traceaddr0 == "" ]]
-then
-	echo warning: null trace buffer address for core 0
-fi
-if [[ $traceaddr1 == "" ]]
-then
-	echo warning: null trace buffer address for core 1
-fi
-if [[ $errbufaddr0 == "" ]]
-then
-	echo warning: null error buffer address for core 0
-fi
-if [[ $errbufaddr1 == "" ]]
-then
-	echo warning: null error buffer address for core 1
+	if [[ $entryaddr0 == "" ]]
+	then
+		echo warning: null entry point for core 0
+	fi
+
+	if [[ $traceaddr0 == "" ]]
+	then
+		echo warning: null trace buffer address for core 0
+	fi
+
+	if [[ $errbufaddr0 == "" ]]
+	then
+		echo warning: null error buffer address for core 0
+	fi
 fi
 
+if [[ -f $core1file ]]
+then
+	if [[ $entryaddr1 == "" ]]
+	then
+		echo warning: null entry point for core 1
+	fi
+	if [[ $traceaddr1 == "" ]]
+	then
+		echo warning: null trace buffer address for core 1
+	fi
+	if [[ $errbufaddr1 == "" ]]
+	then
+		echo warning: null error buffer address for core 1
+	fi
+fi
 
 file_info=`file $outfile`
 foo=`echo $file_info | grep executable`
@@ -177,9 +185,16 @@ then
 fi
 
 tmp=/tmp/genrprc-$$
+if [[ -f $core1file ]]
+then
+	echo $dir/mkheader $core0file $core1file $outfile
+	$dir/mkheader $core0file $core1file $outfile
+else
+	echo $dir/mkheader $core0file $outfile
+	$dir/mkheader $core0file $outfile
+fi
 
-echo $dir/mkheader $core0file $core1file $outfile
-$dir/mkheader $core0file $core1file $outfile
+
 if [[ $? != 0 ]]
 then
 	echo mkheader failed
@@ -224,43 +239,6 @@ fi
 # resource gets the value of entry1, etc.).
 #
 
-if [[ $traceaddr0 == "" ]]
-then
-	trace0=
-else
-	trace0="trace0:$traceaddr0"
-fi
-if [[ $traceaddr1 == "" ]]
-then
-	trace1=
-else
-	trace1="trace1:$traceaddr1"
-fi
-if [[ $errbufaddr0 == "" ]]
-then
-	errbuf0=
-else
-	errbuf0="errbuf0:$errbufaddr0"
-fi
-if [[ $errbufaddr1 == "" ]]
-then
-	errbuf1=
-else
-	errbuf1="errbuf1:$errbufaddr1"
-fi
-if [[ $entryaddr0 == "" ]]
-then
-	entry0=
-else
-	entry0="entry0:$entryaddr0"
-fi
-if [[ $entryaddr1 == "" ]]
-then
-	entry1=
-else
-	entry1="entry1:$entryaddr1"
-fi
-
 if [[ -f $core0file ]]
 then
 	t0Size=`readelf -S $core0file | \
@@ -293,6 +271,32 @@ else
 	d1Size=0
 fi
 
+args=
+if [[ $traceaddr0 != "" ]]
+then
+	args="$args trace0:$traceaddr0:$t0Size"
+fi
+if [[ $traceaddr1 != "" ]]
+then
+	args="$args trace1:$traceaddr1:$t1Size"
+fi
+if [[ $errbufaddr0 != "" ]]
+then
+	args="$args errbuf0:$errbufaddr0:$d0Size"
+fi
+if [[ $errbufaddr1 != "" ]]
+then
+	args="$args errbuf1:$errbufaddr1:$d1Size"
+fi
+if [[ $entryaddr0 != "" ]]
+then
+	args="$args entry0:$entryaddr0:0"
+fi
+if [[ $entryaddr1 != "" ]]
+then
+	args="$args entry1:$entryaddr1:0"
+fi
+
 if [[ -f $core0file ]]
 then
 	resource_tab=`readelf -S $core0file | \
@@ -305,14 +309,9 @@ then
 		echo $dir/genbase $core0file $tmp $*
 		$dir/genbase $core0file $tmp $*
 	else
-		echo $dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
-		$dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
+		echo $dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
+		$dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
 	fi
-
 	cat $tmp >> $outfile
 	rm $tmp
 fi
@@ -330,12 +329,8 @@ then
 		echo $dir/genbase $core1file $tmp $*
 		$dir/genbase $core1file $tmp $*
 	else
-		echo $dir/genbase $core1file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
-		$dir/genbase $core1file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
+		echo $dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
+		$dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
 	fi
 
 	cat $tmp >> $outfile
