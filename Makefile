@@ -35,9 +35,9 @@ BIOSTOOLSROOT   ?= /usr/local
 REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
-XDCVERSION      ?= xdctools_3_22_03_41
+XDCVERSION      ?= xdctools_3_23_02_47
 BIOSVERSION     ?= bios_6_32_01_38
-IPCVERSION      ?= ipc_1_23_01_26
+IPCVERSION      ?= ipc_1_24_02_27
 
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
 include bldcfg.mk
@@ -64,7 +64,6 @@ clean:
 	cd ../..
 
 smp_config:
-	@echo XDCVERSION=xdctools_3_23_01_43 > bldcfg.mk
 	@echo BIOSVERSION=smpbios_1_00_00_21_eng >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 
