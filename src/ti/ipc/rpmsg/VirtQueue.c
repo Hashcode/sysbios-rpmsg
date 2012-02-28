@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -178,8 +178,10 @@ static UInt16 dspProcId;
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
 
+#ifdef M3_ONLY
 extern Void OffloadM3_init();
 extern Int OffloadM3_processSysM3Tasks(UArg msg);
+#endif
 
 static inline Void * mapPAtoVA(UInt pa)
 {
@@ -368,9 +370,11 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             default:
+#ifdef M3_ONLY
                 /* Check and process any Inter-M3 Offload messages */
                 if (OffloadM3_processSysM3Tasks(msg))
                     return;
+#endif
 
                 /*
                  *  If the message isn't one of the above, it's either part of the
@@ -525,7 +529,9 @@ Void VirtQueue_startup()
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
         System_printf("VirtQueue_startup: buf_addr address of 0x%x received\n", buf_addr);
 
+#ifdef M3_ONLY
         OffloadM3_init();
+#endif
     }
     else if (MultiProc_self() == appm3ProcId) {
         InterruptM3_intRegister(VirtQueue_isr);
