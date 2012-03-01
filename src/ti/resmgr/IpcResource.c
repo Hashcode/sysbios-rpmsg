@@ -153,6 +153,7 @@ Int IpcResource_disconnect(IpcResource_Handle handle)
 
     if (!handle) {
         System_printf("IpcResource_disconnect: handle is NULL\n");
+        return IpcResource_E_INVALARGS;
     }
 
     req.resType = 0;
@@ -177,7 +178,7 @@ Int IpcResource_disconnect(IpcResource_Handle handle)
 
     Memory_free(NULL, handle, sizeof(*handle));
 
-    return 0;
+    return IpcResource_S_SUCCESS;
 }
 
 Int IpcResource_request(IpcResource_Handle handle,
