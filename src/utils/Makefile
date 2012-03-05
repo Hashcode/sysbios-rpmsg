@@ -30,7 +30,15 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-all: readrprc wrints genbase genextbin xdep ducati-m3.bin tesla-dsp.bin
+ifdef TMS470CGTOOLPATH
+	DUCATI = ducati-m3.bin
+endif
+
+ifdef C6000CGTOOLPATH
+	TESLA = tesla-dsp.bin
+endif
+
+all: readrprc wrints genbase genextbin xdep $(DUCATI) $(TESLA)
 
 ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 wrints genbase
 	#
@@ -80,5 +88,5 @@ elfload/genbase:
 	cd elfload; make
 
 clean:
-	@rm -f genbase readrprc wrints genextbin *.o ducati-m3.bin tesla-dsp.bin
+	@rm -f genbase readrprc wrints genextbin *.o $(DUCATI) $(TESLA)
 	cd elfload; make clean

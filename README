@@ -73,9 +73,14 @@ TOOLS
 
 BUILD (Linux Environment)
     1) Export the proper environment variables to point to your Code Generation
-       Tools installation paths (if different from the default)
+       Tools installation paths (mandatory step). The build targets are controlled
+       based on which environment variables are defined. The TMS470CGTOOLPATH enables
+       the M3 target build, while the C6000CGTOOLPATH enables the C6x build. If the
+       variables are exported in between builds on an existing shell, do 'touch' the
+       <sysbios-rpmsg>/src/config.bld for the change to become effective.
        Eg:
            export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
+                               -- and/or --
            export C6000CGTOOLPATH=/data/omapts/linux/dsp-tc/cgt6x-7.2.0
 
     2) Export the proper environment variable to point to your installation path

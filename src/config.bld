@@ -34,24 +34,9 @@
  *  Sample Build configuration script
  */
 
-/* Default tools locations */
-var armcgt_linux   = "/opt/TI/TMS470CGT4.9.0"
-var dspcgt_linux   = "/opt/TI/C6000CGT7.2.0"
-var armcgt_windows = "C:/Program Files/Texas Instruments/TMS470 Code Generation Tools 4.9.0"
-var dspcgt_windows = "C:/Program Files/Texas Instruments/C6000 Code Generation Tools 7.2.0"
-
 /* Exported tools locations to supercede defaults */
-var armcgt_env = java.lang.System.getenv("TMS470CGTOOLPATH");
-var dspcgt_env = java.lang.System.getenv("C6000CGTOOLPATH");
-
-/* Configure code generation tools paths */
-if (Build.hostOSName == 'Linux') {
-    var arm_cgtools_rootdir = armcgt_env ? armcgt_env : armcgt_linux;
-    var c6x_cgtools_rootdir = dspcgt_env ? dspcgt_env : dspcgt_linux;
-} else {
-    var arm_cgtools_rootdir = armcgt_env ? armcgt_env : armcgt_windows;
-    var c6x_cgtools_rootdir = dspcgt_env ? dspcgt_env : dspcgt_windows;
-}
+var arm_cgtools_rootdir = java.lang.System.getenv("TMS470CGTOOLPATH");
+var c6x_cgtools_rootdir = java.lang.System.getenv("C6000CGTOOLPATH");
 
 /* Setup for C64T target */
 var C64T = xdc.useModule('ti.targets.elf.C64T');
@@ -79,8 +64,9 @@ M3.platforms = [
                ];
 M3.platform = M3.platforms[0];
 
-/* Uncomment the required targets */
-Build.targets = [
-                    C64T,
-                    M3,
-                ];
+if (c6x_cgtools_rootdir != null && c6x_cgtools_rootdir != "") {
+    Build.targets.$add(C64T);
+}
+if (arm_cgtools_rootdir != null && arm_cgtools_rootdir != "") {
+    Build.targets.$add(M3);
+}
