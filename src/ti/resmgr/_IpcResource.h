@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,10 +57,10 @@ extern "C" {
 #define EINVAL                              22
 
 typedef enum {
-    IpcResource_ReqType_CONN,
+    IpcResource_ReqType_CONNECT,
+    IpcResource_ReqType_DISCONNECT,
     IpcResource_ReqType_ALLOC,
     IpcResource_ReqType_FREE,
-    IpcResource_ReqType_DISCONN,
     IpcResource_ReqType_REQ_CONSTRAINTS,
     IpcResource_ReqType_REL_CONSTRAINTS
 } IpcResource_ReqType;
@@ -85,6 +85,7 @@ typedef struct {
  */
 struct IpcResource_Object {
     UInt32              endPoint;
+    UInt32              remote;
     UInt                timeout;
     Semaphore_Handle    sem;
     MessageQCopy_Handle msgq;
