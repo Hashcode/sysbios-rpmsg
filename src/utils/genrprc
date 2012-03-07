@@ -87,6 +87,13 @@ while true ; do
     esac
 done
 
+ext=`basename $1 | awk -F . '{print $NF}'`
+if [[ $ext == "xe64T" && $entryname0 == "" ]]
+then
+	echo warning: ti_sysbios_family_c64p_Hwi0 is being set as entry point for dsp
+	entryname0=ti_sysbios_family_c64p_Hwi0
+fi
+
 if [[ $# == 3 ]]
 then
 	core0file=$1
