@@ -31,28 +31,17 @@
 #
 
 # Repo
-REPO		= $(shell if [ "$$BIOSTOOLSROOT" != "" ]; \
-			  then echo $$BIOSTOOLSROOT; \
-			  else echo "/usr/local"; \
-			  fi)
+BIOSTOOLSROOT   ?= /usr/local
+REPO            := $(BIOSTOOLSROOT)
 
-# Edit Dependency Versions:
-XDCROOTVER	= $(shell if [ "$$XDCVERSION" != "" ]; \
-			  then echo $$XDCVERSION; \
-			  else echo "xdctools_3_22_03_41"; \
-			  fi)
-BIOSPRODVER	= $(shell if [ "$$BIOSVERSION" != "" ]; \
-			  then echo $$BIOSVERSION; \
-			  else echo "bios_6_32_01_38"; \
-			  fi)
-IPCPRODVER	= $(shell if [ "$$IPCVERSION" != "" ]; \
-			  then echo $$IPCVERSION; \
-			  else echo "ipc_1_23_01_26"; \
-			  fi)
+# Customizable version variables - export them or pass as arguments to make
+XDCVERSION	    ?= xdctools_3_22_03_41
+BIOSVERSION	    ?= bios_6_32_01_38
+IPCVERSION	    ?= ipc_1_23_01_26
 
-BIOSPROD	= $(REPO)/$(BIOSPRODVER)
-IPCPROD		= $(REPO)/$(IPCPRODVER)
-XDCDIST_TREE	= $(REPO)/$(XDCROOTVER)
+BIOSPROD	= $(REPO)/$(BIOSVERSION)
+IPCPROD		= $(REPO)/$(IPCVERSION)
+XDCDIST_TREE	= $(REPO)/$(XDCVERSION)
 
 export XDCROOT	= $(XDCDIST_TREE)
 
@@ -71,7 +60,8 @@ clean:
 
 info: tools
 tools:
-	@echo "REPO := $(REPO)"
-	@echo "XDC  := $(XDCDIST_TREE)"
-	@echo "BIOS := $(BIOSPROD)"
-	@echo "IPC  := $(IPCPROD)"
+	@echo "REPO   := $(REPO)"
+	@echo "XDC    := $(XDCDIST_TREE)"
+	@echo "BIOS   := $(BIOSPROD)"
+	@echo "IPC    := $(IPCPROD)"
+	@echo "ARMCGT := $(TMS470CGTOOLPATH)"

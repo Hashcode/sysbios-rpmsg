@@ -107,10 +107,20 @@ BUILD (Linux Environment)
     5) From the top-level sysbios-rpmsg directory, type in 'make' to build the
        entire tree plus sample applications
 
-    6) Type 'make tools' or 'make info' to get your current tools location and
+    6) Steps 1 to 4 can also be achieved alternatively by defining any of the
+       variables on the make invocation line within the shell.
+       Eg:
+        1. make TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
+             (define custom installation path for TMS470CGTOOLPATH)
+        2. make BIOSTOOLSROOT=/data/omapts/linux/dsp-tc XDCVERSION=xdctools_3_22_01_21
+             (define custom BIOSTOOLSROOT location and XDC version)
+        3. make XDCVERSION=xdctools_3_22_01_21 BIOSVERSION=bios_6_32_01_38
+             (define custom XDC and BIOS versions)
+
+    7) Type 'make tools' or 'make info' to get your current tools location and
        versions.
 
-    7) A default firmware binary, ducati-m3.bin is generated in the src/utils
+    8) A default firmware binary, ducati-m3.bin is generated in the src/utils
        directory, using two of the sample baseimages in sysbios-rpmsg tree.
 
 CLEAN (Linux Environment)
