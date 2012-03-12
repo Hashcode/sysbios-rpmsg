@@ -41,42 +41,29 @@ TOOLS
     o The following are the current versions and download instructions for these
       tools.
        1) BIOS:  6.32.01.38
-          Public Links:-
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
             Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
-          TI Internal Links:-
-            Linux:   http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
-            Windows: http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
 
        2) XDC: 3.22.03.41
-          Public Links:-
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_03_41/exports/xdctools_setuplinux_3_22_03_41.bin
             Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_03_41/exports/xdctools_setupwin32_3_22_03_41.exe
-          TI Internal Links:-
-            Linux:   http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_03_41/exports/xdctools_setuplinux_3_22_03_41.bin
-            Windows: http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_03_41/exports/xdctools_setupwin32_3_22_03_41.exe
 
        3) CGT TMS470: 4.9.0
-          Public Links:-
-            TMS470 Compiler is not available for free publicly. Please contact your TI representative.
-         TI Internal Links:-
-            Linux:   http://syntaxerror.dal.design.ti.com/release/releases/arm/rel4_9_0/build/install/ti_cgt_tms470_4.9.0_setup_linux_x86.bin
-            Windows: http://syntaxerror.dal.design.ti.com/release/releases/arm/rel4_9_0/build/install/ti_cgt_tms470_4.9.0_setup_win32.exe
+            TMS470 Compiler is not available for free publicly. Please contact
+            your TI representative. A TMS470 Compiler is supplied with Code
+            Composer Studio (CCS), and can be used if you have a valid license.
 
        4) CGT C6000: 7.2.0
-          Public Links:-
             Please pick the appropriate version from the above public link.
-          TI Internal Links:-
-            Linux:   http://syntaxerror.dal.design.ti.com/release/releases/c60/rel7_2_0/build/install/ti_cgt_c6000_7.2.0_setup_linux_x86.bin
-            Windows: http://syntaxerror.dal.design.ti.com/release/releases/c60/rel7_2_0/build/install/ti_cgt_c6000_7.2.0_setup_win32.exe
 
 
 BUILD (Linux Environment)
     1) Export the proper environment variables to point to your Code Generation
-       Tools installation paths (mandatory step). The build targets are controlled
-       based on which environment variables are defined. The TMS470CGTOOLPATH enables
-       the M3 target build, while the C6000CGTOOLPATH enables the C6x build. If the
-       variables are exported in between builds on an existing shell, do 'touch' the
+       Tools installation paths (mandatory step). The build targets are
+       controlled based on which environment variables are defined. The
+       TMS470CGTOOLPATH enables the M3 target build, while the C6000CGTOOLPATH
+       enables the C6x build. If the variables are exported in between builds on
+       an existing shell, do 'touch' the
        <sysbios-rpmsg>/src/config.bld for the change to become effective.
        Eg:
            export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
