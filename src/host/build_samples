@@ -1,7 +1,5 @@
-# Note: copy to Linux kernel repo, tools/ to build.
+# Note: copy to Linux kernel repo, tools/rpmsg to build.
+# Use static linking to run the executable in Android environment
 
-arm-none-linux-gnueabi-gcc test_rpmsg_omx.c -o test_rpmsg_omx -lpthread
-arm-none-linux-gnueabi-gcc omx_sample.c -o omx_sample -lpthread
-arm-none-linux-gnueabi-gcc omx_benchmark.c -o omx_benchmark -lrt
-
-#cp -p omx_sample omx_benchmark /data/exports/gp/omap4_angstrom_rfs/virtio
+arm-none-linux-gnueabi-gcc omx_sample.c -o omx_sample -lpthread --static
+arm-none-linux-gnueabi-gcc omx_benchmark.c -o omx_benchmark -lrt --static

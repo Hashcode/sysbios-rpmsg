@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,13 +45,13 @@
  * ------------------------------------------
  * In package.bld:
  *   - Set profile=release in package.bld
- * In bencmark test code:
+ * In benchmark test code:
  *   - Disable printf's, trace.
  * In benchmark .cfg file:
  *   - Defaults.common$.diags_ASSERT = Diags.ALWAYS_OFF
  *   - Defaults.common$.logger = null;
  *
- * Expected Result:  (Panda Board ES 2.1, rpmsg13 branch)
+ * Expected Result:
  * ---------------
  * avg time: 110 usecs
  */
@@ -69,7 +69,7 @@
 #include <time.h>
 #include <sys/eventfd.h>
 
-#include "../include/linux/rpmsg_omx.h"
+#include "../../include/linux/rpmsg_omx.h"
 
 #include "omx_packet.h"
 
@@ -77,6 +77,18 @@
 typedef struct {
     int a;
 } fxn_double_args;
+
+/* The map_info_type enum is defined in the rpmsg_omx driver, and is defined
+ * elsewhere in userspace, but define it here for this sample. The data portion
+ * of the packet being written is expected to start with this.
+ */
+typedef enum {
+    RPC_OMX_MAP_INFO_NONE       = 0,
+    RPC_OMX_MAP_INFO_ONE_BUF    = 1,
+    RPC_OMX_MAP_INFO_TWO_BUF    = 2,
+    RPC_OMX_MAP_INFO_THREE_BUF  = 3,
+    RPC_OMX_MAP_INFO_MAX        = 0x7FFFFFFF
+} map_info_type;
 
 /* Note: Set bit 31 to indicate static function indicies:
  * This function order will be hardcoded on BIOS side, hence preconfigured:
@@ -144,9 +156,10 @@ void test_exec_call(int fd, int num_iterations)
     char              return_buf[512] = {0};
     omx_packet        *packet = (omx_packet *)packet_buf;
     omx_packet        *rtn_packet = (omx_packet *)return_buf;
-    fxn_double_args   *fxn_args   = (fxn_double_args *)&packet->data;
-    struct timespec   start,end;
-    long              elapsed=0,delta;
+    fxn_double_args   *fxn_args = NULL;
+    struct timespec   start, end;
+    long              elapsed = 0, delta;
+    map_info_type     map_info = RPC_OMX_MAP_INFO_NONE;
 
     for (i = 1; i <= num_iterations; i++) {
 
@@ -157,7 +170,9 @@ void test_exec_call(int fd, int num_iterations)
         packet->fxn_idx = FXN_IDX_FXNDOUBLE;
 
         /* Set data for the OMX function: */
-        packet->data_size = sizeof(fxn_double_args);
+        memcpy(packet->data, &map_info, sizeof(map_info));
+        packet->data_size = sizeof(fxn_double_args) + sizeof(map_info) ;
+        fxn_args = (fxn_double_args *)((char *)packet->data + sizeof(map_info));
         fxn_args->a = i;
 
         /* Exec command: */
@@ -188,48 +203,66 @@ void test_exec_call(int fd, int num_iterations)
 
 int main(int argc, char *argv[])
 {
-       int fd;
-       int ret;
-       int num_iterations = 1;
-       struct omx_conn_req connreq = { .name = "OMX" };
+    int fd;
+    int ret = 0;
+    int num_iterations = 1;
+    struct omx_conn_req connreq = { .name = "OMX" };
+    int rproc = 0;
+    char rpmsg_dev[20];
 
-       if (argc > 2)  {
-            printf("Usage: omx_sample [<num_iterations>]\n");
-            return 1;
-       }
-       else if (argc == 2) {
-            num_iterations = atoi(argv[1]);
-       }
-       else {
-            num_iterations = 1;
-       }
+    switch (argc) {
+    case 3:
+        rproc = atoi(argv[1]);
+        num_iterations = atoi(argv[2]);
+        break;
+    case 2:
+        rproc = atoi(argv[1]);
+        break;
+    case 1:
+        break;
+    default:
+         ret = 1;
+         break;
+    }
 
-       /* Connect to the OMX ServiceMgr on Ducati core 1: */
-       fd = open("/dev/rpmsg-omx1", O_RDWR);
-       if (fd < 0) {
-            perror("Can't open OMX device");
-            return 1;
-       }
+    if (rproc < 0 || rproc > 2) {
+        printf("Incorrect input argument for processor, should be 0, 1 or 2\n");
+        ret = 1;
+    }
 
-       /* Create an OMX server instance, and rebind its address to this
-        * file descriptor.
-        */
-       ret = ioctl(fd, OMX_IOCCONNECT, &connreq);
-       if (ret < 0) {
-            perror("Can't connect to OMX instance");
-            return 1;
-       }
+    if (ret) {
+       printf("Usage: omx_sample [<processor> [<num_iterations>]]\n");
+       return ret;
+    }
 
-       printf("omx_sample: Connected to %s\n", connreq.name);
-       test_exec_call(fd, num_iterations);
+    sprintf(rpmsg_dev, "/dev/rpmsg-omx%d", rproc);
 
-       /* Terminate connection and destroy OMX instance */
-       ret = close(fd);
-       if (ret < 0) {
-            perror("Can't close OMX fd ??");
-            return 1;
-       }
+    /* Connect to the OMX ServiceMgr */
+    fd = open(rpmsg_dev, O_RDWR);
+    if (fd < 0) {
+        perror("Can't open OMX device");
+        return 1;
+    }
 
-       printf("omx_sample: Closed connection to %s!\n", connreq.name);
-       return 0;
+    /* Create an OMX server instance, and rebind its address to this
+    * file descriptor.
+    */
+    ret = ioctl(fd, OMX_IOCCONNECT, &connreq);
+    if (ret < 0) {
+        perror("Can't connect to OMX instance");
+        return 1;
+    }
+
+    printf("omx_sample: Connected to %s\n", connreq.name);
+    test_exec_call(fd, num_iterations);
+
+    /* Terminate connection and destroy OMX instance */
+    ret = close(fd);
+    if (ret < 0) {
+        perror("Can't close OMX fd ??");
+        return 1;
+    }
+
+    printf("omx_sample: Closed connection to %s!\n", connreq.name);
+    return 0;
 }
