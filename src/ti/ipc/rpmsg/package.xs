@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,14 @@
 /*
  *  ======== package.xs ========
  */
+
+/*
+ *  ======== init ========
+ */
+function init()
+{
+    xdc.loadPackage('ti.pm');
+}
 
 /*
  *  ======== close ========
