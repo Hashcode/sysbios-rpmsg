@@ -31,13 +31,20 @@
 #
 
 ifdef TMS470CGTOOLPATH
+ifeq ($(BUILD_SMP),1)
+	DUCATI = smp-ducati-m3.bin
+	IPU = smp-omap5-ducati-m3.bin
+else
 	DUCATI = ducati-m3.bin
 	IPU = omap5-ducati-m3.bin
 endif
+endif
 
 ifdef C6000CGTOOLPATH
+ifneq ($(BUILD_SMP),1)
 	TESLA = tesla-dsp.bin
 	DSP = omap5-tesla-dsp.bin
+endif
 endif
 
 all: readrprc wrints genbase genextbin xdep $(DUCATI) $(TESLA) $(IPU) $(DSP)
@@ -63,6 +70,14 @@ omap5-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_core0/debug/test
 omap5-tesla-dsp.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T wrints genbase
 	# Generating omap5-dsp-bin...
 	./genrprc --e0=ti_sysbios_family_c64p_Hwi0 --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T $@
+
+smp-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_ipu/debug/test_omx_ipu.xem3 wrints genbase
+	# Generating smp-ducati-m3.bin...
+	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_ipu/debug/test_omx_ipu.xem3 $@
+
+smp-omap5-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_ipu/debug/test_omx_ipu.xem3 wrints genbase
+	# Generating smp-omap5-ducati-m3.bin...
+	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_ipu/debug/test_omx_ipu.xem3 $@
 
 CFLAGS = -Wall -m32
 RPRCOBJ = readrprc.o
