@@ -339,6 +339,11 @@ void serviceMgrTaskFxn(UArg arg0, UArg arg1)
 
     System_printf("serviceMgr: started on port: %d\n", SERVICE_MGR_PORT);
 
+#ifdef SMP
+    NameMap_register("rpmsg-omx1", SERVICE_MGR_PORT);
+    System_printf("serviceMgr: sending BOOTINIT_DONE\n");
+    VirtQueue_postInitDone();
+#else
     if (MultiProc_self() == MultiProc_getId("CORE0")) {
         NameMap_register("rpmsg-omx0", SERVICE_MGR_PORT);
     }
@@ -355,6 +360,7 @@ void serviceMgrTaskFxn(UArg arg0, UArg arg1)
                         MultiProc_self());
         VirtQueue_postInitDone();
     }
+#endif
 
     while (1) {
        MessageQCopy_recv(msgq, (Ptr)msg, &len, &remote, MessageQCopy_FOREVER);
