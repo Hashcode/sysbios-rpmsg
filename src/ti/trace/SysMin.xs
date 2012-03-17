@@ -15,6 +15,7 @@
  */
 
 var SysMin = this;
+var Core = null;
 
 /*
  *  ======== module$static$init ========
@@ -36,7 +37,12 @@ function module$static$init(obj, params)
                        + " = 0x" + Number(this.LINEBUFSIZE).toString(16), this);
     }
 
-    obj.lineBuffers.length = 1;
+    if (Program.platformName.match(/ipu/)) {
+        obj.lineBuffers.length = Core.numCores;
+    }
+    else {
+        obj.lineBuffers.length = 1;
+    }
     for (var i = 0; i < obj.lineBuffers.length; i++) {
         obj.lineBuffers[i].lineidx = 0;
         for (var j = 0; j < this.LINEBUFSIZE; j++) {
@@ -64,6 +70,9 @@ function module$static$init(obj, params)
  */
 function module$use(obj, params)
 {
+    if (Program.platformName.match(/ipu/)) {
+        Core = xdc.module("ti.sysbios.hal.Core");
+    }
 }
 
 /*

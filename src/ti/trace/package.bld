@@ -38,6 +38,7 @@
 /* explicit references to global objects */
 var Build = xdc.useModule('xdc.bld.BuildEnvironment');
 var Pkg = xdc.useModule('xdc.bld.PackageContents');
+var smpBuild = java.lang.System.getenv("BUILD_SMP");
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
@@ -53,15 +54,34 @@ Pkg.otherFiles = [
 
 /* list of libraries to build */
 var libArray = new Array();
-libArray.push(
-    {
-        name: "ti.trace",
-        sources: [
-            "SysMin.c",
-            "StackDbg.c",
-        ],
-    }
-);
+if (smpBuild == "1") {
+    /* trace library for IPU SMP target */
+    libArray.push(
+        {
+            name: "ti.trace_smp",
+            sources: [
+                "SysMin.c",
+                "StackDbg.c",
+            ],
+            libAttrs: {
+                defs: " -DSMP"
+            },
+            isas: [ "v7M" ],
+        }
+    );
+}
+else {
+    /* trace library for regular targets */
+    libArray.push(
+        {
+            name: "ti.trace",
+            sources: [
+                "SysMin.c",
+                "StackDbg.c",
+            ],
+        }
+    );
+}
 
 /* generate the package libraries */
 /* check if profile specified in XDCARGS */
