@@ -193,6 +193,10 @@ Int IpcResource_request(IpcResource_Handle handle,
     Int status;
     Char *name;
     IpcResource_Processor rproc;
+    IpcResource_Regulator *reg;
+    _IpcResource_Regulator _reg;
+    IpcResource_Auxclk *auxclk;
+    _IpcResource_Auxclk _auxclk;
 
     if (!handle || !resHandle) {
         System_printf("IpcResource_request: Invalid paramaters\n");
@@ -216,6 +220,37 @@ Int IpcResource_request(IpcResource_Handle handle,
     req->reqType = IpcResource_ReqType_ALLOC;
 
     switch(type) {
+    case IpcResource_TYPE_AUXCLK:
+        auxclk = resParams;
+        /* Build auxclk name based on the ID */
+        sprintf(_auxclk.name, "auxclk%d_ck", auxclk->clkId);
+        _auxclk.clkRate = auxclk->clkRate;
+
+        if (auxclk->parentSrcClk >=
+                (sizeof(auxclkSrcNames) / sizeof(*auxclkSrcNames))) {
+            return IpcResource_E_INVALARGS;
+        }
+
+        strcpy(_auxclk.parentName, auxclkSrcNames[auxclk->parentSrcClk]);
+        _auxclk.parentSrcClkRate = auxclk->parentSrcClkRate;
+        resParams = &_auxclk;
+        rlen = sizeof(_auxclk);
+        break;
+
+    case IpcResource_TYPE_REGULATOR:
+        reg = resParams;
+
+        if ((!reg->regulatorId) || (reg->regulatorId > NUM_REGULATORS)) {
+            return IpcResource_E_INVALARGS;
+        }
+
+        strcpy(_reg.name, regulatorNames[reg->regulatorId - 1]);
+        _reg.minUV = reg->minUV;
+        _reg.maxUV = reg->maxUV;
+        resParams = &_reg;
+        rlen = sizeof(_reg);
+        break;
+
     case IpcResource_TYPE_IPU:
     case IpcResource_TYPE_DSP:
         strcpy(rproc.name, rdata->resName);
