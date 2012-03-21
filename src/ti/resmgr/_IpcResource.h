@@ -47,6 +47,8 @@ extern "C" {
  * =============================================================================
  */
 
+#define ARRAY_SIZE(x)   (sizeof(x) / sizeof(*(x)))
+
 /*
  * Linux error codes that can be returned by
  * RM running on A9 side
@@ -66,18 +68,34 @@ typedef enum {
 } IpcResource_ReqType;
 
 typedef struct {
-    UInt32 resType;
-    UInt32 reqType;
-    UInt32 resHandle;
+    Char   resName[16];
     Char   resParams[];
+} IpcResource_AllocData;
+
+typedef struct {
+    UInt32 resHandle;
+} IpcResource_FreeData;
+
+typedef struct {
+    UInt32                      resHandle;
+    IpcResource_ConstraintData  cdata;
+} IpcResource_Constraint;
+
+typedef struct {
+    UInt32 reqType;
+    Char   data[];
 } IpcResource_Req;
 
 typedef struct {
-    UInt32 status;
-    UInt32 resType;
     UInt32 resHandle;
     UInt32 base;
     Char   resParams[];
+} IpcResource_AckData;
+
+typedef struct {
+    UInt32 reqType;
+    UInt32 status;
+    Char   data[];
 } IpcResource_Ack;
 
 /*!
@@ -90,6 +108,33 @@ struct IpcResource_Object {
     Semaphore_Handle    sem;
     MessageQCopy_Handle msgq;
 };
+
+/* Names should match the IpcResource_Type definitions */
+static Char * IpcResource_names[] = {
+    "omap-gptimer",
+    "iva",
+    "iva_seq0",
+    "iva_seq1",
+    "l3bus",
+    "omap-iss",
+    "omap-fdif",
+    "omap-sl2if",
+    "omap-auxclk",
+    "regulator",
+    "gpio",
+    "omap-sdma",
+    "ipu",
+    "dsp",
+    "i2c"
+};
+
+static inline Char *IpcResource_toName(UInt type)
+{
+    if (type < ARRAY_SIZE(IpcResource_names)) {
+        return IpcResource_names[type];
+    }
+    return NULL;
+}
 
 
 #if defined (__cplusplus)

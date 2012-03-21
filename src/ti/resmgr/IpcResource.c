@@ -51,7 +51,7 @@
 #include "_IpcResource.h"
 
 #define DEFAULT_TIMEOUT 500
-#define MAXMSGSIZE 84
+#define MAXMSGSIZE      128
 
 static UInt16 IpcResource_resLen(IpcResource_Type type)
 {
@@ -182,16 +182,26 @@ Int IpcResource_request(IpcResource_Handle handle,
 {
     Char msg[MAXMSGSIZE];
     IpcResource_Req *req = (Void *)msg;
+    IpcResource_AllocData *rdata = (Void *)req->data;
     IpcResource_Ack *ack = (Void *)msg;
-    UInt16 hlen = sizeof(*req);
+    IpcResource_AckData *adata = (Void *)ack->data;
+    UInt16 hlen = sizeof(*rdata) + sizeof(*req);
     UInt16 alen = sizeof(*ack);
     UInt16 rlen = IpcResource_resLen(type);
     UInt16 len;
     UInt32 remote;
     Int status;
+    Char *name;
 
     if (!handle || !resHandle) {
         System_printf("IpcResource_request: Invalid paramaters\n");
+        return IpcResource_E_INVALARGS;
+    }
+
+    name = IpcResource_toName(type);
+    if (!name) {
+        System_printf("IpcResource_request: resource type %d "
+                      "is invalid\n", type);
         return IpcResource_E_INVALARGS;
     }
 
@@ -201,10 +211,10 @@ Int IpcResource_request(IpcResource_Handle handle,
         return IpcResource_E_INVALARGS;
     }
 
-    req->resType = type;
+    strncpy(rdata->resName, name, 16);
     req->reqType = IpcResource_ReqType_ALLOC;
 
-    memcpy(req->resParams, resParams, rlen);
+    memcpy(rdata->resParams, resParams, rlen);
     Semaphore_pend(handle->sem, BIOS_WAIT_FOREVER);
     status = MessageQCopy_send(MultiProc_getId("HOST"), handle->remote,
                         handle->endPoint, req, hlen + rlen);
@@ -241,10 +251,10 @@ Int IpcResource_request(IpcResource_Handle handle,
         goto end;
     }
 
-    Assert_isTrue(len == (rlen + alen), NULL);
+    Assert_isTrue(len == rlen + alen + sizeof(*adata), NULL);
 
-    *resHandle = ack->resHandle;
-    memcpy(resParams, ack->resParams, rlen);
+    *resHandle = adata->resHandle;
+    memcpy(resParams, adata->resParams, rlen);
 
 end:
     return status;
@@ -252,13 +262,14 @@ end:
 
 Int IpcResource_setConstraints(IpcResource_Handle handle,
                                IpcResource_ResHandle resHandle,
-                               UInt32 action,
+                               UInt32 reqType,
                                Void *constraints)
 {
     Char msg[MAXMSGSIZE];
     IpcResource_Ack *ack = (Void *)msg;
     IpcResource_Req *req = (Void *)msg;
-    UInt16 rlen = sizeof(IpcResource_ConstraintData);
+    IpcResource_Constraint *c = (Void *)req->data;
+    UInt16 rlen = sizeof(*c);
     UInt16 alen = sizeof(*ack);
     UInt16 len;
     UInt32 remote;
@@ -269,16 +280,15 @@ Int IpcResource_setConstraints(IpcResource_Handle handle,
         return IpcResource_E_INVALARGS;
     }
 
-    if (rlen && !constraints) {
+    if (!constraints) {
         System_printf("IpcResource_setConstraints: needs parameters\n");
         return IpcResource_E_INVALARGS;
     }
 
-    req->resType = 0;
-    req->reqType = action;
-    req->resHandle = resHandle;
+    req->reqType = reqType;
+    c->resHandle = resHandle;
 
-    memcpy(req->resParams, constraints, rlen);
+    memcpy(&c->cdata, constraints, rlen);
     Semaphore_pend(handle->sem, BIOS_WAIT_FOREVER);
     status = MessageQCopy_send(MultiProc_getId("HOST"), handle->remote,
                         handle->endPoint, req, sizeof(*req) + rlen);
@@ -290,7 +300,7 @@ Int IpcResource_setConstraints(IpcResource_Handle handle,
         goto end;
     }
 
-    if (action == IpcResource_ReqType_REL_CONSTRAINTS) {
+    if (reqType == IpcResource_ReqType_REL_CONSTRAINTS) {
         Semaphore_post(handle->sem);
         goto end;
     }
@@ -313,9 +323,14 @@ Int IpcResource_setConstraints(IpcResource_Handle handle,
         goto end;
     }
 
-    Assert_isTrue(len == (rlen + alen), NULL);
-
     status = _IpcResource_translateError(ack->status);
+    if (status) {
+        System_printf("IpcResource_setConstraints: error from Host "
+                      "failed status %d\n", status);
+        goto end;
+    }
+
+    Assert_isTrue(len == (rlen + alen), NULL);
 
 end:
     return status;
@@ -345,19 +360,20 @@ Int IpcResource_release(IpcResource_Handle handle,
                         IpcResource_ResHandle resHandle)
 {
     Int status;
-    IpcResource_Req req;
+    Char msg[sizeof(IpcResource_Req) + sizeof(IpcResource_FreeData)];
+    IpcResource_Req *req = (Void *)msg;
+    IpcResource_FreeData *rel = (Void *)req->data;
 
     if (!handle) {
         System_printf("IpcResource_release: handle is NULL\n");
         return IpcResource_E_INVALARGS;
     }
 
-    req.resType = 0;
-    req.reqType = IpcResource_ReqType_FREE;
-    req.resHandle = resHandle;
+    req->reqType = IpcResource_ReqType_FREE;
+    rel->resHandle = resHandle;
 
     status = MessageQCopy_send(MultiProc_getId("HOST"), handle->remote,
-                      handle->endPoint, &req, sizeof(req));
+                      handle->endPoint, req, sizeof(msg));
     if (status) {
         System_printf("IpcResource_release: MessageQCopy_send "
                       "failed status %d\n", status);
