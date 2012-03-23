@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,6 +80,7 @@ var GateSwi   = xdc.useModule('ti.sysbios.gates.GateSwi');
 
 var Task          = xdc.useModule('ti.sysbios.knl.Task');
 Task.deleteTerminatedTasks = true;
+Task.common$.namedInstance = true;
 
 var Assert = xdc.useModule('xdc.runtime.Assert');
 var Defaults = xdc.useModule('xdc.runtime.Defaults');
