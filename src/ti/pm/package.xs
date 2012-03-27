@@ -44,7 +44,8 @@ function init()
         var Power = xdc.useModule('ti.sysbios.family.c64p.tesla.Power');
     }
 
-    if (Program.build.target.name.match(/M3/)) {
+    if (Program.build.target.name.match(/M3/) &&
+        !Program.platformName.match(/ipu/)) {
         Program.sectMap[".ipcpower_data"] = new Program.SectionSpec();
         Program.sectMap[".ipcpower_data"].type = "NOINIT";
         Program.sectMap[".ipcpower_data"].loadAddress = 0x2100;
@@ -68,19 +69,24 @@ function getLibs(prog)
     var file;
     var libAry = [];
     var profile = this.profile;
+    var smp = "";
 
     suffix = prog.build.target.findSuffix(this);
     if (suffix == null) {
         return "";  /* nothing to contribute */
     }
 
+    if (prog.platformName.match(/ipu/)) {
+        smp = "_smp";
+    }
+
     /* make sure the library exists, else fallback to a built library */
-    file = "lib/" + profile + "/ti.pm" + ".a" + suffix;
+    file = "lib/" + profile + "/ti.pm" + smp + ".a" + suffix;
     if (java.io.File(this.packageBase + file).exists()) {
         libAry.push(file);
     }
     else {
-        file = "lib/release/ti.pm" + ".a" + suffix;
+        file = "lib/release/ti.pm" + smp + ".a" + suffix;
         if (java.io.File(this.packageBase + file).exists()) {
             libAry.push(file);
         }

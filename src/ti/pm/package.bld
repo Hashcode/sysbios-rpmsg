@@ -38,6 +38,7 @@
 /* explicit references to global objects */
 var Build = xdc.useModule('xdc.bld.BuildEnvironment');
 var Pkg = xdc.useModule('xdc.bld.PackageContents');
+var smpBuild = java.lang.System.getenv("BUILD_SMP");
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
@@ -52,27 +53,44 @@ Pkg.otherFiles = [
 
 /* list of libraries to build */
 var libArray = new Array();
-/* pm library for M3 target */
-libArray.push(
-    {
-        name: "ti.pm",
-        sources: [
-            "IpcPower",
-        ],
-        isas: [ "v7M" ],
-    }
-);
+if (smpBuild == "1") {
+    /* pm library for IPU SMP target */
+    libArray.push(
+        {
+            name: "ti.pm_smp",
+            sources: [
+                "IpcPower",
+            ],
+            libAttrs: {
+                defs: " -DSMP"
+            },
+            isas: [ "v7M" ],
+        }
+    );
+}
+else {
+    /* pm library for IPU non-SMP target */
+    libArray.push(
+        {
+            name: "ti.pm",
+            sources: [
+                "IpcPower",
+            ],
+            isas: [ "v7M" ],
+        }
+    );
 
-/* pm library for DSP target */
-libArray.push(
-    {
-        name: "ti.pm",
-        sources: [
-            "IpcPowerDsp",
-        ],
-        isas: [ "64T" ],
-    }
-);
+    /* pm library for DSP target */
+    libArray.push(
+        {
+            name: "ti.pm",
+            sources: [
+                "IpcPowerDsp",
+            ],
+            isas: [ "64T" ],
+        }
+    );
+}
 
 /* generate the package libraries */
 /* check if profile specified in XDCARGS */
