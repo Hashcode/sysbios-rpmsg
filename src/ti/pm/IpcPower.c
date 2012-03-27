@@ -63,6 +63,9 @@
 #define CPU_COPY                       -1
 #define REG32(A)   (*(volatile UInt32 *) (A))
 
+#define SET_DEEPSLEEP (REG32(M3_SCR_REG) | (1 << DEEPSLEEP_BIT))
+#define CLR_DEEPSLEEP (REG32(M3_SCR_REG) & (~(1 << DEEPSLEEP_BIT)))
+
 #pragma DATA_SECTION(IpcPower_hibLocks, ".ipcpower_data")
 UInt32 IpcPower_hibLocks[2]; /* One lock for each of the IPU cores */
 
@@ -81,6 +84,9 @@ typedef enum IpcPower_SleepMode {
     IpcPower_SLEEP_MODE_WAKEUNLOCK
 } IpcPower_SleepMode;
 
+/* Deep sleep state variable for IpcPower module */
+static Bool IpcPower_deepSleep = TRUE;
+
 static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
 {
     IArg hwiKey;
@@ -94,12 +100,12 @@ static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
             }
         case IpcPower_SLEEP_MODE_DEEPSLEEP:
             if (!refWakeLockCnt) {
-                REG32(M3_SCR_REG) |= 1 << DEEPSLEEP_BIT;
+                IpcPower_deepSleep = TRUE;
             }
             break;
         case IpcPower_SLEEP_MODE_WAKELOCK:
             refWakeLockCnt++;
-            REG32(M3_SCR_REG) &= ~(1 << DEEPSLEEP_BIT);
+            IpcPower_deepSleep = FALSE;
             break;
     }
     Hwi_restore(hwiKey);
@@ -193,6 +199,7 @@ Void IpcPower_suspend()
  */
 Void IpcPower_idle()
 {
+    REG32(M3_SCR_REG) = IpcPower_deepSleep ? SET_DEEPSLEEP : CLR_DEEPSLEEP;
     asm(" wfi");
 }
 
