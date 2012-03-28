@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,8 +90,13 @@ void serviceMgrTaskFxn(UArg arg0, UArg arg1);
 
 Void ServiceMgr_init()
 {
+    static Int  curInit = 0;
     Task_Params params;
-    UInt     i;
+    UInt        i;
+
+    if (curInit++ != 0) {
+        return; /* module already initialized */
+    }
 
     RcmServer_init();
 
