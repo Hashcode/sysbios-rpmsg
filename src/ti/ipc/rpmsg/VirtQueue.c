@@ -369,12 +369,14 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             case (UInt)RP_MSG_HIBERNATION:
-                /* Core0 should notify Core1 */
-                if (MultiProc_self() == sysm3ProcId) {
-                    InterruptProxy_intSend(appm3ProcId,
-                                           (UInt)(RP_MSG_HIBERNATION));
+                if (IpcPower_canHibernate() == TRUE) {
+                    /* Core0 should notify Core1 */
+                    if (MultiProc_self() == sysm3ProcId) {
+                        InterruptProxy_intSend(appm3ProcId,
+                                               (UInt)(RP_MSG_HIBERNATION));
+                    }
+                    IpcPower_suspend();
                 }
-                IpcPower_suspend();
                 return;
 
             default:

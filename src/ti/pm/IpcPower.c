@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,8 +49,9 @@
 #include <xdc/runtime/Log.h>
 #include <xdc/runtime/Diags.h>
 
-#include <ti/sysbios/knl/Swi.h>
 #include <ti/sysbios/hal/Hwi.h>
+#include <ti/sysbios/knl/Swi.h>
+#include <ti/sysbios/family/arm/ducati/Core.h>
 #include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
 
 #include <ti/ipc/MultiProc.h>
@@ -61,6 +62,9 @@
 #define NO_MASTERCORE                   0
 #define CPU_COPY                       -1
 #define REG32(A)   (*(volatile UInt32 *) (A))
+
+#pragma DATA_SECTION(IpcPower_hibLocks, ".ipcpower_data")
+UInt32 IpcPower_hibLocks[2]; /* One lock for each of the IPU cores */
 
 static Power_SuspendArgs PowerSuspArgs;
 static Swi_Handle suspendResumeSwi;
@@ -142,10 +146,13 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
 Void IpcPower_init()
 {
     Swi_Params swiParams;
+    UInt coreIdx = Core_getId();
 
     if (curInit++) {
         return;
     }
+
+    IpcPower_hibLocks[coreIdx] = 0;
 
     sysm3ProcId = MultiProc_getId("CORE0");
     appm3ProcId = MultiProc_getId("CORE1");
@@ -205,4 +212,56 @@ Void IpcPower_wakeLock()
 Void IpcPower_wakeUnlock()
 {
     IpcPower_sleepMode(IpcPower_SLEEP_MODE_WAKEUNLOCK);
+}
+
+/*
+ *  ======== IpcPower_hibernateLock ========
+ */
+UInt IpcPower_hibernateLock()
+{
+    IArg hwiKey, swiKey;
+    UInt coreIdx = Core_getId();
+
+    hwiKey = Hwi_disable();
+    swiKey = Swi_disable();
+
+    IpcPower_hibLocks[coreIdx] += 1;
+
+    Swi_restore(swiKey);
+    Hwi_restore(hwiKey);
+
+    return (IpcPower_hibLocks[coreIdx]);
+}
+
+/*
+ *  ======== IpcPower_hibernateUnlock ========
+ */
+UInt IpcPower_hibernateUnlock()
+{
+    IArg hwiKey, swiKey;
+    UInt coreIdx = Core_getId();
+
+    hwiKey = Hwi_disable();
+    swiKey = Swi_disable();
+
+    if (IpcPower_hibLocks[coreIdx] > 0) {
+        IpcPower_hibLocks[coreIdx] -= 1;
+    }
+
+    Swi_restore(swiKey);
+    Hwi_restore(hwiKey);
+
+    return (IpcPower_hibLocks[coreIdx]);
+}
+
+/*
+ *  ======== IpcPower_canHibernate ========
+ */
+Bool IpcPower_canHibernate()
+{
+    if (IpcPower_hibLocks[0] || IpcPower_hibLocks[1]) {
+        return (FALSE);
+    }
+
+    return (TRUE);
 }

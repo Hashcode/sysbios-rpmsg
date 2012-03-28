@@ -46,6 +46,7 @@
 #include <xdc/runtime/Memory.h>
 #include <xdc/runtime/Main.h>
 
+#include <ti/sysbios/hal/Hwi.h>
 #include <ti/sysbios/knl/Swi.h>
 #include <ti/sysbios/family/c64p/tesla/Power.h>
 #include <ti/sysbios/family/c64p/tesla/Wugen.h>
@@ -56,6 +57,8 @@
 #include "_IpcPower.h"
 
 #define REG32(A)   (*(volatile UInt32 *) (A))
+
+static UInt32 IpcPower_hibLock;
 
 #define PDCCMD_REG      0x01810000
 #define SLEEP_MODE      0x15555
@@ -104,6 +107,8 @@ Void IpcPower_init()
         return;
     }
 
+    IpcPower_hibLock = 0;
+
     Swi_Params_init(&swiParams);
     swiParams.priority = Swi_numPriorities - 1; /* Max Priority Swi */
     suspendResumeSwi = Swi_create(IpcPower_suspendSwi, &swiParams, NULL);
@@ -141,4 +146,55 @@ Void IpcPower_idle()
     Wugen_enableEvent(MBX_DSP_IRQ);
 
     asm(" idle");
+}
+
+/*
+ *  ======== IpcPower_hibernateLock ========
+ */
+UInt IpcPower_hibernateLock()
+{
+    IArg hwiKey, swiKey;
+
+    hwiKey = Hwi_disable();
+    swiKey = Swi_disable();
+
+    IpcPower_hibLock++;
+
+    Swi_restore(swiKey);
+    Hwi_restore(hwiKey);
+
+    return (IpcPower_hibLock);
+}
+
+/*
+ *  ======== IpcPower_hibernateUnlock ========
+ */
+UInt IpcPower_hibernateUnlock()
+{
+    IArg hwiKey, swiKey;
+
+    hwiKey = Hwi_disable();
+    swiKey = Swi_disable();
+
+    if (IpcPower_hibLock > 0) {
+        IpcPower_hibLock--;
+    }
+
+    Swi_restore(swiKey);
+    Hwi_restore(hwiKey);
+
+    return (IpcPower_hibLock);
+}
+
+
+/*
+ *  ======== IpcPower_canHibernate ========
+ */
+Bool IpcPower_canHibernate()
+{
+    if (IpcPower_hibLock) {
+        return (FALSE);
+    }
+
+    return (TRUE);
 }
