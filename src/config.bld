@@ -37,6 +37,7 @@
 /* Exported tools locations to supercede defaults */
 var arm_cgtools_rootdir = java.lang.System.getenv("TMS470CGTOOLPATH");
 var c6x_cgtools_rootdir = java.lang.System.getenv("C6000CGTOOLPATH");
+var build_smp = java.lang.System.getenv("BUILD_SMP");
 
 /* Setup for C64T target */
 var C64T = xdc.useModule('ti.targets.elf.C64T');
@@ -56,19 +57,34 @@ M3.rootDir = arm_cgtools_rootdir;
 M3.ccOpts.suffix += " --embed_inline_assembly -ms -pds=71";
 M3.lnkOpts.prefix += " --retain=.resource_table";
 M3.lnkOpts.prefix += " --cinit_compression=off";
-/* Helps boot times, plus unmasks issues w/ uninit'd vars */
-M3.lnkOpts.prefix +=  " --zero_init=off";
+
+/* Default platforms for M3 in non-SMP mode */
+var regPlatforms = [
+                        "ti.platform.omap4430.core0",
+                        "ti.platform.omap4430.core1",
+                        "ti.platform.omap54xx.core0",
+                        "ti.platform.omap54xx.core1",
+                   ];
+
+/* Default platforms for M3 in SMP mode */
+var smpPlatforms = [
+                        "ti.platform.omap4430.ipu",
+                        "ti.platform.omap54xx.ipu",
+                   ];
 
 /* Set default platform and list of all interested platforms for M3 */
-M3.platforms = [
-                  "ti.platform.omap4430.core0",
-                  "ti.platform.omap4430.core1",
-                  "ti.platform.omap54xx.core0",
-                  "ti.platform.omap54xx.core1",
-               ];
+if (build_smp == null || build_smp == "0") {
+    /* Helps boot times, plus unmasks issues w/ uninit'd vars */
+    M3.lnkOpts.prefix +=  " --zero_init=off";
+    M3.platforms = regPlatforms;
+}
+else {
+    M3.platforms = smpPlatforms;
+}
 M3.platform = M3.platforms[0];
 
-if (c6x_cgtools_rootdir != null && c6x_cgtools_rootdir != "") {
+if (c6x_cgtools_rootdir != null && c6x_cgtools_rootdir != "" &&
+    (build_smp == null || build_smp == "0")) {
     Build.targets.$add(C64T);
 }
 if (arm_cgtools_rootdir != null && arm_cgtools_rootdir != "") {

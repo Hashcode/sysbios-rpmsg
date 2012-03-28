@@ -39,23 +39,39 @@ XDCVERSION      ?= xdctools_3_22_03_41
 BIOSVERSION     ?= bios_6_32_01_38
 IPCVERSION      ?= ipc_1_23_01_26
 
+ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
+include bldcfg.mk
+endif
+
 BIOSPROD        = $(REPO)/$(BIOSVERSION)
 IPCPROD         = $(REPO)/$(IPCVERSION)
 XDCPROD         = $(REPO)/$(XDCVERSION)
+
+BUILD_SMP       ?= 0
 
 export XDCROOT  = $(XDCPROD)
 export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all:
-	$(XDCROOT)/xdc -k -j $(j) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
+	$(XDCROOT)/xdc -k -j $(j) BUILD_SMP=$(BUILD_SMP) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
 	cd src/utils/elfload; make
-	cd src/utils; make
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP)
 
 clean:
 	$(XDCROOT)/xdc clean -Pr src
 	cd src/utils/elfload; make clean
-	cd src/utils; make clean
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP) clean
 	cd ../..
+
+smp_config:
+	@echo XDCVERSION=xdctools_3_23_01_43 > bldcfg.mk
+	@echo BIOSVERSION=smpbios_1_00_00_21_eng >> bldcfg.mk
+	@echo BUILD_SMP=1 >> bldcfg.mk
+
+unconfig:
+ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
+	@rm bldcfg.mk
+endif
 
 info: tools
 tools:
