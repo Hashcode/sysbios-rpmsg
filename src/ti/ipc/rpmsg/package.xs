@@ -39,6 +39,9 @@
 function init()
 {
     xdc.loadPackage('ti.pm');
+    var Semaphore = xdc.useModule('ti.sysbios.knl.Semaphore');
+    var semParams = new Semaphore.Params();
+    Program.global.MessageQCopy_semHandle = Semaphore.create(1, semParams);
 }
 
 /*
