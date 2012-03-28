@@ -79,7 +79,6 @@ xdc.useModule('ti.sysbios.xdcruntime.GateThreadSupport');
 var GateSwi   = xdc.useModule('ti.sysbios.gates.GateSwi');
 
 var Task          = xdc.useModule('ti.sysbios.knl.Task');
-Task.deleteTerminatedTasks = true;
 Task.common$.namedInstance = true;
 
 var Assert = xdc.useModule('xdc.runtime.Assert');
