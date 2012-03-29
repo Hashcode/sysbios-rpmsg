@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,10 +47,6 @@
 #include <ti/sysbios/knl/Semaphore.h>
 
 #include <ti/ipc/MultiProc.h>
-#include <ti/ipc/rpmsg/MessageQCopy.h>
-#include <ti/srvmgr/NameMap.h>
-#include <ti/resmgr/IpcResource.h>
-#include <ti/ipc/rpmsg/InterruptM3.h>
 
 #define RP_MSG_OFFLOAD_BASE 0xF0F0F0F0
 
