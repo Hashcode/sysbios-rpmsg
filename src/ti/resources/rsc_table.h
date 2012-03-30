@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,5 +65,6 @@
 #define TYPE_TRACE       4
 #define TYPE_ENTRYPOINT  5
 #define TYPE_CRASHDUMP   6
+#define TYPE_SUSPENDADDR 7
 
 #endif /* _RSC_TABLE_H_ */

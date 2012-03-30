@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011, Texas Instruments Incorporated
+ *  Copyright (c) 2011-2012, Texas Instruments Incorporated
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -68,6 +68,7 @@ enum rproc_fw_resource_type {
     RSC_TRACE       = 4,
     RSC_BOOTADDR    = 5,
     RSC_CRASHDUMP   = 6,
+    RSC_SUSPENDADDR = 7,
 };
 
 enum rproc_fw_section_type {

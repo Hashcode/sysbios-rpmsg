@@ -1,7 +1,7 @@
 /*
  *  Syslink-IPC for TI OMAP Processors
  *
- *  Copyright (c) 2008-2011, Texas Instruments Incorporated
+ *  Copyright (c) 2008-2012, Texas Instruments Incorporated
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -187,7 +187,24 @@ static void patchup_resources(struct rproc_fw_resource *res,
         case RSC_DEVICE:
             printf("found M/I/D/S resource, nothing to do\n");
             break;
+        case RSC_SUSPENDADDR:
+            printf("found SUSPADDR resource, looking for corresponding tag...\n");
 
+            for (i = 0; i < num_tags; i++) {
+                if (!strncmp(tag_name[i], "susp", 4)) {
+                    if (res->da == atoi(&tag_name[i][4])) {
+                        printf("...found tag %s\n", tag_name[i]);
+                        printf("patching address 0x%x\n", tag_addr[i]);
+                        res->da = tag_addr[i];
+                        break;
+                    }
+                }
+            }
+
+            if (i == num_tags) {
+                printf("...no tag found, ignoring resource\n");
+            }
+            break;
         default:
             fprintf(stderr, "unknown resource type %d\n", res->type);
             break;
