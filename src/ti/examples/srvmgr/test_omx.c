@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -256,12 +256,12 @@ Int main(Int argc, char* argv[])
     /* Some background ping testing tasks, used by rpmsg samples: */
     start_ping_tasks();
 
-#if 0  /* CORE0 */
+#if 0 /* DSP or CORE0 or IPU */
     /* Run a background task to test rpmsg_resmgr service */
     start_resmgr_task();
 #endif
 
-#if 0  /* CORE0 */
+#if 0  /* DSP or CORE0 or IPU */
     /* Run a background task to test hwspinlock */
     start_hwSpinlock_task();
 #endif
