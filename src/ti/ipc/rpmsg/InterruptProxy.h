@@ -37,7 +37,7 @@
 #ifndef ti_ipc_rpmsg_InterruptProxy__include
 #define ti_ipc_rpmsg_InterruptProxy__include
 
-#if defined (__cplusplus)
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -45,38 +45,46 @@ extern "C" {
 
 #define INVALIDPAYLOAD       (0xFFFFFFFF)
 
+#if defined(M3_ONLY)
+#include <ti/ipc/rpmsg/InterruptM3.h>
 
-/*!
- *  ======== InterruptProxy_intEnable ========
- *  Enable remote processor interrupt
+/*
+ *************************************************************************
+ *                      M3 Interrupt Proxy Macros
+ *************************************************************************
  */
-Void InterruptProxy_intEnable();
 
-/*!
- *  ======== InterruptProxy_intDisable ========
- *  Disable remote processor interrupt
+#define InterruptProxy_intEnable        InterruptM3_intEnable
+
+#define InterruptProxy_intDisable       InterruptM3_intDisable
+
+#define InterruptProxy_intRegister      InterruptM3_intRegister
+
+#define InterruptProxy_intSend          InterruptM3_intSend
+
+#define InterruptProxy_intClear         InterruptM3_intClear
+#endif
+
+#if defined(DSP)
+#include <ti/ipc/rpmsg/InterruptDsp.h>
+
+/*
+ *************************************************************************
+ *                      DSP Interrupt Proxy Macros
+ *************************************************************************
  */
-Void InterruptProxy_intDisable();
+#define InterruptProxy_intEnable        InterruptDsp_intEnable
 
-/*!
- *  ======== InterruptProxy_intRegister ========
- *  Register a Hwi function for the remote processor interrupt
- */
-Void InterruptProxy_intRegister(Hwi_FuncPtr fxn);
+#define InterruptProxy_intDisable       InterruptDsp_intDisable
 
-/*!
- *  ======== InterruptProxy_intSend ========
- *  Send interrupt to the remote processor
- */
-Void InterruptProxy_intSend(UInt16 remoteProcId,  UArg arg);
+#define InterruptProxy_intRegister      InterruptDsp_intRegister
 
-/*!
- *  ======== InterruptProxy_intClear ========
- *  Clear interrupt
- */
-UInt InterruptProxy_intClear();
+#define InterruptProxy_intSend          InterruptDsp_intSend
 
-#if defined (__cplusplus)
+#define InterruptProxy_intClear         InterruptDsp_intClear
+#endif
+
+#if defined(__cplusplus)
 }
 #endif /* defined (__cplusplus) */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 
 #include <ti/ipc/MultiProc.h>
 
-#include "InterruptM3.h"
+#include <ti/ipc/rpmsg/InterruptM3.h>
 
 /* Register access method. */
 #define REG16(A)   (*(volatile UInt16 *) (A))

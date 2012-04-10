@@ -86,6 +86,9 @@ libArray.push(
             "VirtQueue",
             "InterruptDsp",
         ],
+        libAttrs: {
+            defs: " -DDSP"
+        },
         isas: [ "64T" ],
     }
 );

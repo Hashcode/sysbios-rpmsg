@@ -42,7 +42,7 @@
 
 #include <ti/ipc/MultiProc.h>
 
-#include "InterruptDsp.h"
+#include <ti/ipc/rpmsg/InterruptDsp.h>
 
 /* Register access method. */
 #define REG16(A)   (*(volatile UInt16 *) (A))
@@ -75,37 +75,6 @@
 Hwi_FuncPtr userFxn = NULL;
 
 Void InterruptDsp_isr(UArg arg);
-
-
-/*
- *************************************************************************
- *                      Proxy functions
- *************************************************************************
- */
-Void InterruptProxy_intEnable()
-{
-    InterruptDsp_intEnable();
-}
-
-Void InterruptProxy_intDisable()
-{
-    InterruptDsp_intDisable();
-}
-
-Void InterruptProxy_intRegister(Hwi_FuncPtr fxn)
-{
-    InterruptDsp_intRegister(fxn);
-}
-
-Void InterruptProxy_intSend(UInt16 remoteProcId, UArg arg)
-{
-    InterruptDsp_intSend(remoteProcId, arg);
-}
-
-UInt InterruptProxy_intClear()
-{
-    return InterruptDsp_intClear();
-}
 
 /*
  *************************************************************************
