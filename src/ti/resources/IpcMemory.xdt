@@ -92,6 +92,16 @@
 #define IPU_MEM_IPC_VRING       0xA0000000
 #define IPU_MEM_IPC_DATA        0x9F000000
 
+#define IPU_MEM_IPC_VRING_SIZE  SZ_1M
+#define IPU_MEM_IPC_DATA_SIZE   SZ_1M
+#define IPU_MEM_TEXT_SIZE       (SZ_1M * 6)
+#ifdef OMAP5
+#define IPU_MEM_DATA_SIZE       (SZ_1M * 156)
+#else
+#define IPU_MEM_DATA_SIZE       (SZ_1M * 96)
+#endif
+#define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 90)
+
 /*
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
  * PHYS_MEM_IPC_VRING & PHYS_MEM_IPC_DATA MUST be together.
@@ -139,20 +149,15 @@ ti_resources_IpcMemory_Resource resources[] = {
        0, "IPU_IVAHD_SL2" },
     /* IPU_MEM_IPC_VRING should be first irrespective of static or dynamic
      * carveout. */
-    { TYPE_CARVEOUT, IPU_MEM_IPC_VRING, 0, PHYS_MEM_IPC_VRING, 0, SZ_1M,
-       0, "IPU_MEM_IPC_VRING" },
-    { TYPE_CARVEOUT, IPU_MEM_IPC_DATA, 0, PHYS_MEM_IPC_DATA, 0, SZ_1M,
-       0, "IPU_MEM_IPC_DATA" },
-    { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, SZ_1M * 6,
+    { TYPE_CARVEOUT, IPU_MEM_IPC_VRING, 0, PHYS_MEM_IPC_VRING, 0,
+       IPU_MEM_IPC_VRING_SIZE, 0, "IPU_MEM_IPC_VRING" },
+    { TYPE_CARVEOUT, IPU_MEM_IPC_DATA, 0, PHYS_MEM_IPC_DATA, 0,
+       IPU_MEM_IPC_DATA_SIZE, 0, "IPU_MEM_IPC_DATA" },
+    { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, IPU_MEM_TEXT_SIZE,
        0, "IPU_MEM_TEXT" },
-#ifdef OMAP5
-    { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 156,
+    { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, IPU_MEM_DATA_SIZE,
        0, "IPU_MEM_DATA" },
-#else
-    { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 96,
-       0, "IPU_MEM_DATA" },
-#endif
-    { TYPE_CARVEOUT, IPU_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, SZ_1M * 90,
+    { TYPE_CARVEOUT, IPU_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, IPU_MEM_IOBUFS_SIZE,
        0, "IPU_MEM_IOBUFS" },
 };
 
@@ -203,6 +208,7 @@ UInt32 resourcesLen = sizeof(resources) / sizeof(*resources);
 #define DSP_MEM_TEXT_SIZE       SZ_512K
 #define DSP_MEM_DATA_SIZE       SZ_512K
 #define DSP_MEM_HEAP_SIZE       SZ_2M
+#define DSP_MEM_IOBUFS_SIZE     (SZ_1M * 90)
 
 /*
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
@@ -253,7 +259,7 @@ ti_resources_IpcMemory_Resource resources[] = {
        0, "DSP_MEM_DATA" },
     { TYPE_CARVEOUT, DSP_MEM_HEAP, 0, PHYS_MEM_HEAP, 0, DSP_MEM_HEAP_SIZE,
        0, "DSP_MEM_HEAP" },
-    { TYPE_CARVEOUT, DSP_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, SZ_1M * 90,
+    { TYPE_CARVEOUT, DSP_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, DSP_MEM_IOBUFS_SIZE,
        0, "DSP_MEM_IOBUFS" },
 };
 
