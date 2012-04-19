@@ -40,9 +40,6 @@
 #include <xdc/cfg/global.h>
 #include <xdc/runtime/System.h>
 
-#include <ti/ipc/MultiProc.h>
-#include <ti/sysbios/knl/Semaphore.h>
-#include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
 
 #include <ti/grcm/RcmTypes.h>
@@ -52,21 +49,19 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 #include <ti/ipc/rpmsg/MessageQCopy.h>
-#include <ti/ipc/rpmsg/VirtQueue.h>
 #include "rpmsg_omx.h"
 #include "NameMap.h"
 #include "ServiceMgr.h"
 
-/* Hard coded to match Host side, but can be moved into the BIOS resource tbl */
-#define  SERVICE_MGR_PORT   60
 
 #define  MAX_NAMELEN       64
 
 /* This artificially limits the number of service instances on this core: */
 #define  MAX_TUPLES        256
 #define  FREE_TUPLE_KEY    0xFFFFFFFF
+
+#define  MAX_SERVICES      4
 
 /* ServiceMgr disconnect hook function */
 static ServiceMgr_disconnectFuncPtr ServiceMgr_disconnectUserFxn = NULL;
@@ -85,13 +80,20 @@ struct Tuple {
 };
 struct Tuple Tuples[MAX_TUPLES];
 
+typedef struct {
+    Task_FuncPtr    fxn;
+    Char            name[MAX_NAMELEN];
+    Task_Params     params;
+    UInt16          reserved;
+    Bool            taken;
+} ServiceMgr_ServiceTask;
 
-void serviceMgrTaskFxn(UArg arg0, UArg arg1);
+static ServiceMgr_ServiceTask serviceTasks[MAX_SERVICES];
+
 
 Void ServiceMgr_init()
 {
     static Int  curInit = 0;
-    Task_Params params;
     UInt        i;
 
     if (curInit++ != 0) {
@@ -108,11 +110,61 @@ Void ServiceMgr_init()
        Tuples[i].key = FREE_TUPLE_KEY;
     }
 
-    /* Create our ServiceMgr Thread: */
-    Task_Params_init(&params);
-    params.instance->name = "ServiceMgr";
-    params.priority = 1;   /* Lowest priority thread */
-    Task_create(serviceMgrTaskFxn, &params, NULL);
+    for (i = 0; i < MAX_SERVICES; i++) {
+        serviceTasks[i].taken = FALSE;
+        serviceTasks[i].fxn = NULL;
+        serviceTasks[i].reserved = (UInt16) -1;
+    }
+}
+
+UInt ServiceMgr_start(UInt16 reserved)
+{
+    UInt        i;
+    UInt        count = 0;
+    static Bool started = FALSE;
+
+    if (started) {
+        return 0;
+    }
+
+    for (i = 0; (i < MAX_SERVICES) && (serviceTasks[i].taken); i++) {
+        Task_create(serviceTasks[i].fxn, &serviceTasks[i].params, NULL);
+        count++;
+    }
+
+    return (count);
+}
+
+Bool ServiceMgr_registerSrvTask(UInt16 reserved, Task_FuncPtr func,
+                                Task_Params *taskParams)
+{
+    UInt                    i;
+    Bool                    found = FALSE;
+    ServiceMgr_ServiceTask  *st;
+    Task_Params             *params;
+
+    /* Search the array for a free slot */
+    for (i = 0; (i < MAX_SERVICES) && (found == FALSE); i++) {
+        if (!serviceTasks[i].taken) {
+            st = &serviceTasks[i];
+            st->fxn = func;
+            strcpy(st->name, taskParams->instance->name);
+
+            /* Deal with the Task_Params to avoid IInstance mismatch */
+            params = &st->params;
+            Task_Params_init(params);
+            memcpy((Void *)(&params->arg0), &taskParams->arg0,
+                        sizeof(*params) - sizeof(Void *));
+            params->instance->name = st->name;
+
+            st->reserved = reserved;
+            st->taken = TRUE;
+            found = TRUE;
+            break;
+        }
+    }
+
+    return (found);
 }
 
 Bool ServiceMgr_register(String name, RcmServer_Params  *rcmServerParams)
@@ -126,7 +178,7 @@ Bool ServiceMgr_register(String name, RcmServer_Params  *rcmServerParams)
                        MAX_NAMELEN );
     }
     else {
-        /* Search the array for a free slot: */
+        /* Search the array for a free slot */
         for (i = 0; (i < ServiceMgr_NUMSERVICETYPES) && (found == FALSE); i++) {
             if (!serviceDefs[i].taken) {
                 sd = &serviceDefs[i];
@@ -223,7 +275,7 @@ static Bool removeTuple(UInt32 key, UInt32 * value)
     return(found);
 }
 
-static UInt32 createService(Char * name, UInt32 * endpt)
+UInt32 ServiceMgr_createService(Char * name, UInt32 * endpt)
 {
     Int i;
     Int status = 0;
@@ -279,7 +331,7 @@ static UInt32 createService(Char * name, UInt32 * endpt)
 }
 
 
-static UInt32 deleteService(UInt32 addr)
+UInt32 ServiceMgr_deleteService(UInt32 addr)
 {
     Int status = 0;
     RcmServer_Handle  rcmSrvHandle;
@@ -309,104 +361,4 @@ static UInt32 deleteService(UInt32 addr)
     System_printf("deleteService: removed RcmServer at endpoint: %d\n", addr);
 
     return OMX_SUCCESS;
-}
-
-void serviceMgrTaskFxn(UArg arg0, UArg arg1)
-{
-    MessageQCopy_Handle msgq;
-    UInt32 local;
-    UInt32 remote;
-    Char msg[HDRSIZE + sizeof(struct omx_connect_req)];
-    struct omx_msg_hdr * hdr = (struct omx_msg_hdr *)msg;
-    struct omx_connect_rsp * rsp = (struct omx_connect_rsp *)hdr->data;
-    struct omx_connect_req * req = (struct omx_connect_req *)hdr->data;
-    struct omx_disc_req * disc_req = (struct omx_disc_req *)hdr->data;
-    struct omx_disc_rsp * disc_rsp = (struct omx_disc_rsp *)hdr->data;
-    UInt16 dstProc;
-    UInt16 len;
-    UInt32 newAddr = 0;
-
-
-#ifdef BIOS_ONLY_TEST
-    dstProc = MultiProc_self();
-#else
-    dstProc = MultiProc_getId("HOST");
-#endif
-
-    MessageQCopy_init(dstProc);
-
-    msgq = MessageQCopy_create(SERVICE_MGR_PORT, &local);
-
-    System_printf("serviceMgr: started on port: %d\n", SERVICE_MGR_PORT);
-
-#ifdef SMP
-    NameMap_register("rpmsg-omx1", SERVICE_MGR_PORT);
-    System_printf("serviceMgr: sending BOOTINIT_DONE\n");
-    VirtQueue_postInitDone();
-#else
-    if (MultiProc_self() == MultiProc_getId("CORE0")) {
-        NameMap_register("rpmsg-omx0", SERVICE_MGR_PORT);
-    }
-    if (MultiProc_self() == MultiProc_getId("CORE1")) {
-        NameMap_register("rpmsg-omx1", SERVICE_MGR_PORT);
-    }
-    if (MultiProc_self() == MultiProc_getId("DSP")) {
-        NameMap_register("rpmsg-omx2", SERVICE_MGR_PORT);
-    }
-
-    if ((MultiProc_self() == MultiProc_getId("CORE1")) ||
-        (MultiProc_self() == MultiProc_getId("DSP"))) {
-        System_printf("serviceMgr: Proc#%d sending BOOTINIT_DONE\n",
-                        MultiProc_self());
-        VirtQueue_postInitDone();
-    }
-#endif
-
-    while (1) {
-       MessageQCopy_recv(msgq, (Ptr)msg, &len, &remote, MessageQCopy_FOREVER);
-       System_printf("serviceMgr: received msg type: %d from addr: %d\n",
-                      hdr->type, remote);
-       switch (hdr->type) {
-           case OMX_CONN_REQ:
-            /* This is a request to create a new service, and return
-             * it's connection endpoint.
-             */
-            System_printf("serviceMgr: CONN_REQ: len: %d, name: %s\n",
-                 hdr->len, req->name);
-
-            rsp->status = createService(req->name, &newAddr);
-
-            hdr->type = OMX_CONN_RSP;
-            rsp->addr = newAddr;
-            hdr->len = sizeof(struct omx_connect_rsp);
-            len = HDRSIZE + hdr->len;
-            break;
-
-           case OMX_DISC_REQ:
-            /* Destroy the service instance at given service addr: */
-            System_printf("serviceMgr: OMX_DISCONNECT: len %d, addr: %d\n",
-                 hdr->len, disc_req->addr);
-
-            disc_rsp->status = deleteService(disc_req->addr);
-
-            /* currently, no response expected from rpmsg_omx: */
-            continue;
-#if 0       // rpmsg_omx is not listening for this ... yet.
-            hdr->type = OMX_DISC_RSP;
-            hdr->len = sizeof(struct omx_disc_rsp);
-            len = HDRSIZE + hdr->len;
-            break;
-#endif
-
-           default:
-            System_printf("unexpected msg type: %d\n", hdr->type);
-            hdr->type = OMX_NOTSUPP;
-            break;
-       }
-
-       System_printf("serviceMgr: Replying with msg type: %d to addr: %d "
-                      " from: %d\n",
-                      hdr->type, remote, local);
-       MessageQCopy_send(dstProc, remote, local, msg, len);
-    }
 }
