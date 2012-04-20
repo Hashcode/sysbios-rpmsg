@@ -38,7 +38,7 @@ metaonly module Platform inherits xdc.platform.IPlatform {
 
     config ti.platforms.generic.Platform.Instance plat =
         ti.platforms.generic.Platform.create("plat", {
-            clockRate:      200.0,
+            clockRate:      212.8,
             catalogName:    "ti.catalog.arm.cortexm3",
             deviceName:     "OMAP4430",
             externalMemoryMap: [
