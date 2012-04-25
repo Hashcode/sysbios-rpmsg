@@ -192,6 +192,7 @@ Int IpcResource_request(IpcResource_Handle handle,
     UInt32 remote;
     Int status;
     Char *name;
+    IpcResource_Processor rproc;
 
     if (!handle || !resHandle) {
         System_printf("IpcResource_request: Invalid paramaters\n");
@@ -213,6 +214,19 @@ Int IpcResource_request(IpcResource_Handle handle,
 
     strncpy(rdata->resName, name, 16);
     req->reqType = IpcResource_ReqType_ALLOC;
+
+    switch(type) {
+    case IpcResource_TYPE_IPU:
+    case IpcResource_TYPE_DSP:
+        strcpy(rproc.name, rdata->resName);
+        strncpy(rdata->resName, "rproc", 16);
+        resParams = &rproc;
+        rlen = sizeof(rproc);
+        break;
+
+    default:
+        break;
+    }
 
     memcpy(rdata->resParams, resParams, rlen);
     Semaphore_pend(handle->sem, BIOS_WAIT_FOREVER);

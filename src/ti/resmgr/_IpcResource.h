@@ -98,6 +98,10 @@ typedef struct {
     Char   data[];
 } IpcResource_Ack;
 
+typedef struct {
+    Char name[16];
+} IpcResource_Processor;
+
 /*!
  *  @brief  IpcResource_Object type
  */
@@ -123,8 +127,8 @@ static Char * IpcResource_names[] = {
     "regulator",
     "gpio",
     "omap-sdma",
-    "ipu",
-    "dsp",
+    "ipu_c0",
+    "dsp_c0",
     "i2c"
 };
 
