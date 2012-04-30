@@ -49,6 +49,7 @@ BIOS.libType    = BIOS.LibType_Custom;
 
 xdc.loadPackage('ti.ipc.rpmsg');
 xdc.loadPackage('ti.srvmgr');
+xdc.useModule('ti.srvmgr.omx.OmxSrvMgr');
 xdc.loadPackage('ti.resmgr');
 
 /* Enable Memory Translation module that operates on the BIOS Resource Table */
