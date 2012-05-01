@@ -266,6 +266,9 @@ Int main(Int argc, char* argv[])
     start_hwSpinlock_task();
 #endif
 
+    /* Start the ServiceMgr services */
+    ServiceMgr_start(0);
+
     BIOS_start();
 
     return (0);
