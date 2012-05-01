@@ -116,7 +116,7 @@ static void patchup_resources(struct rproc_fw_resource *res,
     res_end = (struct rproc_fw_resource *)((unsigned int)res + res_size);
 
     while (res < res_end) {
-        printf("resource: %d, da: %llx, pa: %llx, len: %d, name: %s\n",
+        printf("resource: %d, da: 0x%llx, pa: 0x%llx, len: 0x%8x, name: %s\n",
                 res->type, res->da, res->pa, res->len, res->name);
         switch (res->type) {
         case RSC_TRACE:
