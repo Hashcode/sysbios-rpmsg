@@ -101,5 +101,5 @@ elfload/genbase:
 	cd elfload; make
 
 clean:
-	@rm -f genbase readrprc wrints genextbin *.o $(DUCATI) $(TESLA) $(IPU) $(DSP)
+	@rm -f genbase readrprc wrints genextbin xdep *.o $(DUCATI) $(TESLA) $(IPU) $(DSP)
 	cd elfload; make clean

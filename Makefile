@@ -35,17 +35,16 @@ BIOSTOOLSROOT   ?= /usr/local
 REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
-XDCVERSION	    ?= xdctools_3_22_03_41
-BIOSVERSION	    ?= bios_6_32_01_38
-IPCVERSION	    ?= ipc_1_23_01_26
+XDCVERSION      ?= xdctools_3_22_03_41
+BIOSVERSION     ?= bios_6_32_01_38
+IPCVERSION      ?= ipc_1_23_01_26
 
-BIOSPROD	= $(REPO)/$(BIOSVERSION)
-IPCPROD		= $(REPO)/$(IPCVERSION)
-XDCDIST_TREE	= $(REPO)/$(XDCVERSION)
+BIOSPROD        = $(REPO)/$(BIOSVERSION)
+IPCPROD         = $(REPO)/$(IPCVERSION)
+XDCPROD         = $(REPO)/$(XDCVERSION)
 
-export XDCROOT	= $(XDCDIST_TREE)
-
-export XDCPATH	= $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
+export XDCROOT  = $(XDCPROD)
+export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all:
 	$(XDCROOT)/xdc -k -j $(j) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
@@ -61,7 +60,8 @@ clean:
 info: tools
 tools:
 	@echo "REPO   := $(REPO)"
-	@echo "XDC    := $(XDCDIST_TREE)"
+	@echo "XDC    := $(XDCPROD)"
 	@echo "BIOS   := $(BIOSPROD)"
 	@echo "IPC    := $(IPCPROD)"
 	@echo "ARMCGT := $(TMS470CGTOOLPATH)"
+	@echo "C6xCGT := $(C6000CGTOOLPATH)"
