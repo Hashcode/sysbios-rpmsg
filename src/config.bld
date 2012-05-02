@@ -74,3 +74,12 @@ if (c6x_cgtools_rootdir != null && c6x_cgtools_rootdir != "") {
 if (arm_cgtools_rootdir != null && arm_cgtools_rootdir != "") {
     Build.targets.$add(M3);
 }
+
+/* Eliminate profiles that aren't 'debug' or 'release' */
+for (var t = 0; t < Build.targets.length; t++) {
+    for (prof in Build.targets[t].profiles) {
+        if ((prof != "debug") && (prof != "release")) {
+            delete Build.targets[t].profiles[prof];
+        }
+    }
+}
