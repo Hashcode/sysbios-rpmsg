@@ -54,14 +54,9 @@ export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all:
 	$(XDCROOT)/xdc -k -j $(j) BUILD_SMP=$(BUILD_SMP) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
-	cd src/utils/elfload; make
-	cd src/utils; make BUILD_SMP=$(BUILD_SMP)
 
 clean:
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
-	cd src/utils/elfload; make clean
-	cd src/utils; make BUILD_SMP=$(BUILD_SMP) clean
-	cd ../..
 
 smp_config:
 	@echo BIOSVERSION=smpbios_1_00_00_21_eng >> bldcfg.mk
