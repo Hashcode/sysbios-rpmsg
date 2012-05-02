@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *  ======== InterruptM3.h ========
+ *  ======== InterruptIpu.h ========
  *  OMAP4430/Ducati Interrupt Manger
  */
 
@@ -40,30 +40,29 @@
 
 
 /*!
- *  ======== InterruptM3_intEnable ========
+ *  ======== InterruptIpu_intEnable ========
  *  Enable remote processor interrupt
  */
-Void InterruptM3_intEnable();
+Void InterruptIpu_intEnable();
 
 /*!
- *  ======== InterruptM3_intDisable ========
+ *  ======== InterruptIpu_intDisable ========
  */
-Void InterruptM3_intDisable();
+Void InterruptIpu_intDisable();
 
 /*!
- *  ======== InterruptM3_intRegister ========
+ *  ======== InterruptIpu_intRegister ========
  */
-Void InterruptM3_intRegister(Hwi_FuncPtr fxn);
+Void InterruptIpu_intRegister(Hwi_FuncPtr fxn);
 
 /*!
- *  ======== InterruptM3_intSend ========
+ *  ======== InterruptIpu_intSend ========
  *  Send interrupt to the remote processor
  */
-Void InterruptM3_intSend(UInt16 remoteProcId,  UArg arg);
-
+Void InterruptIpu_intSend(UInt16 remoteProcId,  UArg arg);
 
 /*!
- *  ======== InterruptM3_intClear ========
+ *  ======== InterruptIpu_intClear ========
  *  Clear interrupt
  */
-UInt InterruptM3_intClear();
+UInt InterruptIpu_intClear();

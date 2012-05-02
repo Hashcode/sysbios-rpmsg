@@ -67,7 +67,7 @@ libArray.push(
         sources: [
             "MessageQCopy",
             "VirtQueue",
-            "InterruptM3",
+            "InterruptIpu",
             "OffloadM3",
         ],
         libAttrs: {

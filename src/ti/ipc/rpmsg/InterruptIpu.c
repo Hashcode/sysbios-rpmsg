@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *  ======== Interrupt.c ========
- *  OMAP4430/Ducati Interrupt Manger
+ *  ======== InterruptIpu.c ========
+ *  IPU Interrupt Manger
  */
 
 #include <xdc/std.h>
@@ -44,7 +44,7 @@
 
 #include <ti/ipc/MultiProc.h>
 
-#include <ti/ipc/rpmsg/InterruptM3.h>
+#include <ti/ipc/rpmsg/InterruptIpu.h>
 
 /* Register access method. */
 #define REG16(A)   (*(volatile UInt16 *) (A))
@@ -84,7 +84,7 @@
 
 Hwi_FuncPtr userFxn = NULL;
 
-Void InterruptM3_isr(UArg arg);
+Void InterruptIpu_isr(UArg arg);
 
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
@@ -98,10 +98,10 @@ static UInt16 dspProcId;
  */
 
 /*!
- *  ======== InterruptM3_intEnable ========
+ *  ======== InterruptIpu_intEnable ========
  *  Enable remote processor interrupt
  */
-Void InterruptM3_intEnable()
+Void InterruptIpu_intEnable()
 {
     /*
      *  If the remote processor communicates via mailboxes, we should enable
@@ -117,10 +117,10 @@ Void InterruptM3_intEnable()
 }
 
 /*!
- *  ======== InterruptM3_intDisable ========
+ *  ======== InterruptIpu_intDisable ========
  *  Disables remote processor interrupt
  */
-Void InterruptM3_intDisable()
+Void InterruptIpu_intDisable()
 {
     /*
      *  If the remote processor communicates via mailboxes, we should disable
@@ -136,9 +136,9 @@ Void InterruptM3_intDisable()
 }
 
 /*!
- *  ======== InterruptM3_intRegister ========
+ *  ======== InterruptIpu_intRegister ========
  */
-Void InterruptM3_intRegister(Hwi_FuncPtr fxn)
+Void InterruptIpu_intRegister(Hwi_FuncPtr fxn)
 {
     Hwi_Params  hwiAttrs;
     UInt        key;
@@ -157,34 +157,34 @@ Void InterruptM3_intRegister(Hwi_FuncPtr fxn)
 
     if (Core_getId() == 0) {
         Hwi_create(M3INT_MBX,
-                   (Hwi_FuncPtr)InterruptM3_isr,
+                   (Hwi_FuncPtr)InterruptIpu_isr,
                    &hwiAttrs,
                    NULL);
-        /* InterruptM3_intEnable won't enable the Hwi */
+        /* InterruptIpu_intEnable won't enable the Hwi */
         Hwi_enableInterrupt(M3INT_MBX);
     }
     else {
         Hwi_create(M3INT,
-                   (Hwi_FuncPtr)InterruptM3_isr,
+                   (Hwi_FuncPtr)InterruptIpu_isr,
                    &hwiAttrs,
                    NULL);
     }
 
     /* Enable the mailbox interrupt to the M3 core */
-    InterruptM3_intEnable();
+    InterruptIpu_intEnable();
 
     /* Restore global interrupts */
     Hwi_restore(key);
 }
 
 /*!
- *  ======== InterruptM3_intSend ========
+ *  ======== InterruptIpu_intSend ========
  *  Send interrupt to the remote processor
  */
-Void InterruptM3_intSend(UInt16 remoteProcId, UArg arg)
+Void InterruptIpu_intSend(UInt16 remoteProcId, UArg arg)
 {
     Log_print2(Diags_USER1,
-        "InterruptM3_intSend: Sending interrupt with payload 0x%x to proc #%d",
+        "InterruptIpu_intSend: Sending interrupt with payload 0x%x to proc #%d",
         (IArg)arg, (IArg)remoteProcId);
     if (remoteProcId == sysm3ProcId) {
         while(REG32(MAILBOX_FIFOSTATUS(HOST_TO_SYSM3_MBX)));
@@ -212,10 +212,10 @@ Void InterruptM3_intSend(UInt16 remoteProcId, UArg arg)
 }
 
 /*!
- *  ======== InterruptM3_intClear ========
+ *  ======== InterruptIpu_intClear ========
  *  Clear interrupt and return payload
  */
-UInt InterruptM3_intClear()
+UInt InterruptIpu_intClear()
 {
     UInt arg = INVALIDPAYLOAD;
 
@@ -259,17 +259,17 @@ UInt InterruptM3_intClear()
 }
 
 /*!
- *  ======== InterruptM3_isr ========
+ *  ======== InterruptIpu_isr ========
  *  Calls the function supplied by the user in intRegister
  */
-Void InterruptM3_isr(UArg arg)
+Void InterruptIpu_isr(UArg arg)
 {
     UArg payload;
 
-    payload = InterruptM3_intClear();
+    payload = InterruptIpu_intClear();
     if (payload != INVALIDPAYLOAD) {
         Log_print1(Diags_USER1,
-            "InterruptM3_isr: Interrupt received, payload = 0x%x\n",
+            "InterruptIpu_isr: Interrupt received, payload = 0x%x\n",
             (IArg)payload);
         userFxn(payload);
     }

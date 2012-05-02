@@ -46,7 +46,7 @@ extern "C" {
 #define INVALIDPAYLOAD       (0xFFFFFFFF)
 
 #if defined(M3_ONLY)
-#include <ti/ipc/rpmsg/InterruptM3.h>
+#include <ti/ipc/rpmsg/InterruptIpu.h>
 
 /*
  *************************************************************************
@@ -54,15 +54,15 @@ extern "C" {
  *************************************************************************
  */
 
-#define InterruptProxy_intEnable        InterruptM3_intEnable
+#define InterruptProxy_intEnable        InterruptIpu_intEnable
 
-#define InterruptProxy_intDisable       InterruptM3_intDisable
+#define InterruptProxy_intDisable       InterruptIpu_intDisable
 
-#define InterruptProxy_intRegister      InterruptM3_intRegister
+#define InterruptProxy_intRegister      InterruptIpu_intRegister
 
-#define InterruptProxy_intSend          InterruptM3_intSend
+#define InterruptProxy_intSend          InterruptIpu_intSend
 
-#define InterruptProxy_intClear         InterruptM3_intClear
+#define InterruptProxy_intClear         InterruptIpu_intClear
 #endif
 
 #if defined(DSP)
