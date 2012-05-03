@@ -443,6 +443,14 @@ Void VirtQueue_isr(UArg msg)
     }
     else {
 #endif
+        /* Don't let unknown messages to pass as a virtqueue index */
+        if (msg >= NUM_QUEUES) {
+            /* Adding print here deliberately, we should never see this */
+            System_printf("VirtQueue_isr: Invalid mailbox message 0x%x "
+                          "received\n", msg);
+            return;
+        }
+
         vq = queueRegistry[msg];
         if (vq) {
             vq->callback(vq);
