@@ -298,9 +298,9 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
 {
     UInt16 head;
 
-    Log_print5(Diags_USER1, "getAvailBuf vq: 0x%x %d %d %d 0x%x\n", (IArg)vq,
-        vq->last_avail_idx, vq->vring.avail->idx, vq->vring.num,
-        (IArg)&vq->vring.avail);
+    Log_print6(Diags_USER1, "getAvailBuf vq: 0x%x %d %d %d 0x%x 0x%x\n",
+        (IArg)vq, vq->last_avail_idx, vq->vring.avail->idx, vq->vring.num,
+        (IArg)&vq->vring.avail, (IArg)vq->vring.avail);
 
     /* There's nothing available? */
     if (vq->last_avail_idx == vq->vring.avail->idx) {
@@ -313,7 +313,7 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
      * Grab the next descriptor number they're advertising, and increment
      * the index we've seen.
      */
-    head = vq->last_avail_idx++ % vq->vring.num;
+    head = vq->vring.avail->ring[vq->last_avail_idx++ % vq->vring.num];
 
     *buf = mapPAtoVA(vq->vring.desc[head].addr);
 
