@@ -93,6 +93,18 @@ extern "C" {
 #endif
 
 /*!
+ *  @brief  VirtQueue Ids for the basic IPC transport rings.
+ */
+#define ID_SELF_TO_A9      0
+#define ID_A9_TO_SELF      1
+
+/*!
+ *  @brief  Size of buffer being exchanged in the VirtQueue rings.
+ */
+#define RP_MSG_BUF_SIZE     (512)
+
+
+/*!
  *  @brief  a queue to register buffers for sending or receiving.
  */
 typedef struct VirtQueue_Object *VirtQueue_Handle;
@@ -111,11 +123,12 @@ typedef Void (*VirtQueue_callback)(VirtQueue_Handle);
  *
  *  @param[in]  callback  the clients callback function.
  *  @param[in]  procId    Processor ID associated with this VirtQueue.
+ *  @param[in]  vqId      VirtQueue ID for this VirtQueue.
  *
  *  @Returns    Returns a handle to a new initialized VirtQueue.
  */
-VirtQueue_Handle VirtQueue_create(VirtQueue_callback callback, UInt16 procId);
-
+VirtQueue_Handle VirtQueue_create(VirtQueue_callback callback, UInt16 procId,
+                                  Int vqId);
 
 /*!
  *  @brief      Notify other processor of new buffers in the queue.
@@ -179,6 +192,7 @@ Void *VirtQueue_getUsedBuf(VirtQueue_Handle vq);
  *
  *  @param[in]  vq        the VirtQueue.
  *  @param[out] buf       Pointer to location of available buffer;
+ *  @param[out] len       Length of the available buffer message.
  *
  *  @return     Returns a token used to identify the available buffer, to be
  *              passed back into VirtQueue_addUsedBuf();
@@ -186,7 +200,7 @@ Void *VirtQueue_getUsedBuf(VirtQueue_Handle vq);
  *
  *  @sa         VirtQueue_addUsedBuf
  */
-Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf);
+Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf, Int *len);
 
 /*!
  *  @brief      Add used buffer to virtqueue's used buffer list.
@@ -194,12 +208,13 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf);
  *
  *  @param[in]  vq        the VirtQueue.
  *  @param[in]  token     token of the buffer to be added to vring used list.
+ *  @param[in]  len       length of the message being added.
  *
  *  @return     Remaining capacity of queue or a negative error.
  *
  *  @sa         VirtQueue_getAvailBuf
  */
-Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 token);
+Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 token, Int len);
 
 /*!
  *  @brief      Post crash message to host mailbox
@@ -211,7 +226,9 @@ Void VirtQueue_postCrashToMailbox(Void);
  */
 Void VirtQueue_postInitDone(Void);
 
+
 #if defined (__cplusplus)
 }
 #endif /* defined (__cplusplus) */
+
 #endif /* ti_ipc_VirtQueue__include */

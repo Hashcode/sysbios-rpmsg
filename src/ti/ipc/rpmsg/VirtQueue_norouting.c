@@ -215,7 +215,7 @@ Void VirtQueue_kick(VirtQueue_Handle vq)
 /*!
  * ======== VirtQueue_addUsedBuf ========
  */
-Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 head)
+Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 head, Int len)
 {
     struct vring_used_elem *used;
 
@@ -229,7 +229,7 @@ Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 head)
     */
     used = &vq->vring.used->ring[vq->vring.used->idx % vq->vring.num];
     used->id = head;
-    used->len = RP_MSG_BUF_SIZE;
+    used->len = len;
 
     vq->vring.used->idx++;
 
@@ -282,7 +282,7 @@ Void *VirtQueue_getUsedBuf(VirtQueue_Object *vq)
 /*!
  * ======== VirtQueue_getAvailBuf ========
  */
-Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
+Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf, Int *len)
 {
     UInt16 head;
 
@@ -308,6 +308,7 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
     head = vq->last_avail_idx++ % vq->vring.num;
 
     *buf = mapPAtoVA(vq->vring.desc[head].addr);
+    *len = vq->vring.desc[head].len;
 
     return (head);
 }
@@ -405,7 +406,7 @@ Void VirtQueue_isr(UArg msg)
  * ======== VirtQueue_create ========
  */
 VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
-        UInt16 remoteProcId)
+                                   UInt16 remoteProcId, Int vqId)
 {
     VirtQueue_Object *vq;
     void *vringAddr;
@@ -419,7 +420,7 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     }
 
     vq->callback = callback;
-    vq->id = numQueues++;
+    vq->id = vqId;
     vq->procId = remoteProcId;
     vq->last_avail_idx = 0;
 
@@ -428,11 +429,11 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     }
 
     switch (vq->id) {
-        case ID_A9_TO_SYSM3:
+        case ID_SELF_TO_A9:
             /* A9 -> SYSM3 */
             vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE);
             break;
-        case ID_SYSM3_TO_A9:
+        case ID_A9_TO_SELF:
             /* SYSM3 */
             vringAddr = (struct vring *)((UInt)bufAddr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
