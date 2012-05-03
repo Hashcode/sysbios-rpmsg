@@ -77,11 +77,22 @@
 #include "virtio_ring.h"
 
 /* Used for defining the size of the virtqueue registry */
-#define NUM_QUEUES                      6
+#define NUM_QUEUES              6
 
 /* Predefined device addresses */
-#define RP_MSG_A9_SELF_VRING_DA         0xA0000000U
-#define RP_MSG_SELF_A9_VRING_DA         0xA0002000U
+#define IPC_MEM_VRING0          0xA0000000
+#define IPC_MEM_VRING1          0xA0004000
+#define IPC_MEM_VRING2          0xA0008000
+#define IPC_MEM_VRING3          0xA000c000
+
+/*
+ * Sizes of the virtqueues (expressed in number of buffers supported,
+ * and must be power of two)
+ */
+#define VQ0_SIZE                256
+#define VQ1_SIZE                256
+#define VQ2_SIZE                256
+#define VQ3_SIZE                256
 
 /*
  * enum - Predefined Mailbox Messages
@@ -125,7 +136,7 @@ enum {
 };
 
 #define DIV_ROUND_UP(n,d)   (((n) + (d) - 1) / (d))
-#define RP_MSG_NUM_BUFS     (256)
+#define RP_MSG_NUM_BUFS     (VQ0_SIZE) /* must be power of two */
 #define RP_MSG_BUF_SIZE     (512)
 #define RP_MSG_BUFS_SPACE   (RP_MSG_NUM_BUFS * RP_MSG_BUF_SIZE * 2)
 
@@ -173,8 +184,6 @@ typedef struct VirtQueue_Object {
     /* Will eventually be used to kick remote processor */
     UInt16                  procId;
 } VirtQueue_Object;
-
-static Ptr bufAddr = (Ptr)RP_MSG_A9_SELF_VRING_DA;
 
 static struct VirtQueue_Object *queueRegistry[NUM_QUEUES] = {NULL};
 
@@ -461,24 +470,21 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
         case ID_SYSM3_TO_A9:
         case ID_DSP_TO_A9:
             /* SYSM3/DSP -> A9 */
-            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE);
+            vringAddr = (struct vring *) IPC_MEM_VRING0;
             break;
         case ID_A9_TO_SYSM3:
         case ID_A9_TO_DSP:
             /* A9 -> SYSM3/DSP */
-            vringAddr = (struct vring *)((UInt)bufAddr +
-                    RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
+            vringAddr = (struct vring *) IPC_MEM_VRING1;
             break;
 #ifndef SMP
         case ID_APPM3_TO_A9:
             /* APPM3 -> A9 */
-            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE +
-                    RPMSG_IPC_MEM);
+            vringAddr = (struct vring *) IPC_MEM_VRING2;
             break;
         case ID_A9_TO_APPM3:
             /* A9 -> APPM3 */
-            vringAddr = (struct vring *)((UInt)bufAddr +
-                    RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE + RPMSG_IPC_MEM);
+            vringAddr = (struct vring *) IPC_MEM_VRING3;
             break;
 #endif
     }
