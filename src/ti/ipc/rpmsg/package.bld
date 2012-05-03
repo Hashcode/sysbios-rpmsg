@@ -38,6 +38,7 @@
 /* explicit references to global objects */
 var Build = xdc.useModule('xdc.bld.BuildEnvironment');
 var Pkg = xdc.useModule('xdc.bld.PackageContents');
+var smpBuild = java.lang.System.getenv("BUILD_SMP");
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
@@ -53,38 +54,57 @@ Pkg.otherFiles = [
 
 /* list of libraries to build */
 var libArray = new Array();
-/* rpmsg library for M3 target */
-libArray.push(
-    {
-        name: "ti.ipc.rpmsg",
-        sources: [
-            "MessageQCopy",
-            "VirtQueue",
-            "InterruptIpu",
-            "OffloadM3",
-        ],
-        libAttrs: {
-            defs: " -DM3_ONLY"
-        },
-        isas: [ "v7M" ],
-    }
-);
+if (smpBuild == "1") {
+    /* rpmsg library for IPU SMP target */
+    libArray.push(
+        {
+            name: "ti.ipc.rpmsg_smp",
+            sources: [
+                "MessageQCopy",
+                "VirtQueue",
+                "InterruptIpu",
+            ],
+            libAttrs: {
+                defs: " -DSMP"
+            },
+            isas: [ "v7M" ],
+        }
+    );
+}
+else {
+    /* rpmsg library for IPU non-SMP target */
+    libArray.push(
+        {
+            name: "ti.ipc.rpmsg",
+            sources: [
+                "MessageQCopy",
+                "VirtQueue",
+                "InterruptIpu",
+                "OffloadM3",
+            ],
+            libAttrs: {
+                defs: " -DM3_ONLY"
+            },
+            isas: [ "v7M" ],
+        }
+    );
 
-/* rpmsg library for DSP target */
-libArray.push(
-    {
-        name: "ti.ipc.rpmsg",
-        sources: [
-            "MessageQCopy",
-            "VirtQueue",
-            "InterruptDsp",
-        ],
-        libAttrs: {
-            defs: " -DDSP"
-        },
-        isas: [ "64T" ],
-    }
-);
+    /* rpmsg library for DSP target */
+    libArray.push(
+        {
+            name: "ti.ipc.rpmsg",
+            sources: [
+                "MessageQCopy",
+                "VirtQueue",
+                "InterruptDsp",
+            ],
+            libAttrs: {
+                defs: " -DDSP"
+            },
+            isas: [ "64T" ],
+        }
+    );
+}
 
 /* generate the package libraries */
 /* check if profile specified in XDCARGS */

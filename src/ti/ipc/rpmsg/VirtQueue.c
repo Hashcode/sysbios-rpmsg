@@ -187,9 +187,11 @@ static struct VirtQueue_Object *queueRegistry[NUM_QUEUES] = {NULL};
 static UInt16 hostProcId;
 static UInt16 dspProcId;
 static UInt16 sysm3ProcId;
+#ifndef SMP
 static UInt16 appm3ProcId;
+#endif
 
-#ifdef M3_ONLY
+#if defined(M3_ONLY) && !defined(SMP)
 extern Void OffloadM3_init();
 extern Int OffloadM3_processSysM3Tasks(UArg msg);
 #endif
@@ -348,7 +350,9 @@ Void VirtQueue_isr(UArg msg)
 
     Log_print1(Diags_USER1, "VirtQueue_isr received msg = 0x%x\n", msg);
 
+#ifndef SMP
     if (MultiProc_self() == sysm3ProcId || MultiProc_self() == dspProcId) {
+#endif
         switch(msg) {
             case (UInt)RP_MSG_MBOX_READY:
                 /* Start the initialization sequence */
@@ -376,17 +380,19 @@ Void VirtQueue_isr(UArg msg)
 
             case (UInt)RP_MSG_HIBERNATION:
                 if (IpcPower_canHibernate() == TRUE) {
+#ifndef SMP
                     /* Core0 should notify Core1 */
                     if (MultiProc_self() == sysm3ProcId) {
                         InterruptProxy_intSend(appm3ProcId,
                                                (UInt)(RP_MSG_HIBERNATION));
                     }
+#endif
                     IpcPower_suspend();
                 }
                 return;
 
             default:
-#ifdef M3_ONLY
+#if defined(M3_ONLY) && !defined(SMP)
                 /* Check and process any Inter-M3 Offload messages */
                 if (OffloadM3_processSysM3Tasks(msg))
                     return;
@@ -423,6 +429,7 @@ Void VirtQueue_isr(UArg msg)
                 /* Init is complete, treat payload as a VirtQueue message */
                 break;
         }
+#ifndef SMP
     }
     else if (msg & 0xFFFF0000) {
         if (msg == (UInt)RP_MSG_HIBERNATION) {
@@ -435,11 +442,14 @@ Void VirtQueue_isr(UArg msg)
         InterruptProxy_intSend(appm3ProcId, (UInt)msg);
     }
     else {
+#endif
         vq = queueRegistry[msg];
         if (vq) {
             vq->callback(vq);
         }
+#ifndef SMP
     }
+#endif
 }
 
 
@@ -465,9 +475,11 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     vq->procId = remoteProcId;
     vq->last_avail_idx = 0;
 
+#ifndef SMP
     if (MultiProc_self() == appm3ProcId) {
         vq->id += 2;
     }
+#endif
     if (MultiProc_self() == dspProcId) {
         vq->id += 4;
     }
@@ -484,6 +496,7 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
             vring_phys = (struct vring *)((UInt)buf_addr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
             break;
+#ifndef SMP
         case ID_APPM3_TO_A9:
             /* APPM3 -> A9 */
             vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE +
@@ -494,6 +507,7 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
             vring_phys = (struct vring *)((UInt)buf_addr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE + RPMSG_IPC_MEM);
             break;
+#endif
     }
 
     Log_print3(Diags_USER1,
@@ -523,7 +537,9 @@ Void VirtQueue_startup()
     hostProcId      = MultiProc_getId("HOST");
     dspProcId       = MultiProc_getId("DSP");
     sysm3ProcId     = MultiProc_getId("CORE0");
+#ifndef SMP
     appm3ProcId     = MultiProc_getId("CORE1");
+#endif
 
     /* Initilize the IpcPower module */
     IpcPower_init();
@@ -539,13 +555,15 @@ Void VirtQueue_startup()
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
         System_printf("VirtQueue_startup: buf_addr address of 0x%x received\n", buf_addr);
 
-#ifdef M3_ONLY
+#if defined(M3_ONLY) && !defined(SMP)
         OffloadM3_init();
 #endif
     }
+#ifndef SMP
     else if (MultiProc_self() == appm3ProcId) {
         InterruptProxy_intRegister(VirtQueue_isr);
     }
+#endif
 }
 
 /*!
