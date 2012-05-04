@@ -83,11 +83,10 @@ typedef enum IpcPower_SleepMode {
 
 static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
 {
-    IArg hwiKey, swiKey;
+    IArg hwiKey;
 
     /* Set/Restore the DeepSleep bit if no timer already in use */
     hwiKey = Hwi_disable();
-    swiKey = Swi_disable();
     switch (opt) {
         case IpcPower_SLEEP_MODE_WAKEUNLOCK:
             if (refWakeLockCnt) {
@@ -103,7 +102,6 @@ static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
             REG32(M3_SCR_REG) &= ~(1 << DEEPSLEEP_BIT);
             break;
     }
-    Swi_restore(swiKey);
     Hwi_restore(hwiKey);
 }
 
@@ -219,15 +217,13 @@ Void IpcPower_wakeUnlock()
  */
 UInt IpcPower_hibernateLock()
 {
-    IArg hwiKey, swiKey;
+    IArg hwiKey;
     UInt coreIdx = Core_getId();
 
     hwiKey = Hwi_disable();
-    swiKey = Swi_disable();
 
     IpcPower_hibLocks[coreIdx] += 1;
 
-    Swi_restore(swiKey);
     Hwi_restore(hwiKey);
 
     return (IpcPower_hibLocks[coreIdx]);
@@ -238,17 +234,15 @@ UInt IpcPower_hibernateLock()
  */
 UInt IpcPower_hibernateUnlock()
 {
-    IArg hwiKey, swiKey;
+    IArg hwiKey;
     UInt coreIdx = Core_getId();
 
     hwiKey = Hwi_disable();
-    swiKey = Swi_disable();
 
     if (IpcPower_hibLocks[coreIdx] > 0) {
         IpcPower_hibLocks[coreIdx] -= 1;
     }
 
-    Swi_restore(swiKey);
     Hwi_restore(hwiKey);
 
     return (IpcPower_hibLocks[coreIdx]);
