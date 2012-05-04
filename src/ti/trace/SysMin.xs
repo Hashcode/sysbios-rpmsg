@@ -14,6 +14,8 @@
  *  ======== SysMin.xs ========
  */
 
+var SysMin = this;
+
 /*
  *  ======== module$static$init ========
  */
@@ -27,6 +29,19 @@ function module$static$init(obj, params)
                        " configured is too large, maximum bufSize allowed is " +
                        "0x" + Number(segment.len).toString(16) + ". Decrement" +
                        " the bufSize appropriately.", this);
+    }
+
+    if (params.bufSize - 8 < this.LINEBUFSIZE) {
+        this.$logError("Buffer Size need to be larger than line buffer of size"
+                       + " = 0x" + Number(this.LINEBUFSIZE).toString(16), this);
+    }
+
+    obj.lineBuffers.length = 1;
+    for (var i = 0; i < obj.lineBuffers.length; i++) {
+        obj.lineBuffers[i].lineidx = 0;
+        for (var j = 0; j < this.LINEBUFSIZE; j++) {
+            obj.lineBuffers[i].linebuf[j] = 0;
+        }
     }
 
     obj.outbuf.length = params.bufSize - 8;
