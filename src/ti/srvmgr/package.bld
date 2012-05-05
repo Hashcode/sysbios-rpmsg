@@ -80,3 +80,7 @@ Pkg.otherFiles = [
     "rpmsg_omx.h",
     "omx_packet.h"
 ];
+
+/* clean lib folder */
+Pkg.generatedFiles.$add("lib/");
+Pkg.libDir = "package/";

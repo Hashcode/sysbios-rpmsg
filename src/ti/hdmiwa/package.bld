@@ -52,6 +52,11 @@ commonBld.buildLibs(objList, undefined, trgFilter, arguments);
 
 arguments = ["profile=release platform=all"];
 commonBld.buildLibs(objList, undefined, trgFilter, arguments);
+
 /* include source files in the release package */
 Pkg.attrs.exportSrc = false;
 Pkg.attrs.exportCfg = true;
+
+/* clean lib folder */
+Pkg.generatedFiles.$add("lib/");
+Pkg.libDir = "package/";

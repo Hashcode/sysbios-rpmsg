@@ -76,3 +76,7 @@ commonBld.buildLibs(objList_m3, undefined, trgFilter_m3, arguments);
 Pkg.otherFiles = [
     "IpcResource.h"
 ];
+
+/* clean lib folder */
+Pkg.generatedFiles.$add("lib/");
+Pkg.libDir = "package/";
