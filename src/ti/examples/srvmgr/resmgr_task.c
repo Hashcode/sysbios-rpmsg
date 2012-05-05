@@ -339,9 +339,9 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
 #endif
 
         auxclk.clkId = 1;
-        auxclk.clkRate = 24;
+        auxclk.clkRate = 24000000;
         auxclk.parentSrcClk = 0x2;
-        auxclk.parentSrcClkRate = 192;
+        auxclk.parentSrcClkRate = 192000000;
         System_printf("\nRequesting AuxClk #%d...", auxclk.clkId);
         status = IpcResource_request(ipcResHandle, &auxClkId,
                                  IpcResource_TYPE_AUXCLK, &auxclk);
@@ -367,9 +367,9 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
 
 #ifdef OMAP5xxx
         auxclk.clkId = 2;
-        auxclk.clkRate = 24;
+        auxclk.clkRate = 24000000;
         auxclk.parentSrcClk = 0x2;
-        auxclk.parentSrcClkRate = 192;
+        auxclk.parentSrcClkRate = 192000000;
         System_printf("Requesting AuxClk #%d...", auxclk.clkId);
         status = IpcResource_request(ipcResHandle, &auxClkId,
                                  IpcResource_TYPE_AUXCLK, &auxclk);
@@ -395,9 +395,9 @@ void IpcResourceTaskFxn(UArg arg0, UArg arg1)
 #endif
 
         auxclk.clkId = 3;
-        auxclk.clkRate = 24;
+        auxclk.clkRate = 24000000;
         auxclk.parentSrcClk = 0x2;
-        auxclk.parentSrcClkRate = 192;
+        auxclk.parentSrcClkRate = 192000000;
         System_printf("Requesting AuxClk #%d...", auxclk.clkId);
         status = IpcResource_request(ipcResHandle, &auxClkId,
                                  IpcResource_TYPE_AUXCLK, &auxclk);
