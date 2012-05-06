@@ -38,6 +38,7 @@
 /* explicit references to global objects */
 var Build = xdc.useModule('xdc.bld.BuildEnvironment');
 var Pkg = xdc.useModule('xdc.bld.PackageContents');
+var smpBuild = java.lang.System.getenv("BUILD_SMP");
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
@@ -61,19 +62,36 @@ Pkg.otherFiles = [
 
 /* list of libraries to build */
 var libArray = new Array();
-libArray.push(
-    {
-        name: "ti.grcm",
-        sources: [
-            "RcmServer.c",
-            "RcmUtils.c"
-        ],
-        libAttrs: {
-            defs: "-DRCM_ti_ipc"
+if (smpBuild == "1") {
+    /* grcm with ti.ipc for IPU SMP target */
+    libArray.push(
+        {
+            name: "ti.grcm_smp",
+            sources: [
+                "RcmServer.c",
+                "RcmUtils.c"
+            ],
+            libAttrs: {
+                defs: "-DRCM_ti_ipc"
+            }
         }
-    }
-);
-
+    );
+}
+else {
+    /* grcm with ti.ipc for regular targets */
+    libArray.push(
+        {
+            name: "ti.grcm",
+            sources: [
+                "RcmServer.c",
+                "RcmUtils.c"
+            ],
+            libAttrs: {
+                defs: "-DRCM_ti_ipc"
+            }
+        }
+    );
+}
 
 /* generate the package libraries */
 /* check if profile specified in XDCARGS */
