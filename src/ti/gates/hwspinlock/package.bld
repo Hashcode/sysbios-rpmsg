@@ -38,6 +38,7 @@
 /* explicit references to global objects */
 var Build = xdc.useModule('xdc.bld.BuildEnvironment');
 var Pkg = xdc.useModule('xdc.bld.PackageContents');
+var smpBuild = java.lang.System.getenv("BUILD_SMP");
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
@@ -49,14 +50,29 @@ Pkg.attrs.exportCfg = true;
 
 /* list of libraries to build */
 var libArray = new Array();
-libArray.push(
-    {
-        name: "ti.gates.hwspinlock",
-        sources: [
-            "HwSpinlock",
-        ],
-    }
-);
+if (smpBuild == "1") {
+    /* ti.gates.hwspinlock library for IPU SMP target */
+    libArray.push(
+        {
+            name: "ti.gates.hwspinlock_smp",
+            sources: [
+                "HwSpinlock.c"
+            ],
+            isas: [ "v7M" ],
+        }
+    );
+}
+else {
+    /* ti.gates.hwspinlock library for regular targets */
+    libArray.push(
+        {
+            name: "ti.gates.hwspinlock",
+            sources: [
+                "HwSpinlock",
+            ],
+        }
+    );
+}
 
 /* generate the package libraries */
 /* check if profile specified in XDCARGS */
