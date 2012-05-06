@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@ Pkg.makePrologue =
 
 /* add custom files to all releases */
 Pkg.attrs.exportSrc = false;
+Pkg.attrs.exportCfg = true;
 Pkg.otherFiles = [
     "RcmClient.h",
     "RcmServer.h",
@@ -60,11 +61,9 @@ Pkg.otherFiles = [
 
 /* list of libraries to build */
 var libArray = new Array();
-
-/* grcm with ti.ipc */
 libArray.push(
     {
-        name: "grcm",
+        name: "ti.grcm",
         sources: [
             "RcmServer.c",
             "RcmUtils.c"
@@ -75,23 +74,8 @@ libArray.push(
     }
 );
 
-/* grcm with ti.syslink (ARM only) */
-libArray.push(
-    {
-        name: "grcm_syslink",
-        sources: [
-            "RcmServer.c",
-            "RcmUtils.c"
-        ],
-        libAttrs: {
-            defs: "-DRCM_ti_syslink"
-        },
-        icw: [ "v5T" ]
-    }
-);
 
 /* generate the package libraries */
-var Pkg = xdc.useModule('xdc.bld.PackageContents');
 /* check if profile specified in XDCARGS */
 /* XDCARGS="... profile=debug ..." */
 var cmdlProf = (" " + arguments.join(" ") + " ").match(/ profile=([^ ]+) /);
