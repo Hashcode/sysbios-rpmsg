@@ -41,17 +41,11 @@ var Pkg = xdc.useModule('xdc.bld.PackageContents');
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
-Pkg.generatedFiles.$add("nocfg/");
-Pkg.generatedFiles.$add("nocfg.mak");
 Pkg.libDir = "package/";
-
-/* add custom makefiles to build model */
-Pkg.makePrologue =
-    "-include prologue.mak\n" +
-    "-include docs.mak\n";
 
 /* add custom files to all releases */
 Pkg.attrs.exportSrc = false;
+Pkg.attrs.exportCfg = true;
 Pkg.otherFiles = [
     "MessageQCopy.h",
     "InterruptProxy.h",
@@ -59,7 +53,6 @@ Pkg.otherFiles = [
 
 /* list of libraries to build */
 var libArray = new Array();
-
 /* rpmsg library for M3 target */
 libArray.push(
     {
@@ -94,7 +87,6 @@ libArray.push(
 );
 
 /* generate the package libraries */
-var Pkg = xdc.useModule('xdc.bld.PackageContents');
 /* check if profile specified in XDCARGS */
 /* XDCARGS="... profile=debug ..." */
 var cmdlProf = (" " + arguments.join(" ") + " ").match(/ profile=([^ ]+) /);
