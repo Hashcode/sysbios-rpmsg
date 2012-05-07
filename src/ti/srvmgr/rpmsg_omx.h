@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,6 @@
 #ifndef _RPMSGOMX_H_
 #define _RPMSGOMX_H_
 
-typedef unsigned int u32;
-
 /**
  * enum omx_msg_types - various message types currently supported
  *
@@ -70,13 +68,13 @@ typedef unsigned int u32;
  * the status from the OMX_DISC_REQ message.
  */
 enum omx_msg_types {
-  OMX_CONN_REQ = 0,
-  OMX_CONN_RSP = 1,
-  OMX_PING_MSG = 2,
-  OMX_PONG_MSG = 3,
-  OMX_DISC_REQ = 4,
-  OMX_RAW_MSG  = 5,
-  OMX_DISC_RSP = 6
+    OMX_CONN_REQ = 0,
+    OMX_CONN_RSP = 1,
+    OMX_PING_MSG = 2,
+    OMX_PONG_MSG = 3,
+    OMX_DISC_REQ = 4,
+    OMX_RAW_MSG  = 5,
+    OMX_DISC_RSP = 6
 };
 
 /**
@@ -91,10 +89,10 @@ enum omx_msg_types {
  * @OMX_FAIL: general failure.
  */
 enum omx_error_codes {
-  OMX_SUCCESS = 0,
-  OMX_NOTSUPP = 1,
-  OMX_NOMEM = 2,
-  OMX_FAIL  = 3
+    OMX_SUCCESS = 0,
+    OMX_NOTSUPP = 1,
+    OMX_NOMEM = 2,
+    OMX_FAIL  = 3
 };
 
 /**
@@ -108,30 +106,30 @@ enum omx_error_codes {
  * right after the standard rpmsg header ends).
  */
 struct omx_msg_hdr {
-  u32 type;
-  u32 flags;
-  u32 len;
-  char data[1];
+    UInt32 type;
+    UInt32 flags;
+    UInt32 len;
+    Char   data[1];
 };
 
 /* define this here because we cannot use data[0] in struct above */
-#define HDRSIZE (3 * sizeof(u32))
+#define HDRSIZE (3 * sizeof(UInt))
 
 struct omx_connect_req {
-  char name[48];
+    Char name[48];
 };
 
 struct omx_connect_rsp {
-  u32 status;
-  u32 addr;
+    UInt32 status;
+    UInt32 addr;
 };
 
 struct omx_disc_req {
-  u32 addr;
+    UInt32 addr;
 };
 
 struct omx_disc_rsp {
-  u32 status;
+    UInt32 status;
 };
 
 #endif
