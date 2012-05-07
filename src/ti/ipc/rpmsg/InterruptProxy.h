@@ -45,7 +45,7 @@ extern "C" {
 
 #define INVALIDPAYLOAD       (0xFFFFFFFF)
 
-#if defined(M3_ONLY)
+#if defined(M3_ONLY) || defined(SMP)
 #include <ti/ipc/rpmsg/InterruptIpu.h>
 
 /*
