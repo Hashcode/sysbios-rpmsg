@@ -35,37 +35,45 @@
  *
  */
 
-var Deh;
-var d_hwi;
-var d_task = null;
-var d_swi  = null;
-var d_task_hook = null;
-var d_swi_hook  = null;
-var Exception = null;
+var Deh = null;
+var MultiProc = null;
+var Hwi = null;
 
+/*
+ *  ======== module$use ========
+ */
 function module$use()
 {
+    var Swi = null;
+    var Task = null;
+    var Exception = null;
     var Settings = xdc.module("ti.sysbios.family.Settings");
 
+    Deh = this;
+
     xdc.useModule('xdc.runtime.System');
-    d_hwi = xdc.useModule(Settings.getDefaultHwiDelegate());
-    d_task = xdc.useModule('ti.sysbios.knl.Task');
-    d_swi  = xdc.useModule('ti.sysbios.knl.Swi');
-    d_task_hook = new d_task.HookSet;
-    d_swi_hook  = new d_swi.HookSet;
+
+    Hwi = xdc.useModule(Settings.getDefaultHwiDelegate());
+    MultiProc = xdc.module('ti.sdo.utils.MultiProc');
 
     if (Program.build.target.name.match(/C64T/)) {
         Exception = xdc.useModule("ti.sysbios.family.c64p.Exception");
-        Exception.exceptionHook = this.excHandlerDsp;
+        Exception.exceptionHook = Deh.excHandlerDsp;
     }
     else {
         xdc.useModule('ti.trace.StackDbg');
     }
 
-    Deh = this;
+    Swi = xdc.useModule('ti.sysbios.knl.Swi');
+    Task = xdc.useModule('ti.sysbios.knl.Task');
+
+    xdc.useModule('ti.deh.Watchdog');
 }
 
-function module$static$init(obj, params)
+/*
+ *  ======== module$static$init ========
+ */
+function module$static$init(mod, params)
 {
     var segname = Program.sectMap[".errorbuf"];
     var segment = Program.cpu.memoryMap[segname];
@@ -77,27 +85,19 @@ function module$static$init(obj, params)
                        " the bufSize appropriately.", this);
     }
 
-    obj.outbuf.length = params.bufSize;
+    mod.outbuf.length = params.bufSize;
     if (params.bufSize != 0) {
         var Memory = xdc.module('xdc.runtime.Memory');
-        Memory.staticPlace(obj.outbuf, 0x1000, params.sectionName);
+        Memory.staticPlace(mod.outbuf, 0x1000, params.sectionName);
     }
 
-    d_swi_hook.beginFxn = Deh.swiPrehook;
-    d_swi.addHookSet(d_swi_hook);
-
-    d_task_hook.switchFxn = Deh.taskSwitch;
-    d_task.addHookSet(d_task_hook);
-
-    obj.index = 0;
     if (Program.build.target.name.match(/C64T/)) {
-        obj.isrStackSize = null;
-        obj.isrStackBase = null;
+        mod.isrStackSize = null;
+        mod.isrStackBase = null;
     }
     else {
-        obj.isrStackSize = Program.stack;
-        obj.isrStackBase = $externPtr('__TI_STACK_BASE');
-        d_hwi.excHandlerFunc = Deh.excHandler;
+        mod.isrStackSize = Program.stack;
+        mod.isrStackBase = $externPtr('__TI_STACK_BASE');
+        Hwi.excHandlerFunc = Deh.excHandler;
     }
-    obj.wdt_base = null;
 }

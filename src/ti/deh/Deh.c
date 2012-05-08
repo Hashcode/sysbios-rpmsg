@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,35 +35,26 @@
  *  ======== Deh.c ========
  *
  */
+
 #include <xdc/runtime/Assert.h>
 #include <xdc/runtime/System.h>
 #include <xdc/runtime/Error.h>
-#include <xdc/runtime/System.h>
 #include <xdc/runtime/Startup.h>
 #include <xdc/runtime/Memory.h>
-#include <ti/sysbios/family/arm/m3/Hwi.h>
-#include <ti/sysbios/family/arm/ducati/Core.h>
-#include <ti/sysbios/hal/ammu/AMMU.h>
+#include <xdc/runtime/Types.h>
+
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Swi.h>
 #include <ti/sysbios/knl/Task.h>
-#include "package/internal/Deh.xdc.h"
-#include <ti/ipc/rpmsg/VirtQueue.h>
-#include <xdc/cfg/global.h>
+#include <ti/sysbios/hal/ammu/AMMU.h>
+#include <ti/sysbios/family/arm/m3/Hwi.h>
+
 #include <ti/ipc/MultiProc.h>
-#include <ti/sysbios/interfaces/ITimer.h>
-#include <ti/sysbios/timers/dmtimer/Timer.h>
+#include <ti/ipc/rpmsg/VirtQueue.h>
 #include <ti/trace/StackDbg.h>
+#include <ti/deh/Watchdog.h>
 
-
-/*---- watchdog timer ----*/
-#define DEH_WDT_ISR     ((Core_getId() == 0) ? Deh_WDT_ISR_0 : Deh_WDT_ISR_1)
-#define DEH_WDT_BASE    ((Core_getId() == 0) ? Deh_WDT_CORE0 : Deh_WDT_CORE1)
-#define DEH_WDT_CLKCTRL ((Core_getId() == 0) ? Deh_WDT_CLKCTRL_CORE0 : \
-                          Deh_WDT_CLKCTRL_CORE1)
-#define DEH_WDT_CLKCTRL_IDELST_MASK    (3 << 16)
-
-#define REG32(A)   (*(volatile UInt32 *) (A))
+#include "package/internal/Deh.xdc.h"
 
 /*
  *  ======== Deh_Module_startup ========
@@ -71,9 +62,10 @@
 Int Deh_Module_startup(Int phase)
 {
     if (AMMU_Module_startupDone() == TRUE) {
-        Deh_watchdog_init();
+        Watchdog_init(ti_sysbios_family_arm_m3_Hwi_excHandlerAsm__I);
         return Startup_DONE;
     }
+
     return Startup_NOTDONE;
 }
 
@@ -82,104 +74,12 @@ Int Deh_Module_startup(Int phase)
  */
 Void Deh_idleBegin(Void)
 {
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        base->tclr |= 1;
-        base->tcrr = (UInt32) Deh_WDT_TIME;
-    }
-
+    Watchdog_idleBegin();
 }
 
 /*
- *  ======== Deh_swiPrehook ========
+ *  ======== dump_hex ========
  */
-Void Deh_swiPrehook(Swi_Handle swi)
-{
-    Deh_watchdog_kick();
-}
-
-/*
- *  ======== Deh_taskSwitch ========
- */
-Void Deh_taskSwitch(Task_Handle p, Task_Handle n)
-{
-    Deh_watchdog_kick();
-}
-
-/*
- *  ======== Deh_watchdog_init ========
- */
-Void Deh_watchdog_init(Void)
-{
-    Hwi_Params      hp;
-    UInt            key;
-    Deh_timerRegs  *base = (Deh_timerRegs *) DEH_WDT_BASE;
-
-    if (REG32(DEH_WDT_CLKCTRL) & DEH_WDT_CLKCTRL_IDELST_MASK) {
-        System_printf("DEH: Watchdog disabled\n");
-        return;
-    }
-
-    module->wdt_base = (Deh_timerRegs *) DEH_WDT_BASE;
-    base->tisr = ~0;
-    base->tier = 2;
-    base->twer = 2;
-    base->tldr = Deh_WDT_TIME;
-    /* Booting can take more time, so set CRR to WDT_TIME_BOOT */
-    base->tcrr = Deh_WDT_TIME_BOOT;
-    key = Hwi_disable();
-    Hwi_Params_init(&hp);
-    hp.priority = 1;
-    hp.maskSetting = Hwi_MaskingOption_LOWER;
-    Hwi_create(DEH_WDT_ISR,
-        (Hwi_FuncPtr)ti_sysbios_family_arm_m3_Hwi_excHandlerAsm__I,
-        &hp, NULL);
-    Hwi_enableInterrupt(DEH_WDT_ISR);
-    Hwi_restore(key);
-    Deh_watchdog_start();
-    System_printf("DEH: Watchdog started\n");
-
-}
-
-/*
- *  ======== Deh_watchdog_stop ========
- */
-Void Deh_watchdog_stop(Void)
-{
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        base->tclr &= ~1;
-    }
-}
-
-/*
- *  ======== Deh_watchdog_start ========
- */
-Void Deh_watchdog_start(Void)
-{
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        base->tclr |= 1;
-    }
-}
-
-/*
- *  ======== Deh_watchdog_kick ========
- *  can be called from isr conext
- */
-Void Deh_watchdog_kick(Void)
-{
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        Deh_watchdog_start();
-        base->ttgr = 0;
-    }
-}
-
 static Void dump_hex(UInt base, UInt len, UInt start)
 {
     UInt top;
@@ -195,6 +95,9 @@ static Void dump_hex(UInt base, UInt len, UInt start)
     }
 }
 
+/*
+ *  ======== printStackEntry ========
+ */
 static Bool printStackEntry(struct StackDbg_StackEntry *entry, Void *user)
 {
     UInt *cnt = (UInt *)user;
@@ -216,12 +119,15 @@ static Bool printStackEntry(struct StackDbg_StackEntry *entry, Void *user)
     return TRUE;
 }
 
-/* read data from HWI exception handler and print it to crash dump */
-/* buffer. Notify host exception has occurred                      */
+/*
+ *  ======== Deh_excHandler ========
+ *  Read data from HWI exception handler and print it to crash dump buffer.
+ *  Notify host that exception has occurred.
+ */
 Void Deh_excHandler(UInt *excStack, UInt lr)
 {
     Hwi_ExcContext  exc;
-    Deh_excRegs    *excRegs;
+    Deh_ExcRegs    *excRegs;
     Char           *ttype;
     UInt            excNum;
     Char           *etype;
@@ -229,9 +135,9 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     Char           *name;
     UInt           sCnt = 0;
 
-    excRegs = (Deh_excRegs *) module->outbuf;
+    excRegs = (Deh_ExcRegs *) Deh_module->outbuf;
 
-    /* copy registers from stack to excContext */
+    /* Copy registers from stack to excContext */
     excRegs->r0  = exc.r0 = (Ptr)excStack[8];      /* r0 */
     excRegs->r1  = exc.r1 = (Ptr)excStack[9];      /* r1 */
     excRegs->r2  = exc.r2 = (Ptr)excStack[10];     /* r2 */
@@ -262,15 +168,15 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
         case BIOS_ThreadType_Swi:
             if (BIOS_swiEnabled == TRUE) {
                 exc.threadHandle = (Ptr)Swi_self();
-                exc.threadStack = module->isrStackBase;
-                exc.threadStackSize = module->isrStackSize;
+                exc.threadStack = Deh_module->isrStackBase;
+                exc.threadStackSize = Deh_module->isrStackSize;
             }
             break;
         case BIOS_ThreadType_Hwi:
         case BIOS_ThreadType_Main:
             exc.threadHandle = NULL;
-            exc.threadStack = module->isrStackBase;
-            exc.threadStackSize = module->isrStackSize;
+            exc.threadStack = Deh_module->isrStackBase;
+            exc.threadStackSize = Deh_module->isrStackSize;
             break;
         default:
             exc.threadHandle = NULL;
@@ -293,7 +199,7 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     BIOS_setThreadType(BIOS_ThreadType_Main);
 
     excNum = Hwi_nvic.ICSR & 0xff;
-    if (excNum == (DEH_WDT_ISR)) {
+    if (Watchdog_isException(excNum)) {
         etype = "Watchdog fired";
     }
     else {
@@ -384,7 +290,7 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
             System_printf("Hwi_E_reserved: Num:%d\n", excNum);
             break;
         default:
-            if (excNum != (DEH_WDT_ISR)) {
+            if (!Watchdog_isException(excNum)) {
                 System_printf("Hwi_E_noIsr: Num:%d\n", excNum);
             }
             break;

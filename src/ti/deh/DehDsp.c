@@ -32,7 +32,7 @@
  */
 
 /*
- *  ======== Deh.c ========
+ *  ======== DehDsp.c ========
  *
  */
 
@@ -40,24 +40,14 @@
 #include <xdc/runtime/Startup.h>
 
 #include <ti/sysbios/BIOS.h>
+#include <ti/sysbios/hal/ammu/AMMU.h>
 #include <ti/sysbios/family/c64p/Hwi.h>
 #include <ti/sysbios/family/c64p/Exception.h>
-#include <ti/sysbios/hal/ammu/AMMU.h>
-#include <ti/sysbios/knl/Swi.h>
-#include <ti/sysbios/knl/Task.h>
-#include <ti/sysbios/interfaces/ITimer.h>
-#include <ti/sysbios/timers/dmtimer/Timer.h>
+
+#include <ti/ipc/MultiProc.h>
+#include <ti/deh/Watchdog.h>
 
 #include "package/internal/Deh.xdc.h"
-
-/*---- watchdog timer ----*/
-#define DEH_WDT_ISR     Deh_WDT_ISR_DSP
-#define DEH_WDT_BASE    Deh_WDT_DSP
-#define DEH_WDT_CLKCTRL Deh_WDT_CLKCTRL_DSP
-
-#define DEH_WDT_CLKCTRL_IDELST_MASK    (3 << 16)
-
-#define REG32(A)   (*(volatile UInt32 *) (A))
 
 /*
  *  ======== Deh_Module_startup ========
@@ -65,9 +55,10 @@
 Int Deh_Module_startup(Int phase)
 {
     if (AMMU_Module_startupDone() == TRUE) {
-        Deh_watchdog_init();
+        Watchdog_init(ti_sysbios_family_c64p_Exception_dispatch__E);
         return Startup_DONE;
     }
+
     return Startup_NOTDONE;
 }
 
@@ -76,103 +67,7 @@ Int Deh_Module_startup(Int phase)
  */
 Void Deh_idleBegin(Void)
 {
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        base->tclr |= 1;
-        base->tcrr = (UInt32) Deh_WDT_TIME;
-    }
-
-}
-
-/*
- *  ======== Deh_swiPrehook ========
- */
-Void Deh_swiPrehook(Swi_Handle swi)
-{
-    Deh_watchdog_kick();
-}
-
-/*
- *  ======== Deh_taskSwitch ========
- */
-Void Deh_taskSwitch(Task_Handle p, Task_Handle n)
-{
-    Deh_watchdog_kick();
-}
-
-/*
- *  ======== Deh_watchdog_init ========
- */
-Void Deh_watchdog_init(Void)
-{
-    Hwi_Params      hp;
-    UInt            key;
-    Deh_timerRegs  *base = (Deh_timerRegs *) DEH_WDT_BASE;
-
-    if ((REG32(DEH_WDT_CLKCTRL) & DEH_WDT_CLKCTRL_IDELST_MASK)
-                                 == DEH_WDT_CLKCTRL_IDELST_MASK) {
-        System_printf("DEH: Watchdog disabled %x\n", REG32(DEH_WDT_CLKCTRL));
-        return;
-    }
-
-    module->wdt_base = (Deh_timerRegs *) DEH_WDT_BASE;
-    base->tisr = ~0;
-    base->tier = 2;
-    base->twer = 2;
-    base->tldr = Deh_WDT_TIME;
-    /* Booting can take more time, so set CRR to WDT_TIME_BOOT */
-    base->tcrr = Deh_WDT_TIME_BOOT;
-    key = Hwi_disable();
-    Hwi_Params_init(&hp);
-    hp.priority = 1;
-    hp.maskSetting = Hwi_MaskingOption_LOWER;
-    hp.eventId = 52;
-    Hwi_create(DEH_WDT_ISR,
-        (Hwi_FuncPtr)ti_sysbios_family_c64p_Exception_dispatch__E,
-        &hp, NULL);
-    Hwi_enableInterrupt(DEH_WDT_ISR);
-    Hwi_restore(key);
-    Deh_watchdog_start();
-    System_printf("DEH: Watchdog started\n");
-}
-
-/*
- *  ======== Deh_watchdog_stop ========
- */
-Void Deh_watchdog_stop(Void)
-{
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        base->tclr &= ~1;
-    }
-}
-
-/*
- *  ======== Deh_watchdog_start ========
- */
-Void Deh_watchdog_start(Void)
-{
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        base->tclr |= 1;
-    }
-}
-
-/*
- *  ======== Deh_watchdog_kick ========
- *  Can be called from isr context
- */
-Void Deh_watchdog_kick(Void)
-{
-    Deh_timerRegs *base = module->wdt_base;
-
-    if (base) {
-        Deh_watchdog_start();
-        base->ttgr = 0;
-    }
+    Watchdog_idleBegin();
 }
 
 /*

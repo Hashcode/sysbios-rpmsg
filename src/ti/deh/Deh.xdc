@@ -44,17 +44,22 @@ import ti.sysbios.knl.Swi;
  *
  *  Exceptions that are unrecoverable need to be communicated to
  *  the host processor so that it can print debug information, do
- *  resource cleanup and ultimately reload DSP. The notification
- *  mechanism for sending events to the host processor has been
- *  conolidated in this module.
+ *  resource cleanup and ultimately reload a slave processor. The
+ *  notification mechanism for sending events to the host processor
+ *  has been consolidated in this module.
  */
 
 @Template("./Deh.xdt")
 @ModuleStartup
 module Deh {
 
-    /*! Exception Registers */
-    struct excRegs {
+    /*!
+     *  Exception Registers
+     *
+     *  Exception registers that will be filled in by the exception handler.
+     *  NOTE: This is currently handling only ARM cores.
+     */
+    struct ExcRegs {
         Ptr  r0;    /* CPU registers */
         Ptr  r1;
         Ptr  r2;
@@ -81,9 +86,15 @@ module Deh {
         Ptr  MMAR;
         Ptr  BFAR;
         Ptr  AFSR;
-    }
+    };
 
-    /*! Crash dump buffer size */
+    /*!
+     *  Crash dump buffer size
+     *
+     *  Size of the buffer that will be used to store the crash dump data.
+     *
+     *  Default is 0x200 bytes
+     */
     config SizeT bufSize = 0x200;
 
     /*!
@@ -92,73 +103,44 @@ module Deh {
      */
     metaonly config String sectionName = null;
 
-    /*! The test function to plug into the hook exposed by BIOS */
+    /*!
+     *  ======== excHandler ========
+     *  The exception handler function to be plugged into the hook exposed by
+     *  BIOS for M3/M4 targets.
+     *
+     *  @param(excStack)    Stack pointer containing the exception data
+     *  @param(lr)          Link register value
+     */
     Void excHandler(UInt *excStack, UInt lr);
 
-    /*! Exception handler function for DSP to be plugged into the BIOS hook */
+    /*!
+     *  ======== excHandlerDsp ========
+     *  Exception handler function to be plugged into the BIOS exception hook
+     *  for C6x targets.
+     */
     Void excHandlerDsp();
 
-    readonly config Int WDT_TIME = (0 - (38400000 * 5));
-    readonly config Int WDT_TIME_BOOT = (0 - 38400000 * 10);
-    readonly config UInt WDT_CORE0 = 0xA803E000;
-    readonly config UInt WDT_CORE1 = 0xA8088000;
-    readonly config UInt WDT_DSP = 0x01D3A000 ;
-    readonly config UInt WDT_CLKCTRL_CORE0 = 0xAA009450;
-    readonly config UInt WDT_CLKCTRL_CORE1 = 0xAA009430;
-    readonly config UInt WDT_CLKCTRL_DSP = 0x4A004570;
-    readonly config UInt WDT_ISR_0 = 55;
-    readonly config UInt WDT_ISR_1 = 56;
-    readonly config UInt WDT_ISR_DSP = 15;
-
-    /*! timer registers */
-    struct timerRegs {
-        UInt tidr;
-        UInt empty[3];
-        UInt tiocpCfg;
-        UInt empty1[3];
-        UInt irq_eoi;
-        UInt irqstat_raw;
-        UInt tisr;      /* irqstat   */
-        UInt tier;      /* irqen_set */
-        UInt irqen_clr;
-        UInt twer;      /* irqwaken; */
-        UInt tclr;
-        Int  tcrr;
-        Int  tldr;
-        UInt ttgr;
-        UInt twps;
-        UInt tmar;
-        UInt tcar1;
-        UInt tsicr;
-        UInt tcar2;
-    }
-
-    /*! function called when entering idle */
+    /*!
+     *  ======== idleBegin ========
+     *  Idle function to be added to the Idle task. This function will be
+     *  deprecated soon, and replaced directly with the equivalent function
+     *  in the Watchdog module.
+     */
     Void idleBegin();
 
-    /*! function called when leaving idle */
-    Void idleEnd();
 
-    /*! watchdog functions */
-    Void watchdog_init();
-    Void watchdog_stop();
-    Void watchdog_start();
-    Void watchdog_kick();
-    Void taskSwitch(Task.Handle p, Task.Handle n);
-    Void swiPrehook(Swi.Handle swi);
+internal:   /* not for client use */
 
-internal:
     /*! Functions for decoding exceptions */
     Void excMemFault();
     Void excBusFault();
     Void excUsageFault();
     Void excHardFault();
 
+    /*! Module state structure */
     struct Module_State {
         Char        outbuf[];      /* the output buffer */
-        Int         index;
         SizeT       isrStackSize;  /* stack info for ISR/SWI */
         Ptr         isrStackBase;
-        timerRegs   *wdt_base;
-    }
+    };
 }

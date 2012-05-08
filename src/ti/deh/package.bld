@@ -59,8 +59,12 @@ if (smpBuild == "1") {
         {
             name: "ti.deh_smp",
             sources: [
-                "Deh.c"
+                "Deh",
+                "Watchdog"
             ],
+            libAttrs: {
+                defs: " -DM3_ONLY -DSMP"
+            },
             isas: [ "v7M" ],
         }
     );
@@ -71,8 +75,12 @@ else {
         {
             name: "ti.deh",
             sources: [
-                "Deh.c"
+                "Deh",
+                "Watchdog"
             ],
+            libAttrs: {
+                defs: " -DM3_ONLY"
+            },
             isas: [ "v7M" ],
         }
     );
@@ -82,8 +90,12 @@ else {
         {
             name: "ti.deh",
             sources: [
-                "DehDsp.c"
+                "DehDsp",
+                "Watchdog"
             ],
+            libAttrs: {
+                defs: " -DDSP"
+            },
             isas: [ "64T" ],
         }
     );
