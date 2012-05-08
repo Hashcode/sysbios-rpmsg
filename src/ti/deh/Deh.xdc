@@ -131,12 +131,6 @@ module Deh {
 
 internal:   /* not for client use */
 
-    /*! Functions for decoding exceptions */
-    Void excMemFault();
-    Void excBusFault();
-    Void excUsageFault();
-    Void excHardFault();
-
     /*! Module state structure */
     struct Module_State {
         Char        outbuf[];      /* the output buffer */

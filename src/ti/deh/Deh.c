@@ -131,7 +131,6 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
     Char           *ttype;
     UInt            excNum;
     Char           *etype;
-    UInt8          *pc;
     Char           *name;
     UInt           sCnt = 0;
 
@@ -261,37 +260,36 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
 
     switch (excNum) {
         case 2:
-            System_printf("Hwi_E_NMI\n");
+            ti_sysbios_family_arm_m3_Hwi_excNmi(excStack);
             break;
         case 3:
-            Deh_excHardFault();
+            ti_sysbios_family_arm_m3_Hwi_excHardFault(excStack);
             break;
         case 4:
-            Deh_excMemFault();
+            ti_sysbios_family_arm_m3_Hwi_excMemFault(excStack);
             break;
         case 5:
-            Deh_excBusFault();
+            ti_sysbios_family_arm_m3_Hwi_excBusFault(excStack);
             break;
         case 6:
-            Deh_excUsageFault();
+            ti_sysbios_family_arm_m3_Hwi_excUsageFault(excStack);
             break;
         case 11:
-            pc = (UInt8 *)excStack[14];
-            System_printf("Hwi_E_svCall ID:%d\n", pc[-2]);
+            ti_sysbios_family_arm_m3_Hwi_excSvCall(excStack);
             break;
         case 12:
-            System_printf("Hwi_E_debugMon DFSR: %08x\n", Hwi_nvic.DFSR);
+            ti_sysbios_family_arm_m3_Hwi_excDebugMon(excStack);
             break;
         case 7:
         case 8:
         case 9:
         case 10:
         case 13:
-            System_printf("Hwi_E_reserved: Num:%d\n", excNum);
+            ti_sysbios_family_arm_m3_Hwi_excReserved(excStack, excNum);
             break;
         default:
             if (!Watchdog_isException(excNum)) {
-                System_printf("Hwi_E_noIsr: Num:%d\n", excNum);
+                ti_sysbios_family_arm_m3_Hwi_excNoIsr(excStack, excNum);
             }
             break;
     }
@@ -328,118 +326,3 @@ Void Deh_excHandler(UInt *excStack, UInt lr)
 
 }
 
-/*! Decode memory fault registers */
-Void Deh_excMemFault(Void)
-{
-    Char *fault;
-
-    if (Hwi_nvic.MMFSR) {
-        if (Hwi_nvic.MMFSR & 0x10) {
-            fault = "MSTKERR:Access violation (RD/WR failed). Stack Push";
-        }
-        else if (Hwi_nvic.MMFSR & 0x08) {
-            fault = "MUNSTKERR:Access violation (RD/WR failed). Stack Pop";
-        }
-        else if (Hwi_nvic.MMFSR & 0x02) {
-            fault = "DACCVIOL:Access violation (RD/WR failed). Stack Push";
-        }
-        else if (Hwi_nvic.MMFSR & 0x01) {
-            fault = "IACCVIOL:Instruction violation. Invalid region fetch";
-        }
-        else {
-            fault = "Unknown";
-        }
-        System_printf("Hwi_E_memFault %s", fault);
-        if (Hwi_nvic.MMFSR & 0x80) {
-            System_printf("Hwi_E_memFault: location: %08x\n", Hwi_nvic.MMAR);
-        }
-    }
-}
-
-/*! Decode bus fault registers */
-Void Deh_excBusFault(Void)
-{
-    Char *fault;
-
-    if (Hwi_nvic.BFSR) {
-        if (Hwi_nvic.BFSR & 0x10) {
-            fault = "STKERR:Bus Fault caused by Stack Push";
-        }
-        else if (Hwi_nvic.BFSR & 0x08) {
-            fault = "UNSTKERR:Bus Fault caused by Stack Pop";
-        }
-        else if (Hwi_nvic.BFSR & 0x04) {
-            fault = "IMPRECISERR:Delayed Bus Fault. Exact addr unknown";
-        }
-        else if (Hwi_nvic.BFSR & 0x02) {
-            fault = "PRECISERR:Bus Fault";
-        }
-        else if (Hwi_nvic.BFSR & 0x01) {
-            fault = "IBUSERR:Instruction violation. Invalid region fetch";
-        }
-        else {
-            fault = "Unknown";
-        }
-        System_printf("Hwi_E_busFault %s\n", fault);
-        if (Hwi_nvic.BFSR & 0x80) {
-            System_printf("Hwi_E_busFault: location: %08x\n", Hwi_nvic.BFAR);
-        }
-    }
-}
-
-/*! Decode usage fault registers */
-Void Deh_excUsageFault(Void)
-{
-    Char *fault;
-
-    if (Hwi_nvic.UFSR) {
-        if (Hwi_nvic.UFSR & 0x0001) {
-            fault = "UNDEFINSTR:Undefined instruction";
-        }
-        else if (Hwi_nvic.UFSR & 0x0002) {
-            fault = "INVSTATE:Invalid EPSR and instruction combination";
-        }
-        else if (Hwi_nvic.UFSR & 0x0004) {
-            fault = "INVPC:Invalid PC";
-        }
-        else if (Hwi_nvic.UFSR & 0x0008) {
-            fault = "NOCP:Attempting to use co-processor";
-        }
-        else if (Hwi_nvic.UFSR & 0x0100) {
-            fault = "UNALIGNED:Unaligned memory access";
-        }
-        else if (Hwi_nvic.UFSR & 0x0200) {
-            fault = "DIVBYZERO";
-        }
-        else {
-            fault = "Unknown";
-        }
-        System_printf("Hwi_E_usageFault %s\n", fault);
-    }
-}
-
-/*! Decode hardfault registers */
-Void Deh_excHardFault(Void)
-{
-    Char *fault;
-
-    if (Hwi_nvic.HFSR) {
-        if (Hwi_nvic.HFSR & 0x40000000) {
-            System_printf("Hwi_E_hardFault: FORCED\n");
-            Deh_excUsageFault();
-            Deh_excBusFault();
-            Deh_excMemFault();
-            return;
-        }
-        else if (Hwi_nvic.HFSR & 0x80000000) {
-            fault = "DEBUGEVT";
-        }
-        else if (Hwi_nvic.HFSR & 0x00000002) {
-            fault = "VECTBL";
-        }
-        else {
-            fault = "Unknown";
-        }
-        System_printf("Hwi_E_hardFault %s\n", fault);
-    }
-}
