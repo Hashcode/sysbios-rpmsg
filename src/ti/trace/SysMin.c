@@ -158,12 +158,9 @@ Void SysMin_putch(Char ch)
         module->lineBuffers[coreId].lineidx = lineIdx;
 
 #ifdef SMP
-        /* restore local interrupts */
-        Hwi_restoreCoreInts((UInt)key);
-
         /* Copy line buffer to shared output buffer at EOL or when filled up */
         if ((ch == '\n') || (lineIdx >= SysMin_LINEBUFSIZE)) {
-            key = Gate_enterSystem();
+            Gate_enterSystem();
 
             /* Tag core number */
             SysMin_output('[');
@@ -198,6 +195,10 @@ Void SysMin_putch(Char ch)
             module->lineBuffers[coreId].lineidx = 0;
 
             Gate_leaveSystem(key);
+        }
+        else {
+            /* restore local interrupts */
+            Hwi_restoreCoreInts((UInt)key);
         }
 #else
             module->getTime = FALSE;
