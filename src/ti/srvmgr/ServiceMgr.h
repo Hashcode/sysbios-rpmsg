@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,18 @@
  *
  */
 
+#ifndef ti_srvmgr_ServiceMgr__include
+#define ti_srvmgr_ServiceMgr__include
+
 #include <xdc/std.h>
 
 #include <ti/grcm/RcmServer.h>
+
+
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 
 /* Max number of known service types: */
 #define ServiceMgr_NUMSERVICETYPES         16
@@ -119,3 +128,10 @@ Void ServiceMgr_send(Service_Handle srvc, Ptr data, UInt16 len);
  */
 Bool ServiceMgr_registerDisconnectFxn(Service_Handle srvc, Ptr data,
                                       ServiceMgr_disconnectFuncPtr func);
+
+
+#if defined (__cplusplus)
+}
+#endif /* defined (__cplusplus) */
+
+#endif /* ti_srvmgr_ServiceMgr__include */
