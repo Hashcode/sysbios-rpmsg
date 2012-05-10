@@ -58,7 +58,7 @@ all:
 	cd src/utils; make BUILD_SMP=$(BUILD_SMP)
 
 clean:
-	$(XDCROOT)/xdc clean -Pr src
+	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
 	cd src/utils/elfload; make clean
 	cd src/utils; make BUILD_SMP=$(BUILD_SMP) clean
 	cd ../..
