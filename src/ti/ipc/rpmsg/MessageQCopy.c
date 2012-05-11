@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,6 +118,7 @@ typedef struct MessageQCopy_Transport  {
     Swi_Handle       swiHandle;
     VirtQueue_Handle virtQueue_toHost;
     VirtQueue_Handle virtQueue_fromHost;
+    Semaphore_Handle semHandle_toHost;
 } MessageQCopy_Transport;
 
 
@@ -188,6 +189,7 @@ static Void callback_availBufReady(VirtQueue_Handle vq)
        /* Note: We post nothing for transport.virtQueue_toHost, as we assume the
         * host has already made all buffers available for sending.
         */
+        Semaphore_post(transport.semHandle_toHost);
         Log_print0(Diags_INFO, FXNN": virtQueue_toHost kicked");
     }
 }
@@ -242,6 +244,7 @@ Void MessageQCopy_init(UInt16 remoteProcId)
     if (module.heap == 0) {
        System_abort("MessageQCopy_init: HeapBuf_create returned 0\n");
     }
+    transport.semHandle_toHost = Semaphore_create(0, NULL, NULL);
 
     /* Initialize Transport related objects: */
 
@@ -490,11 +493,14 @@ Int MessageQCopy_send(UInt16 dstProc,
 
     if (dstProc != MultiProc_self()) {
         /* Send to remote processor: */
-        key = GateSwi_enter(module.gateSwi);  // Protect vring structs.
-        token = VirtQueue_getAvailBuf(transport.virtQueue_toHost,
-                                      (Void **)&msg, &length);
-        GateSwi_leave(module.gateSwi, key);
-
+        do {
+            key = GateSwi_enter(module.gateSwi);  /* Protect vring structs */
+            Semaphore_reset(transport.semHandle_toHost, 0);
+            token = VirtQueue_getAvailBuf(transport.virtQueue_toHost,
+                    (Void **)&msg, &length);
+            GateSwi_leave(module.gateSwi, key);
+        } while (token < 0 && Semaphore_pend(transport.semHandle_toHost,
+                                             BIOS_WAIT_FOREVER));
         if (token >= 0) {
             /* Copy the payload and set message header: */
             memcpy(msg->payload, data, len);
