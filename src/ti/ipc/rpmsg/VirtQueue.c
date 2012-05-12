@@ -79,12 +79,12 @@
 /* Used for defining the size of the virtqueue registry */
 #define NUM_QUEUES                      6
 
-/* Predefined addresses */
-#define RP_MSG_A9_SYSM3_VRING_PHYS      0xA0000000U
-#define RP_MSG_SYSM3_A9_VRING_PHYS      0xA0002000U
+/* Predefined device addresses */
+#define RP_MSG_A9_SYSM3_VRING_DA        0xA0000000U
+#define RP_MSG_SYSM3_A9_VRING_DA        0xA0002000U
 
-#define RP_MSG_A9_DSP_VRING_PHYS        0xA0000000U
-#define RP_MSG_DSP_A9_VRING_PHYS        0xA0002000U
+#define RP_MSG_A9_DSP_VRING_DA          0xA0000000U
+#define RP_MSG_DSP_A9_VRING_DA          0xA0002000U
 
 /*
  * enum - Predefined Mailbox Messages
@@ -178,7 +178,7 @@ typedef struct VirtQueue_Object {
 } VirtQueue_Object;
 
 static UInt initStage = 0;
-static Ptr buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+static Ptr bufAddr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
 static Semaphore_Handle semHandle = NULL;
 
 static UInt numQueues = 0;
@@ -411,12 +411,12 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             case 1:
-                //buf_addr = (Ptr)msg;
+                //bufAddr = (Ptr)msg;
                 if ((MultiProc_self() == dspProcId)) {
-                    buf_addr = (Ptr)RP_MSG_A9_DSP_VRING_PHYS;
+                    bufAddr = (Ptr)RP_MSG_A9_DSP_VRING_DA;
                 }
                 else {
-                    buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+                    bufAddr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
                 }
                 initStage++;
 
@@ -460,7 +460,7 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
         UInt16 remoteProcId)
 {
     VirtQueue_Object *vq;
-    void *vring_phys;
+    Void *vringAddr;
     Error_Block eb;
 
     Error_init(&eb);
@@ -488,33 +488,33 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
         case ID_SYSM3_TO_A9:
         case ID_DSP_TO_A9:
             /* SYSM3/DSP -> A9 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE);
+            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE);
             break;
         case ID_A9_TO_SYSM3:
         case ID_A9_TO_DSP:
             /* A9 -> SYSM3/DSP */
-            vring_phys = (struct vring *)((UInt)buf_addr +
+            vringAddr = (struct vring *)((UInt)bufAddr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
             break;
 #ifndef SMP
         case ID_APPM3_TO_A9:
             /* APPM3 -> A9 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE +
+            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE +
                     RPMSG_IPC_MEM);
             break;
         case ID_A9_TO_APPM3:
             /* A9 -> APPM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr +
+            vringAddr = (struct vring *)((UInt)bufAddr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE + RPMSG_IPC_MEM);
             break;
 #endif
     }
 
     Log_print3(Diags_USER1,
-            "vring: %d 0x%x (0x%x)\n", vq->id, (IArg)vring_phys,
+            "vring: %d 0x%x (0x%x)\n", vq->id, (IArg)vringAddr,
             RP_MSG_RING_SIZE);
 
-    vring_init(&(vq->vring), RP_MSG_NUM_BUFS, vring_phys, RP_MSG_VRING_ALIGN);
+    vring_init(&(vq->vring), RP_MSG_NUM_BUFS, vringAddr, RP_MSG_VRING_ALIGN);
 
     /*
      *  Don't trigger a mailbox message every time MPU makes another buffer
@@ -553,7 +553,8 @@ Void VirtQueue_startup()
         Log_print0(Diags_USER1, "VirtQueue_startup: RP_MSG_MBOX_READY received\n");
 
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
-        System_printf("VirtQueue_startup: buf_addr address of 0x%x received\n", buf_addr);
+        System_printf("VirtQueue_startup: bufAddr address of 0x%x received\n",
+                        bufAddr);
 
 #if defined(M3_ONLY) && !defined(SMP)
         OffloadM3_init();

@@ -77,8 +77,8 @@
 #define NUM_QUEUES                      5
 
 /* Predefined addresses */
-#define RP_MSG_A9_SYSM3_VRING_PHYS      0xA0000000U
-#define RP_MSG_SYSM3_A9_VRING_PHYS      0xA0002000U
+#define RP_MSG_A9_SYSM3_VRING_DA        0xA0000000U
+#define RP_MSG_SYSM3_A9_VRING_DA        0xA0002000U
 
 #define APPM3_OFFSET                    (0x50000)
 
@@ -162,7 +162,7 @@ typedef struct VirtQueue_Object {
 } VirtQueue_Object;
 
 static UInt initStage = 0;
-static Ptr buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+static Ptr bufAddr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
 static Semaphore_Handle semHandle = NULL;
 
 static UInt numQueues = 0;
@@ -378,8 +378,8 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             case 1:
-                //buf_addr = (Ptr)msg;
-                buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+                //bufAddr = (Ptr)msg;
+                bufAddr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
                 //doIt();
                 initStage++;
 
@@ -408,7 +408,7 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
         UInt16 remoteProcId)
 {
     VirtQueue_Object *vq;
-    void *vring_phys;
+    void *vringAddr;
     Error_Block eb;
 
     Error_init(&eb);
@@ -430,30 +430,30 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     switch (vq->id) {
         case ID_A9_TO_SYSM3:
             /* A9 -> SYSM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE);
+            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE);
             break;
         case ID_SYSM3_TO_A9:
             /* SYSM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr +
+            vringAddr = (struct vring *)((UInt)bufAddr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
             break;
         case ID_A9_TO_APPM3:
             /* A9 -> APPM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE +
+            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE +
                     APPM3_OFFSET);
             break;
         case ID_APPM3_TO_A9:
             /* APPM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr +
+            vringAddr = (struct vring *)((UInt)bufAddr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE + APPM3_OFFSET);
             break;
     }
 
     Log_print3(Diags_USER1,
-            "vring: %d 0x%x (0x%x)\n", vq->id, (IArg)vring_phys,
+            "vring: %d 0x%x (0x%x)\n", vq->id, (IArg)vringAddr,
             RP_MSG_RING_SIZE);
 
-    vring_init(&(vq->vring), RP_MSG_NUM_BUFS, vring_phys, RP_MSG_VRING_ALIGN);
+    vring_init(&(vq->vring), RP_MSG_NUM_BUFS, vringAddr, RP_MSG_VRING_ALIGN);
 
     /*
      *  Don't trigger a mailbox message every time A8 makes another buffer
@@ -483,7 +483,7 @@ Void VirtQueue_startup()
      *  HOST
      */
     if (MultiProc_self() == dspProcId) {
-        memset((void *)RP_MSG_A9_SYSM3_VRING_PHYS, 0,
+        memset((void *)RP_MSG_A9_SYSM3_VRING_DA, 0,
                 RP_MSG_RING_SIZE * 2 + RP_MSG_BUFS_SPACE);
         InterruptProxy_intRegister(VirtQueue_isr);
 
@@ -492,7 +492,7 @@ Void VirtQueue_startup()
         InterruptProxy_intSend(appm3ProcId, (UInt)RP_MSG_MBOX_READY);
         InterruptProxy_intSend(appm3ProcId, (0xA0000000));
 
-        buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+        bufAddr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
     }
     else {
         semHandle = Semaphore_create(0, NULL, NULL);
@@ -503,7 +503,8 @@ Void VirtQueue_startup()
         Log_print0(Diags_USER1, "VirtQueue_startup: RP_MSG_MBOX_READY received\n");
 
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
-        System_printf("VirtQueue_startup: buf_addr address of 0x%x received\n", buf_addr);
+        System_printf("VirtQueue_startup: bufAddr address of 0x%x received\n",
+                        bufAddr);
     }
 }
 
