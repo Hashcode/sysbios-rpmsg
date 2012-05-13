@@ -57,12 +57,12 @@ extern "C" {
 #define EINVAL                              22
 
 typedef enum {
-    IpcResource_REQ_TYPE_CONN,
-    IpcResource_REQ_TYPE_ALLOC,
-    IpcResource_REQ_TYPE_FREE,
-    IpcResource_REQ_TYPE_DISCONN,
-    IpcResource_REQ_TYPE_REQ_CONSTRAINTS,
-    IpcResource_REQ_TYPE_REL_CONSTRAINTS
+    IpcResource_ReqType_CONN,
+    IpcResource_ReqType_ALLOC,
+    IpcResource_ReqType_FREE,
+    IpcResource_ReqType_DISCONN,
+    IpcResource_ReqType_REQ_CONSTRAINTS,
+    IpcResource_ReqType_REL_CONSTRAINTS
 } IpcResource_ReqType;
 
 typedef struct {
@@ -84,13 +84,15 @@ typedef struct {
  *  @brief  IpcResource_Object type
  */
 struct IpcResource_Object {
-    UInt32 endPoint;
-    UInt timeout;
-    Semaphore_Handle sem;
+    UInt32              endPoint;
+    UInt                timeout;
+    Semaphore_Handle    sem;
     MessageQCopy_Handle msgq;
 };
+
 
 #if defined (__cplusplus)
 }
 #endif /* defined (__cplusplus) */
+
 #endif /* ti_ipc__IpcResource__include */
