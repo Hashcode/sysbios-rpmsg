@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,17 +64,14 @@ function module$use()
     xdc.useModule('xdc.runtime.knl.Thread');
 
     if (Settings.IpcSupport_ti_sdo_ipc == Settings.ipc) {
-        xdc.useModule('ti.sdo.ipc.MessageQ');
         xdc.useModule('ti.sdo.utils.List');
-        xdc.useModule('ti.sdo.utils.NameServer');
     }
     else if (Settings.IpcSupport_ti_syslink_ipc == Settings.ipc) {
-        xdc.loadPackage('ti.syslink');
+        throw new Error("unsupported value for " + Settings.$name
+        + ".ipc config param (" + Settings.ipc + ")");
     }
     else {
         throw new Error("unknown value for " + Settings.$name
         + ".ipc config param (" + Settings.ipc + ")");
     }
-
-//  xdc.useModule('ti.grcm.RcmClient');
 }

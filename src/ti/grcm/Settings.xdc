@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,7 @@ metaonly module Settings
      *  This config param must be set in the application config script.
      *  It has no default value.
      */
-    config IpcSupport ipc;
+    config IpcSupport ipc = IpcSupport_ti_sdo_ipc;
 
     /*!
      *  Controls the loading of string constants to the target

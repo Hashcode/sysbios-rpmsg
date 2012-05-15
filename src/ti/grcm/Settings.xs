@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,5 +47,10 @@ function module$validate()
     if (this.ipc == undefined) {
         throw new Error("ipc config param is undefined, it must be"
         + " assigned a value by the application config script.");
+    }
+    else if (this.ipc == this.IpcSupport_ti_syslink_ipc) {
+        throw new Error("ipc config param cannot be set to "
+        + "IpcSupport_ti_syslink_ipc, it is only supported with "
+        + "IpcSupport_ti_sdo_ipc");
     }
 }
