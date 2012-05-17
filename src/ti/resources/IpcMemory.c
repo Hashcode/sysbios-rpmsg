@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <xdc/runtime/System.h>
 #include <xdc/runtime/Startup.h>
 
-#include <ti/resources/rsc_table.h>
+#include <ti/resources/rsc_types.h>
 #include "package/internal/IpcMemory.xdc.h"
 
 

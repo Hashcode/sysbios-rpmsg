@@ -45,7 +45,7 @@
 %if (MultiProc.id == MultiProc.getIdMeta("CORE0")) {
 
 #include <xdc/runtime/System.h>
-#include <ti/resources/rsc_table.h>
+#include <ti/resources/rsc_types.h>
 
 
 /* Ducati Memory Map: */
@@ -178,7 +178,7 @@ UInt32 resourcesLen = sizeof(resources) / sizeof(*resources);
 %if (MultiProc.id == MultiProc.getIdMeta("DSP")) {
 
 #include <xdc/runtime/System.h>
-#include <ti/resources/rsc_table.h>
+#include <ti/resources/rsc_types.h>
 
 /* Dspi Memory Map: */
 #define L4_44XX_BASE            0x4A000000

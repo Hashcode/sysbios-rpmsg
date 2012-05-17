@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *  ======== rsc_table.h ========
+ *  ======== rsc_types.h ========
  *
  *  Include common definitions for sizes and type of resources
  *  used by the the resource table in each base image, which is
@@ -38,8 +38,8 @@
  *
  */
 
-#ifndef _RSC_TABLE_H_
-#define _RSC_TABLE_H_
+#ifndef _RSC_TYPES_H_
+#define _RSC_TYPES_H_
 
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_64K                          0x00010000
@@ -67,4 +67,4 @@
 #define TYPE_CRASHDUMP   6
 #define TYPE_SUSPENDADDR 7
 
-#endif /* _RSC_TABLE_H_ */
+#endif /* _RSC_TYPES_H_ */
