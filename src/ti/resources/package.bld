@@ -47,10 +47,22 @@ Pkg.libDir = "package/";
 /* add custom files to all releases */
 Pkg.attrs.exportSrc = false;
 Pkg.attrs.exportCfg = true;
-Pkg.otherFiles = [
-    "IpcMemory.h",
-    "rsc_types.h"
-];
+for (var i = 0; i < Build.targets.length; i++) {
+    if (Build.targets[i].name.match(/M3/)) {
+        Pkg.otherFiles = [
+            "IpcMemory.h",
+            "rsc_types.h",
+            "rsc_table_ipu.h",
+        ];
+    }
+    else if (Build.targets[i].name.match(/C64T/)) {
+        Pkg.otherFiles = [
+            "IpcMemory.h",
+            "rsc_types.h",
+            "rsc_table_dsp.h",
+        ];
+    }
+}
 
 /* list of libraries to build */
 var libArray = new Array();
