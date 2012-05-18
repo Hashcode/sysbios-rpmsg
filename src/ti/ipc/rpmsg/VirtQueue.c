@@ -131,8 +131,11 @@ enum {
     RP_MBOX_ECHO_REPLY          = (Int)0xFFFFFF04,
     RP_MBOX_ABORT_REQUEST       = (Int)0xFFFFFF05,
     RP_MSG_FLUSH_CACHE          = (Int)0xFFFFFF06,
-    RP_MSG_HIBERNATION          = (Int)0xFFFFFF07,
-    RP_MSG_BOOTINIT_DONE        = (Int)0xFFFFFF08
+    RP_MSG_BOOTINIT_DONE        = (Int)0xFFFFFF07,
+    RP_MSG_HIBERNATION          = (Int)0xFFFFFF10,
+    RP_MSG_HIBERNATION_FORCE    = (Int)0xFFFFFF11,
+    RP_MSG_HIBERNATION_ACK      = (Int)0xFFFFFF12,
+    RP_MSG_HIBERNATION_CANCEL   = (Int)0xFFFFFF13
 };
 
 #define DIV_ROUND_UP(n,d)   (((n) + (d) - 1) / (d))
@@ -378,16 +381,25 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             case (UInt)RP_MSG_HIBERNATION:
-                if (IpcPower_canHibernate() == TRUE) {
-#ifndef SMP
-                    /* Core0 should notify Core1 */
-                    if (MultiProc_self() == sysm3ProcId) {
-                        InterruptProxy_intSend(appm3ProcId,
-                                               (UInt)(RP_MSG_HIBERNATION));
-                    }
-#endif
-                    IpcPower_suspend();
+                if (IpcPower_canHibernate() == FALSE) {
+                    InterruptProxy_intSend(hostProcId,
+                                        (UInt)RP_MSG_HIBERNATION_CANCEL);
+                    return;
                 }
+
+            /* Fall through */
+            case (UInt)RP_MSG_HIBERNATION_FORCE:
+#ifndef SMP
+                /* Core0 should notify Core1 */
+                if (MultiProc_self() == sysm3ProcId) {
+                    InterruptProxy_intSend(appm3ProcId,
+                                           (UInt)(RP_MSG_HIBERNATION));
+                }
+#endif
+                /* Ack request */
+                InterruptProxy_intSend(hostProcId,
+                                    (UInt)RP_MSG_HIBERNATION_ACK);
+                IpcPower_suspend();
                 return;
 
             default:
