@@ -111,9 +111,9 @@
  * PHYS_MEM_IPC_VRING & PHYS_MEM_IPC_DATA MUST be together.
  */
 #ifdef OMAP5
-#define PHYS_MEM_IPC_VRING      0xAFE00000
+#define PHYS_MEM_IPC_VRING      0xA5000000
 #else
-#define PHYS_MEM_IPC_VRING      0xB3A00000
+#define PHYS_MEM_IPC_VRING      0xA9000000
 #endif
 
 #define PHYS_MEM_IOBUFS         0xBA300000

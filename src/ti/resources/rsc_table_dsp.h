@@ -81,7 +81,6 @@
 #define DSP_MEM_VRING_BUFS0     0xA0040000
 #define DSP_MEM_VRING_BUFS1     0xA0080000
 
-#define DSP_MEM_SIZE            (SZ_1M * 5)
 #define DSP_MEM_IPC_VRING_SIZE  SZ_1M
 #define DSP_MEM_IPC_DATA_SIZE   SZ_1M
 #define DSP_MEM_TEXT_SIZE       SZ_512K
@@ -94,9 +93,9 @@
  */
 /* This address is derived from current IPU & ION carveouts */
 #ifdef OMAP5
-#define PHYS_MEM_IPC_VRING      (0xA9E00000 - DSP_MEM_SIZE)
+#define PHYS_MEM_IPC_VRING      0xA4800000
 #else
-#define PHYS_MEM_IPC_VRING      (0xADA00000 - DSP_MEM_SIZE)
+#define PHYS_MEM_IPC_VRING      0xA8800000
 #endif
 
 /* Need to be identical to that of Ducati */
