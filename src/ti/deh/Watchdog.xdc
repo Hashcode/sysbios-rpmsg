@@ -50,7 +50,12 @@ import ti.sysbios.knl.Swi;
  *     during initial boot time.
  *  3. The WD timer is restarted in the Idle task through the plugged in DEH
  *     task function, or whenever a Task switch happens or a Swi is executed.
- *  4. WD Timer is stopped by MPU by disabling the timer's clock during suspend.
+ *  4. In SMP-mode, Hwis and Swis are executed only in Core0 and Tasks can
+ *     be executed on either of the cores. Core1 stops it's Watchdog upon
+ *     entering Idle task as it can stay in WFI for a long-time (atleast two
+ *     tasks need to be in READY state) and restarts its Watchdog upon a task
+ *     switch.
+ *  5. WD Timer is stopped by MPU by disabling the timer's clock during suspend.
  *     The MPU re-enables the timer's clock upon resume.
  */
 
@@ -151,15 +156,23 @@ internal:   /* not for client use */
      *  ======== stop ========
      *  @_nodoc
      *  Stop the Watchdog timer.
+     *
+     *  @param(core)    Core id on which the function is being called. Value is
+     *                  almost always 0. A non-zero value is seen only in
+     *                  SMP-mode.
      */
-    Void stop();
+    Void stop(Int core);
 
     /*!
      *  ======== start ========
      *  @_nodoc
      *  Start the Watchdog timer.
+     *
+     *  @param(core)    Core id on which the function is being called. Value is
+     *                  almost always 0. A non-zero value is seen only in
+     *                  SMP-mode.
      */
-    Void start();
+    Void start(Int core);
 
     /*!
      *  ======== kick ========
@@ -167,11 +180,16 @@ internal:   /* not for client use */
      *  Refresh or restart the Watchdog timer. This call is used
      *  internally on any condition that validates that the processor
      *  core is executing fine.
+     *
+     *  @param(core)    Core id on which the function is being called. Value is
+     *                  almost always 0. A non-zero value is seen only in
+     *                  SMP-mode.
      */
-    Void kick();
+    Void kick(Int core);
 
     /*! Module state structure */
     struct Module_State {
         TimerDevice device[];   /* watchdog timer specific data */
+        Int         wdtCores;   /* number of watchdog timers (usually 1) */
     };
 }

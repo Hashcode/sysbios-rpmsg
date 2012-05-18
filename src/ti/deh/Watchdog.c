@@ -58,6 +58,10 @@
 #include <ti/sysbios/family/arm/m3/Hwi.h>
 #endif
 
+#ifdef SMP
+#include <ti/sysbios/hal/Core.h>
+#endif
+
 #include "package/internal/Watchdog.xdc.h"
 
 /* Macro to write to GP timer registers */
@@ -89,45 +93,55 @@ Void Watchdog_init( Void (*timerFxn)(Void) )
     Timer_Handle        tHandle;
     Types_FreqHz        tFreq;
     Watchdog_TimerRegs  *timer;
+    Int                 i;
 
     tHandle = Timer_Object_get(NULL, 0);
     Timer_getFreq(tHandle, &tFreq);  /* get timer frequency */
 
-    timer = (Watchdog_TimerRegs *) Watchdog_module->device[0].baseAddr;
+    for (i = 0; i < Watchdog_module->wdtCores; i++) {  /* loop for SMP cores */
+        timer = (Watchdog_TimerRegs *) Watchdog_module->device[i].baseAddr;
 
-    /* Check if timer is enabled by host-side */
-    if ((REG32(Watchdog_module->device[0].clkCtrl) &
-        WATCHDOG_WDT_CLKCTRL_IDLEST_MASK) == WATCHDOG_WDT_CLKCTRL_IDLEST_MASK) {
-        System_printf("Watchdog disabled: TimerBase = 0x%x ClkCtrl = 0x%x\n",
-                                    timer, Watchdog_module->device[0].clkCtrl);
-        return;
-    }
+        /* Check if timer is enabled by host-side */
+        if ((REG32(Watchdog_module->device[i].clkCtrl) &
+            WATCHDOG_WDT_CLKCTRL_IDLEST_MASK) ==
+                                    WATCHDOG_WDT_CLKCTRL_IDLEST_MASK) {
+            System_printf("Watchdog disabled: TimerBase = 0x%x ClkCtrl = 0x%x\n",
+                                    timer, Watchdog_module->device[i].clkCtrl);
+            continue;  /* for next core */
+        }
 
-    /* Update timer registers */
-    timer->tisr = ~0;
-    timer->tier = 2;
-    timer->twer = 2;
-    timer->tldr = (0 - (tFreq.lo * Watchdog_TIME_SEC));
-    timer->tsicr |= 4; /* enable posted write mode */
+        /* Update timer registers */
+        timer->tisr = ~0;
+        timer->tier = 2;
+        timer->twer = 2;
+        timer->tldr = (0 - (tFreq.lo * Watchdog_TIME_SEC));
+        timer->tsicr |= 4; /* enable posted write mode */
 
-    /* Booting can take more time, so set CRR to WDT_TIME_BOOT */
-    timer->tcrr = (0 - (tFreq.lo * Watchdog_BOOT_TIME_SEC));
+        /* Booting can take more time, so set CRR to WDT_TIME_BOOT */
+        timer->tcrr = (0 - (tFreq.lo * Watchdog_BOOT_TIME_SEC));
 
-    /* Update timer registers */
-    Hwi_Params_init(&hwiParams);
-    hwiParams.priority = 1;
-    hwiParams.eventId = Watchdog_module->device[0].eventId;
-    hwiParams.maskSetting = Hwi_MaskingOption_LOWER;
-    key = Hwi_disable();
-    Hwi_create(Watchdog_module->device[0].intNum, (Hwi_FuncPtr) timerFxn,
+        /* Enable interrupt in BIOS */
+        Hwi_Params_init(&hwiParams);
+        hwiParams.priority = 1;
+        hwiParams.eventId = Watchdog_module->device[i].eventId;
+        hwiParams.maskSetting = Hwi_MaskingOption_LOWER;
+        key = Hwi_disable();
+        Hwi_create(Watchdog_module->device[i].intNum, (Hwi_FuncPtr) timerFxn,
                                                             &hwiParams, NULL);
-    Hwi_enableInterrupt(Watchdog_module->device[0].intNum);
-    Hwi_restore(key);
+        Hwi_enableInterrupt(Watchdog_module->device[i].intNum);
+        Hwi_restore(key);
 
-    /* Enable timer */
-    timer->tclr |= 1;
-    System_printf("Watchdog enabled: TimerBase = 0x%x Freq = %d\n",
-                                            timer, tFreq.lo);
+        /* Enable timer */
+        timer->tclr |= 1;
+
+#ifdef SMP
+        System_printf("Watchdog enabled: TimerBase = 0x%x SMP-Core = %d "
+                                            "Freq = %d\n", timer, i, tFreq.lo);
+#else
+        System_printf("Watchdog enabled: TimerBase = 0x%x Freq = %d\n",
+                                                            timer, tFreq.lo);
+#endif
+    }
 
     return;
 }
@@ -137,7 +151,19 @@ Void Watchdog_init( Void (*timerFxn)(Void) )
  */
 Void Watchdog_idleBegin(Void)
 {
-    Watchdog_kick();
+    Int core = 0;
+
+#ifdef SMP
+    core = Core_getCoreId();
+
+    if (core != 0) {
+        Watchdog_stop(core);
+    }
+    else
+#endif
+    {
+        Watchdog_kick(core);
+    }
 }
 
 /*
@@ -145,7 +171,19 @@ Void Watchdog_idleBegin(Void)
  */
 Void Watchdog_swiPrehook(Swi_Handle swi)
 {
-    Watchdog_kick();
+    Int core = 0;
+
+#ifdef SMP
+    core = Core_getCoreId();
+
+    if (core != 0) {
+        Watchdog_start(core);
+    }
+    else
+#endif
+    {
+        Watchdog_kick(core);
+    }
 }
 
 /*
@@ -154,7 +192,19 @@ Void Watchdog_swiPrehook(Swi_Handle swi)
  */
 Void Watchdog_taskSwitch(Task_Handle p, Task_Handle n)
 {
-    Watchdog_kick();
+    Int core = 0;
+
+#ifdef SMP
+    core = Core_getCoreId();
+
+    if (core != 0) {
+        Watchdog_start(core);
+    }
+    else
+#endif
+    {
+        Watchdog_kick(core);
+    }
 }
 
 /*
@@ -162,19 +212,25 @@ Void Watchdog_taskSwitch(Task_Handle p, Task_Handle n)
  */
 Bool Watchdog_isException(UInt excNum)
 {
-    if (excNum == Watchdog_module->device[0].intNum) {
-        return TRUE;
+    Int i;
+    Bool found = FALSE;
+
+    for (i = 0; i < Watchdog_module->wdtCores; i++) {
+        if (excNum == Watchdog_module->device[i].intNum) {
+            found = TRUE;
+            break;
+        }
     }
 
-    return FALSE;
+    return found;
 }
 
 /*
  *  ======== Watchdog_stop ========
  */
-Void Watchdog_stop(Void)
+Void Watchdog_stop(Int core)
 {
-    Watchdog_TimerRegs *timer = Watchdog_module->device[0].baseAddr;
+    Watchdog_TimerRegs *timer = Watchdog_module->device[core].baseAddr;
 
     if (timer) {
         while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TCLR);
@@ -185,9 +241,9 @@ Void Watchdog_stop(Void)
 /*
  *  ======== Watchdog_start ========
  */
-Void Watchdog_start(Void)
+Void Watchdog_start(Int core)
 {
-    Watchdog_TimerRegs *timer = Watchdog_module->device[0].baseAddr;
+    Watchdog_TimerRegs *timer = Watchdog_module->device[core].baseAddr;
 
     if (timer) {
         while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TCLR);
@@ -202,9 +258,9 @@ Void Watchdog_start(Void)
  *  ======== Watchdog_kick ========
  *  Refresh/restart the watchdog timer
  */
-Void Watchdog_kick(Void)
+Void Watchdog_kick(Int core)
 {
-    Watchdog_TimerRegs *timer = Watchdog_module->device[0].baseAddr;
+    Watchdog_TimerRegs *timer = Watchdog_module->device[core].baseAddr;
 
     if (timer) {
         while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TGRR);
