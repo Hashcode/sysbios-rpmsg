@@ -77,7 +77,7 @@
 #include "virtio_ring.h"
 
 /* Used for defining the size of the virtqueue registry */
-#define NUM_QUEUES              6
+#define NUM_QUEUES              4
 
 /* Predefined device addresses */
 #define IPC_MEM_VRING0          0xA0000000
@@ -155,12 +155,12 @@ enum {
 /* The total IPC space needed to communicate with a remote processor */
 #define RPMSG_IPC_MEM   (RP_MSG_BUFS_SPACE + 2 * RP_MSG_RING_SIZE)
 
-#define ID_SYSM3_TO_A9      0
-#define ID_A9_TO_SYSM3      1
-#define ID_APPM3_TO_A9      2
-#define ID_A9_TO_APPM3      3
-#define ID_DSP_TO_A9        4
-#define ID_A9_TO_DSP        5
+#define ID_SYSM3_TO_A9      ID_SELF_TO_A9
+#define ID_A9_TO_SYSM3      ID_A9_TO_SELF
+#define ID_DSP_TO_A9        ID_SELF_TO_A9
+#define ID_A9_TO_DSP        ID_A9_TO_SELF
+#define ID_APPM3_TO_A9      200
+#define ID_A9_TO_APPM3      201
 
 typedef struct VirtQueue_Object {
     /* Id for this VirtQueue_Object */
@@ -188,8 +188,8 @@ typedef struct VirtQueue_Object {
 static struct VirtQueue_Object *queueRegistry[NUM_QUEUES] = {NULL};
 
 static UInt16 hostProcId;
-static UInt16 dspProcId;
 #ifndef SMP
+static UInt16 dspProcId;
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
 #endif
@@ -459,22 +459,20 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
 
 #ifndef SMP
     if (MultiProc_self() == appm3ProcId) {
-        vq->id += 2;
+        /* vqindices that belong to AppM3 should be big so they don't
+         * collide with SysM3's virtqueues */
+        vq->id += 200;
     }
 #endif
-    if (MultiProc_self() == dspProcId) {
-        vq->id += 4;
-    }
 
     switch (vq->id) {
-        case ID_SYSM3_TO_A9:
-        case ID_DSP_TO_A9:
-            /* SYSM3/DSP -> A9 */
+        /* IPC transport vrings */
+        case ID_SELF_TO_A9:
+            /* IPU/DSP -> A9 */
             vringAddr = (struct vring *) IPC_MEM_VRING0;
             break;
-        case ID_A9_TO_SYSM3:
-        case ID_A9_TO_DSP:
-            /* A9 -> SYSM3/DSP */
+        case ID_A9_TO_SELF:
+            /* A9 -> IPU/DSP */
             vringAddr = (struct vring *) IPC_MEM_VRING1;
             break;
 #ifndef SMP
@@ -514,8 +512,8 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
 Void VirtQueue_startup()
 {
     hostProcId      = MultiProc_getId("HOST");
-    dspProcId       = MultiProc_getId("DSP");
 #ifndef SMP
+    dspProcId       = MultiProc_getId("DSP");
     sysm3ProcId     = MultiProc_getId("CORE0");
     appm3ProcId     = MultiProc_getId("CORE1");
 #endif
