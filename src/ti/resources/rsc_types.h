@@ -41,6 +41,8 @@
 #ifndef _RSC_TYPES_H_
 #define _RSC_TYPES_H_
 
+#include <xdc/std.h>
+
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_64K                          0x00010000
 #define SZ_128K                         0x00020000
@@ -57,14 +59,68 @@
 #define SZ_256M                         0x10000000
 #define SZ_512M                         0x20000000
 
+/* Virtio Ids: keep in sync with the linux "include/linux/virtio_ids.h" */
+#define VIRTIO_ID_CONSOLE       3 /* virtio console */
+#define VIRTIO_ID_RPMSG         7 /* virtio remote processor messaging */
+
+/* Indices of rpmsg virtio features we support */
+#define VIRTIO_RPMSG_F_NS       0  /* RP supports name service notifications */
+#define VIRTIO_RING_F_SYMMETRIC 30 /* We support symmetric vring */
+
 /* Resource info: Must match include/linux/remoteproc.h: */
 #define TYPE_CARVEOUT    0
 #define TYPE_DEVMEM      1
-#define TYPE_DEVICE      2
-#define TYPE_IRQ         3
-#define TYPE_TRACE       4
-#define TYPE_ENTRYPOINT  5
-#define TYPE_CRASHDUMP   6
-#define TYPE_SUSPENDADDR 7
+#define TYPE_TRACE       2
+#define TYPE_VDEV        3
+#define TYPE_CRASHDUMP   4
+
+/* Common Resource Structure Types */
+struct fw_rsc_carveout {
+    UInt32  type;
+    UInt32  da;
+    UInt32  pa;
+    UInt32  len;
+    UInt32  flags;
+    UInt32  reserved;
+    Char    name[32];
+};
+
+struct fw_rsc_devmem {
+    UInt32  type;
+    UInt32  da;
+    UInt32  pa;
+    UInt32  len;
+    UInt32  flags;
+    UInt32  reserved;
+    Char    name[32];
+};
+
+struct fw_rsc_trace {
+    UInt32  type;
+    UInt32  da;
+    UInt32  len;
+    UInt32  reserved;
+    Char    name[32];
+};
+
+struct fw_rsc_vdev_vring {
+    UInt32  da; /* device address */
+    UInt32  align;
+    UInt32  num;
+    UInt32  notifyid;
+    UInt32  reserved;
+};
+
+struct fw_rsc_vdev {
+    UInt32  type;
+    UInt32  id;
+    UInt32  notifyid;
+    UInt32  dfeatures;
+    UInt32  gfeatures;
+    UInt32  config_len;
+    Char    status;
+    Char    num_of_vrings;
+    Char    reserved[2];
+};
 
 #endif /* _RSC_TYPES_H_ */

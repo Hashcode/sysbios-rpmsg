@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,19 +71,30 @@ module IpcMemory {
     const Int E_NOTFOUND = -1;
 
     /*!
-     *  @def       IpcMemory_Resource
+     *  @def       IpcMemory_RscTable
      *
-     *  @brief     A Resource Table record
+     *  @brief     An open-ended type-length-value based resource table
      */
-    struct Resource {
+    struct RscTable {
+        UInt32 ver;
+        UInt32 num;
+        UInt32 reserved[2];
+        UInt32 offset[];
+    };
+
+    /*!
+     *  @def       IpcMemory_MemEntry
+     *
+     *  @brief     A Resource Table memory type record
+     */
+    struct MemEntry {
         UInt32 type;
-        UInt32 da_low;       /* Device Virtual Address */
-        UInt32 da_high;
-        UInt32 pa_low;       /* Physical Address */
-        UInt32 pa_high;
-        UInt32 size;
+        UInt32 da;       /* Device Virtual Address */
+        UInt32 pa;       /* Physical Address */
+        UInt32 len;
+        UInt32 flags;
         UInt32 reserved;
-        Char   name[48];
+        Char   name[32];
     };
 
     /*!
@@ -115,10 +126,9 @@ internal:   /* not for client use */
      *  @brief      Return the i-th entry in the resource table
      *
      */
-    Resource *getEntry(UInt entry);
+    MemEntry *getEntry(UInt index);
 
     struct Module_State {
-        UInt32    *pSize;  /* Number of resources in the Resource Table */
-        Resource  *pTable; /* IpcMemory Resource Table pointer */
+        RscTable    *pTable;  /* IpcMemory Resource Table pointer */
     };
 }

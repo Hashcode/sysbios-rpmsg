@@ -63,15 +63,10 @@ function module$use()
 
     if (MultiProc.id == MultiProc.getIdMeta("CORE0") ||
         MultiProc.id == MultiProc.getIdMeta("DSP")) {
-        /* The .resource_size section should always be at the segment base */
-        Program.sectMap[".resource_size"] = new Program.SectionSpec();
-        Program.sectMap[".resource_size"].type = "NOINIT";
-        Program.sectMap[".resource_size"].loadAddress = addr;
-
-        /* The .resource_table should always be at 0x10 offset */
+        /* The .resource_table section should always be at the segment base */
         Program.sectMap[".resource_table"] = new Program.SectionSpec();
         Program.sectMap[".resource_table"].type = "NOINIT";
-        Program.sectMap[".resource_table"].loadAddress = addr + 0x10;
+        Program.sectMap[".resource_table"].loadAddress = addr;
     }
 }
 
@@ -95,6 +90,5 @@ function module$static$init(obj, params)
     }
 
     /* Assign the addresses for the module state variables */
-    obj.pSize = addr;
-    obj.pTable = addr + 0x10;
+    obj.pTable = addr;
 }

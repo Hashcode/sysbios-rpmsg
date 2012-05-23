@@ -73,12 +73,17 @@
 #define DSP_MEM_IOBUFS          0x80000000
 #define DSP_MEM_DATA            0x90000000
 #define DSP_MEM_HEAP            0x90100000
-#define DSP_MEM_IPC_VRING       0xA0000000
-#define DSP_MEM_IPC_DATA        0x9F000000
 
-#define DSP_MEM_SIZE            SZ_4M
-#define DSP_MEM_IPC_VRING_SIZE  (SZ_512K - SZ_64K)
-#define DSP_MEM_IPC_DATA_SIZE   (SZ_512K + SZ_64K)
+#define DSP_MEM_IPC_DATA        0x9F000000
+#define DSP_MEM_IPC_VRING       0xA0000000
+#define DSP_MEM_RPMSG_VRING0    0xA0000000
+#define DSP_MEM_RPMSG_VRING1    0xA0004000
+#define DSP_MEM_VRING_BUFS0     0xA0040000
+#define DSP_MEM_VRING_BUFS1     0xA0080000
+
+#define DSP_MEM_SIZE            (SZ_1M * 5)
+#define DSP_MEM_IPC_VRING_SIZE  SZ_1M
+#define DSP_MEM_IPC_DATA_SIZE   SZ_1M
 #define DSP_MEM_TEXT_SIZE       SZ_512K
 #define DSP_MEM_DATA_SIZE       SZ_512K
 #define DSP_MEM_HEAP_SIZE       SZ_2M
@@ -93,51 +98,183 @@
 #else
 #define PHYS_MEM_IPC_VRING      (0xADA00000 - DSP_MEM_SIZE)
 #endif
-#define PHYS_MEM_IPC_DATA       (PHYS_MEM_IPC_VRING + DSP_MEM_IPC_VRING_SIZE)
-#define PHYS_MEM_TEXT           (PHYS_MEM_IPC_DATA + DSP_MEM_IPC_DATA_SIZE)
-#define PHYS_MEM_DATA           (PHYS_MEM_TEXT + DSP_MEM_TEXT_SIZE)
-#define PHYS_MEM_HEAP           (PHYS_MEM_DATA + DSP_MEM_DATA_SIZE)
 
 /* Need to be identical to that of Ducati */
 #define PHYS_MEM_IOBUFS         0xBA300000
 
-#pragma DATA_SECTION(resourcesLen, ".resource_size")
-#pragma DATA_SECTION(resources, ".resource_table")
+/*
+ * Sizes of the virtqueues (expressed in number of buffers supported,
+ * and must be power of 2)
+ */
+#define DSP_RPMSG_VQ0_SIZE      256
+#define DSP_RPMSG_VQ1_SIZE      256
 
-ti_resources_IpcMemory_Resource resources[] = {
-    { TYPE_TRACE, 0, 0, 0, 0, 0, 0, "0" },
-    { TYPE_ENTRYPOINT, 0, 0, 0, 0, 0, 0, "0" },
-    { TYPE_CRASHDUMP, 0, 0, 0, 0, 0, 0, "0" },
-    { TYPE_SUSPENDADDR, 0, 0, 0, 0, 0, 0, "0" },
-    { TYPE_DEVMEM, DSP_PERIPHERAL_L4CFG, 0, L4_PERIPHERAL_L4CFG, 0, SZ_16M,
-       0, "DSP_PERIPHERAL_L4CFG" },
-    { TYPE_DEVMEM, DSP_PERIPHERAL_L4PER, 0, L4_PERIPHERAL_L4PER, 0, SZ_16M,
-       0, "DSP_PERIPHERAL_L4PER" },
-    { TYPE_DEVMEM, DSP_PERIPHERAL_DMM, 0, L3_PERIPHERAL_DMM, 0, SZ_1M,
-       0, "DSP_PERIPHERAL_DMM" },
-    { TYPE_DEVMEM, DSP_TILER_MODE_0_1, 0, L3_TILER_MODE_0_1, 0, SZ_256M,
-       0, "DSP_TILER_MODE_0_1" },
-    { TYPE_DEVMEM, DSP_TILER_MODE_2, 0, L3_TILER_MODE_2, 0, SZ_128M,
-       0, "DSP_TILER_MODE_2" },
-    { TYPE_DEVMEM, DSP_TILER_MODE_3, 0, L3_TILER_MODE_3, 0, SZ_128M,
-       0, "DSP_TILER_MODE_3" },
+/* flip up bits whose indices represent features we support */
+#define RPMSG_DSP_C0_FEATURES         1
 
-    /* DSP_MEM_IPC_VRING needs to be first irrespective of static or dynamic
-     * carveout. */
-    { TYPE_CARVEOUT, DSP_MEM_IPC_VRING,  0, PHYS_MEM_IPC_VRING, 0,
-       DSP_MEM_IPC_VRING_SIZE, 0, "DSP_MEM_IPC_VRING" },
-    { TYPE_CARVEOUT, DSP_MEM_IPC_DATA,  0, PHYS_MEM_IPC_DATA, 0,
-       DSP_MEM_IPC_DATA_SIZE, 0, "DSP_MEM_IPC_DATA" },
-    { TYPE_CARVEOUT, DSP_MEM_TEXT, 0, PHYS_MEM_TEXT, 0, DSP_MEM_TEXT_SIZE,
-       0, "DSP_MEM_TEXT" },
-    { TYPE_CARVEOUT, DSP_MEM_DATA, 0, PHYS_MEM_DATA, 0, DSP_MEM_DATA_SIZE,
-       0, "DSP_MEM_DATA" },
-    { TYPE_CARVEOUT, DSP_MEM_HEAP, 0, PHYS_MEM_HEAP, 0, DSP_MEM_HEAP_SIZE,
-       0, "DSP_MEM_HEAP" },
-    { TYPE_CARVEOUT, DSP_MEM_IOBUFS, 0, PHYS_MEM_IOBUFS, 0, DSP_MEM_IOBUFS_SIZE,
-       0, "DSP_MEM_IOBUFS" },
+struct resource_table {
+    UInt32 version;
+    UInt32 num;
+    UInt32 reserved[2];
+    UInt32 offset[14];  /* Should match 'num' in actual definition */
+
+    /* rpmsg vdev entry */
+    struct fw_rsc_vdev rpmsg_vdev;
+    struct fw_rsc_vdev_vring rpmsg_vring0;
+    struct fw_rsc_vdev_vring rpmsg_vring1;
+
+    /* text carveout entry */
+    struct fw_rsc_carveout text_cout;
+
+    /* data carveout entry */
+    struct fw_rsc_carveout data_cout;
+
+    /* heap carveout entry */
+    struct fw_rsc_carveout heap_cout;
+
+    /* ipcdata carveout entry */
+    struct fw_rsc_carveout ipcdata_cout;
+
+    /* trace entry */
+    struct fw_rsc_trace trace;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem0;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem1;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem2;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem3;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem4;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem5;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem6;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem7;
 };
 
-UInt32 resourcesLen = sizeof(resources) / sizeof(*resources);
+#define TRACEBUFADDR (UInt32)&ti_trace_SysMin_Module_State_0_outbuf__A
+
+#pragma DATA_SECTION(ti_resources_ResourceTable, ".resource_table")
+#pragma DATA_ALIGN(ti_resources_ResourceTable, 4096)
+
+struct resource_table ti_resources_ResourceTable = {
+    1,      /* we're the first version that implements this */
+    14,     /* number of entries in the table */
+    0, 0,   /* reserved, must be zero */
+    /* offsets to entries */
+    {
+        offsetof(struct resource_table, rpmsg_vdev),
+        offsetof(struct resource_table, text_cout),
+        offsetof(struct resource_table, data_cout),
+        offsetof(struct resource_table, heap_cout),
+        offsetof(struct resource_table, ipcdata_cout),
+        offsetof(struct resource_table, trace),
+        offsetof(struct resource_table, devmem0),
+        offsetof(struct resource_table, devmem1),
+        offsetof(struct resource_table, devmem2),
+        offsetof(struct resource_table, devmem3),
+        offsetof(struct resource_table, devmem4),
+        offsetof(struct resource_table, devmem5),
+        offsetof(struct resource_table, devmem6),
+        offsetof(struct resource_table, devmem7),
+    },
+
+    /* rpmsg vdev entry */
+    {
+        TYPE_VDEV, VIRTIO_ID_RPMSG, 0,
+        RPMSG_DSP_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
+        /* no config data */
+    },
+    /* the two vrings */
+    { DSP_MEM_RPMSG_VRING0, 4096, DSP_RPMSG_VQ0_SIZE, 1, 0 },
+    { DSP_MEM_RPMSG_VRING1, 4096, DSP_RPMSG_VQ1_SIZE, 2, 0 },
+
+    {
+        TYPE_CARVEOUT,
+        DSP_MEM_TEXT, 0,
+        DSP_MEM_TEXT_SIZE, 0, 0, "DSP_MEM_TEXT",
+    },
+
+    {
+        TYPE_CARVEOUT,
+        DSP_MEM_DATA, 0,
+        DSP_MEM_DATA_SIZE, 0, 0, "DSP_MEM_DATA",
+    },
+
+    {
+        TYPE_CARVEOUT,
+        DSP_MEM_HEAP, 0,
+        DSP_MEM_HEAP_SIZE, 0, 0, "DSP_MEM_HEAP",
+    },
+
+    {
+        TYPE_CARVEOUT,
+        DSP_MEM_IPC_DATA, 0,
+        DSP_MEM_IPC_DATA_SIZE, 0, 0, "DSP_MEM_IPC_DATA",
+    },
+
+    {
+        TYPE_TRACE, TRACEBUFADDR, 0x8000, 0, "trace:dsp",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_MEM_IPC_VRING, PHYS_MEM_IPC_VRING,
+        DSP_MEM_IPC_VRING_SIZE, 0, 0, "DSP_MEM_IPC_VRING",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_MEM_IOBUFS, PHYS_MEM_IOBUFS,
+        DSP_MEM_IOBUFS_SIZE, 0, 0, "DSP_MEM_IOBUFS",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_TILER_MODE_0_1, L3_TILER_MODE_0_1,
+        SZ_256M, 0, 0, "DSP_TILER_MODE_0_1",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_TILER_MODE_2, L3_TILER_MODE_2,
+        SZ_128M, 0, 0, "DSP_TILER_MODE_2",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_TILER_MODE_3, L3_TILER_MODE_3,
+        SZ_128M, 0, 0, "DSP_TILER_MODE_3",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_PERIPHERAL_L4CFG, L4_PERIPHERAL_L4CFG,
+        SZ_16M, 0, 0, "DSP_PERIPHERAL_L4CFG",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_PERIPHERAL_L4PER, L4_PERIPHERAL_L4PER,
+        SZ_16M, 0, 0, "DSP_PERIPHERAL_L4PER",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_PERIPHERAL_DMM, L3_PERIPHERAL_DMM,
+        SZ_1M, 0, 0, "DSP_PERIPHERAL_DMM",
+    },
+};
 
 #endif /* _RSC_TABLE_DSP_H_ */
