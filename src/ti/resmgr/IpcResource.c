@@ -116,7 +116,7 @@ IpcResource_Handle IpcResource_connect(UInt timeout)
     handle->msgq= MessageQCopy_create(MessageQCopy_ASSIGN_ANY,
                                       &handle->endPoint);
     req.resType = 0;
-    req.reqType = IpcResource_REQ_TYPE_CONN;
+    req.reqType = IpcResource_ReqType_CONN;
     req.resHandle = 0;
     status = MessageQCopy_send(dstProc, IpcResource_server,
                       handle->endPoint, &req, sizeof(req));
@@ -141,6 +141,7 @@ IpcResource_Handle IpcResource_connect(UInt timeout)
     }
 
     return handle;
+
 err:
     Memory_free(NULL, handle, sizeof(*handle));
     return NULL;
@@ -153,10 +154,11 @@ Int IpcResource_disconnect(IpcResource_Handle handle)
 
     if (!handle) {
         System_printf("IpcResource_disconnect: handle is NULL\n");
+        return IpcResource_E_INVALARGS;
     }
 
     req.resType = 0;
-    req.reqType = IpcResource_REQ_TYPE_DISCONN;
+    req.reqType = IpcResource_ReqType_DISCONN;
 
     status = MessageQCopy_send(MultiProc_getId("HOST"), IpcResource_server,
                         handle->endPoint, &req, sizeof(req));
@@ -177,7 +179,7 @@ Int IpcResource_disconnect(IpcResource_Handle handle)
 
     Memory_free(NULL, handle, sizeof(*handle));
 
-    return 0;
+    return IpcResource_S_SUCCESS;
 }
 
 Int IpcResource_request(IpcResource_Handle handle,
@@ -206,7 +208,7 @@ Int IpcResource_request(IpcResource_Handle handle,
     }
 
     req->resType = type;
-    req->reqType = IpcResource_REQ_TYPE_ALLOC;
+    req->reqType = IpcResource_ReqType_ALLOC;
 
     memcpy(req->resParams, resParams, rlen);
     Semaphore_pend(handle->sem, BIOS_WAIT_FOREVER);
@@ -241,6 +243,7 @@ Int IpcResource_request(IpcResource_Handle handle,
 
     *resHandle = ack->resHandle;
     memcpy(resParams, ack->resParams, rlen);
+
 end:
     return status;
 }
@@ -285,7 +288,7 @@ Int IpcResource_setConstraints(IpcResource_Handle handle,
         goto end;
     }
 
-    if (action == IpcResource_REQ_TYPE_REL_CONSTRAINTS) {
+    if (action == IpcResource_ReqType_REL_CONSTRAINTS) {
         Semaphore_post(handle->sem);
         goto end;
     }
@@ -315,7 +318,7 @@ Int IpcResource_requestConstraints(IpcResource_Handle handle,
 {
     return IpcResource_setConstraints(handle,
                                       resHandle,
-                                      IpcResource_REQ_TYPE_REQ_CONSTRAINTS,
+                                      IpcResource_ReqType_REQ_CONSTRAINTS,
                                       constraints);
 }
 
@@ -325,7 +328,7 @@ Int IpcResource_releaseConstraints(IpcResource_Handle handle,
 {
     return IpcResource_setConstraints(handle,
                                       resHandle,
-                                      IpcResource_REQ_TYPE_REL_CONSTRAINTS,
+                                      IpcResource_ReqType_REL_CONSTRAINTS,
                                       constraints);
 }
 
@@ -341,7 +344,7 @@ Int IpcResource_release(IpcResource_Handle handle,
     }
 
     req.resType = 0;
-    req.reqType = IpcResource_REQ_TYPE_FREE;
+    req.reqType = IpcResource_ReqType_FREE;
     req.resHandle = resHandle;
 
     status = MessageQCopy_send(MultiProc_getId("HOST"), IpcResource_server,

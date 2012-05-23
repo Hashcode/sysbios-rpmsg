@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,19 @@
  *
  */
 
+#ifndef ti_srvmgr_ServiceMgr__include
+#define ti_srvmgr_ServiceMgr__include
+
 #include <xdc/std.h>
 
+#include <ti/sysbios/knl/Task.h>
 #include <ti/grcm/RcmServer.h>
+
+
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 
 /* Max number of known service types: */
 #define ServiceMgr_NUMSERVICETYPES         16
@@ -65,6 +75,45 @@ typedef Void (*ServiceMgr_disconnectFuncPtr)(Service_Handle srvc, Ptr data);
 Void ServiceMgr_init();
 
 /*
+ *  ======== ServiceMgr_registerSrvTask ========
+ */
+/*!
+ *  @brief Register a task associated with a service
+ *
+ *  This function registers a service task function with the ServiceMgr module.
+ *  This allows the service tasks to be outside the scope of the ServiceMgr
+ *  module, and allow users to define their own services with its associated
+ *  task function. After all the registrations are done, a ServiceMgr_start
+ *  would start these tasks.
+ *
+ *  @param[in] reserved    Reserved for future scalability
+ *  @param[in] func        Task function to run for a particular service task
+ *  @param[in] taskParams  Initialized task parameters that will be used to
+ *                         create the task
+ *
+ *  @sa ServiceMgr_start
+ */
+Bool ServiceMgr_registerSrvTask(UInt16 reserved, Task_FuncPtr func,
+                                Task_Params *taskParams);
+
+/*
+ *  ======== ServiceMgr_start ========
+ */
+/*!
+ *  @brief Start the ServiceMgr services
+ *
+ *  This function creates all the task functions associated with the individual
+ *  services. Each of the tasks is responsible for publishing a service to the
+ *  remote processor and service all the incoming connection requests on that
+ *  service.
+ *
+ *  @param[in] reserved    Reserved for future scalability
+ *
+ *  @sa ServiceMgr_registerTask
+ */
+UInt ServiceMgr_start(UInt16 reserved);
+
+/*
  *  ======== ServiceMgr_register ========
  */
 /*!
@@ -83,7 +132,6 @@ Void ServiceMgr_init();
  *  @sa RcmServer_create
  */
 Bool ServiceMgr_register(String name, RcmServer_Params  *rcmServerParams);
-
 
 /*
  *  ======== ServiceMgr_send ========
@@ -119,3 +167,40 @@ Void ServiceMgr_send(Service_Handle srvc, Ptr data, UInt16 len);
  */
 Bool ServiceMgr_registerDisconnectFxn(Service_Handle srvc, Ptr data,
                                       ServiceMgr_disconnectFuncPtr func);
+
+/*
+ *  ======== ServiceMgr_createService =======
+ */
+/*!
+ *  @brief Create a RCM Server instance associated with a service
+ *
+ *  Create a RCM server instance using the set of functions associated with the
+ *  name, and returns an end point address registered for the service.
+ *
+ *  @param[in]  name           Name associated with RCM function set
+ *  @param[in]  endPt          Endpoint pointer address
+ *
+ */
+UInt32 ServiceMgr_createService(Char * name, UInt32 * endPt);
+
+/*
+ *  ======== ServiceMgr_deleteService =======
+ */
+/*!
+ *  @brief Delete the RCM Server instance associated with an endpoint address
+ *
+ *  Deletes the RCM Servver instance associated with a particular endpoint
+ *  address.
+ *
+ *  @param[in]  addr          EndPoint pointer address associated with the
+ *                            service to delete.
+ *
+ */
+UInt32 ServiceMgr_deleteService(UInt32 addr);
+
+
+#if defined (__cplusplus)
+}
+#endif /* defined (__cplusplus) */
+
+#endif /* ti_srvmgr_ServiceMgr__include */

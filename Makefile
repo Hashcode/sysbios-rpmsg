@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, Texas Instruments Incorporated
+# Copyright (c) 2011-2012, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,41 +31,52 @@
 #
 
 # Repo
-REPO		= $(shell if [ "$$BIOSTOOLSROOT" != "" ]; \
-			  then echo $$BIOSTOOLSROOT; \
-			  else echo "/usr/local"; \
-			  fi)
+BIOSTOOLSROOT   ?= /usr/local
+REPO            := $(BIOSTOOLSROOT)
 
-# Edit Dependency Versions:
-XDCROOTVER	= $(shell if [ "$$XDCVERSION" != "" ]; \
-			  then echo $$XDCVERSION; \
-			  else echo "xdctools_3_22_03_41"; \
-			  fi)
-BIOSPRODVER	= bios_6_32_01_38
-IPCPRODVER	= ipc_1_23_01_26
+# Customizable version variables - export them or pass as arguments to make
+XDCVERSION      ?= xdctools_3_23_02_47
+BIOSVERSION     ?= bios_6_32_01_38
+IPCVERSION      ?= ipc_1_24_02_27
 
-BIOSPROD	= $(REPO)/$(BIOSPRODVER)
-IPCPROD		= $(REPO)/$(IPCPRODVER)
-XDCDIST_TREE	= $(REPO)/$(XDCROOTVER)
+ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
+include bldcfg.mk
+endif
 
-export XDCROOT	= $(XDCDIST_TREE)
+BIOSPROD        = $(REPO)/$(BIOSVERSION)
+IPCPROD         = $(REPO)/$(IPCVERSION)
+XDCPROD         = $(REPO)/$(XDCVERSION)
 
-export XDCPATH	= $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
+BUILD_SMP       ?= 0
+
+export XDCROOT  = $(XDCPROD)
+export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all:
-	$(XDCROOT)/xdc -k -j $(j) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
+	$(XDCROOT)/xdc -k -j $(j) BUILD_SMP=$(BUILD_SMP) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
 	cd src/utils/elfload; make
-	cd src/utils; make
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP)
 
 clean:
-	$(XDCROOT)/xdc clean -Pr src
+	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
 	cd src/utils/elfload; make clean
-	cd src/utils; make clean
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP) clean
 	cd ../..
+
+smp_config:
+	@echo BIOSVERSION=smpbios_1_00_00_21_eng >> bldcfg.mk
+	@echo BUILD_SMP=1 >> bldcfg.mk
+
+unconfig:
+ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
+	@rm bldcfg.mk
+endif
 
 info: tools
 tools:
-	@echo "REPO := $(REPO)"
-	@echo "XDC  := $(XDCDIST_TREE)"
-	@echo "BIOS := $(BIOSPROD)"
-	@echo "IPC  := $(IPCPROD)"
+	@echo "REPO   := $(REPO)"
+	@echo "XDC    := $(XDCPROD)"
+	@echo "BIOS   := $(BIOSPROD)"
+	@echo "IPC    := $(IPCPROD)"
+	@echo "ARMCGT := $(TMS470CGTOOLPATH)"
+	@echo "C6xCGT := $(C6000CGTOOLPATH)"

@@ -40,42 +40,38 @@ TOOLS
 
     o The following are the current versions and download instructions for these
       tools.
-       1) BIOS:  6.32.01.38
-          Public Links:-
+       1) BIOS: 6.32.01.38
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
             Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
-          TI Internal Links:-
-            Linux:   http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
-            Windows: http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
 
-       2) XDC: 3.22.03.41
-          Public Links:-
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_03_41/exports/xdctools_setuplinux_3_22_03_41.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_03_41/exports/xdctools_setupwin32_3_22_03_41.exe
-          TI Internal Links:-
-            Linux:   http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_03_41/exports/xdctools_setuplinux_3_22_03_41.bin
-            Windows: http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_03_41/exports/xdctools_setupwin32_3_22_03_41.exe
+       2) XDC:  3.23.02.47
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_02_47/exports/xdctools_setuplinux_3_23_02_47.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_02_47/exports/xdctools_setupwin32_3_23_02_47.exe
 
-       3) CGT TMS470: 4.9.0
-          Public Links:-
-            TMS470 Compiler is not available for free publicly. Please contact your TI representative.
-         TI Internal Links:-
-            Linux:   http://syntaxerror.dal.design.ti.com/release/releases/arm/rel4_9_0/build/install/ti_cgt_tms470_4.9.0_setup_linux_x86.bin
-            Windows: http://syntaxerror.dal.design.ti.com/release/releases/arm/rel4_9_0/build/install/ti_cgt_tms470_4.9.0_setup_win32.exe
+       3) IPC:  1.24.02.27
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_02_27/exports/ipc_setuplinux_1_24_02_27.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_02_27/exports/ipc_setupwin32_1_24_02_27.exe
 
-       4) CGT C6000: 7.2.0
-          Public Links:-
+       4) CGT TMS470: 4.9.0
+            TMS470 Compiler is not available for free publicly. Please contact
+            your TI representative. A TMS470 Compiler is supplied with Code
+            Composer Studio (CCS), and can be used if you have a valid license.
+
+       5) CGT C6000: 7.2.0
             Please pick the appropriate version from the above public link.
-          TI Internal Links:-
-            Linux:   http://syntaxerror.dal.design.ti.com/release/releases/c60/rel7_2_0/build/install/ti_cgt_c6000_7.2.0_setup_linux_x86.bin
-            Windows: http://syntaxerror.dal.design.ti.com/release/releases/c60/rel7_2_0/build/install/ti_cgt_c6000_7.2.0_setup_win32.exe
 
 
 BUILD (Linux Environment)
     1) Export the proper environment variables to point to your Code Generation
-       Tools installation paths (if different from the default)
+       Tools installation paths (mandatory step). The build targets are
+       controlled based on which environment variables are defined. The
+       TMS470CGTOOLPATH enables the M3 target build, while the C6000CGTOOLPATH
+       enables the C6x build. If the variables are exported in between builds on
+       an existing shell, do 'touch' the
+       <sysbios-rpmsg>/src/config.bld for the change to become effective.
        Eg:
            export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
+                               -- and/or --
            export C6000CGTOOLPATH=/data/omapts/linux/dsp-tc/cgt6x-7.2.0
 
     2) Export the proper environment variable to point to your installation path
@@ -91,19 +87,31 @@ BUILD (Linux Environment)
        Eg:
            export XDCVERSION=xdctools_3_22_01_21
 
-    4) Edit Makefile (optional) so that the following variables are pointing to
-       the correct tools versions. The XDCROOTVER and REPO variables are
-       automatically set based on the exported variables in steps #2 & #3.
-       - BIOSPRODVER
-       - IPCPRODVER
+    4) Export the proper environment variable(s) to choose your own versions of
+       BIOS and/or IPC tools (optional, need to set only if different from
+       default is desired)
+       Eg:
+           export BIOSVERSION=bios_6_32_01_38
+                     - and/or -
+           export IPCVERSION=ipc_1_23_01_26
 
     5) From the top-level sysbios-rpmsg directory, type in 'make' to build the
        entire tree plus sample applications
 
-    6) Type 'make tools' or 'make info' to get your current tools location and
+    6) Steps 1 to 4 can also be achieved alternatively by defining any of the
+       variables on the make invocation line within the shell.
+       Eg:
+        1. make TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
+             (define custom installation path for TMS470CGTOOLPATH)
+        2. make BIOSTOOLSROOT=/data/omapts/linux/dsp-tc XDCVERSION=xdctools_3_22_01_21
+             (define custom BIOSTOOLSROOT location and XDC version)
+        3. make XDCVERSION=xdctools_3_22_01_21 BIOSVERSION=bios_6_32_01_38
+             (define custom XDC and BIOS versions)
+
+    7) Type 'make tools' or 'make info' to get your current tools location and
        versions.
 
-    7) A default firmware binary, ducati-m3.bin is generated in the src/utils
+    8) A default firmware binary, ducati-m3.bin is generated in the src/utils
        directory, using two of the sample baseimages in sysbios-rpmsg tree.
 
 CLEAN (Linux Environment)

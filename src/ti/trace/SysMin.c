@@ -16,7 +16,14 @@
 
 #include <xdc/runtime/Startup.h>
 #include <xdc/runtime/Gate.h>
+
+#ifdef SMP
+#include <ti/sysbios/BIOS.h>
+#include <ti/sysbios/hal/Core.h>
+#include <ti/sysbios/hal/Hwi.h>
+#endif
 #include <ti/sysbios/knl/Clock.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -31,8 +38,12 @@ Int SysMin_Module_startup(Int phase)
     if (SysMin_bufSize != 0) {
         memset(module->outbuf, 0, SysMin_bufSize);
     }
+
+#ifndef SMP
     /* Initialize to TRUE so the first line get the timestamp */
     module->getTime = TRUE;
+#endif
+
     return (Startup_DONE);
 }
 
@@ -89,6 +100,14 @@ static inline Void SysMin_output(Char ch)
 Void SysMin_putch(Char ch)
 {
     IArg        key;
+    UInt        i;
+#ifndef SMP
+    static UInt coreId = 0;
+#else
+    UInt        coreId;
+#endif
+    UInt        lineIdx;
+    Char        *lineBuf;
     Int         index;
     UInt64      uSec;
     static Bool configure = FALSE;
@@ -125,9 +144,31 @@ Void SysMin_putch(Char ch)
 
     if (SysMin_bufSize != 0) {
 
+#ifndef SMP
         key = Gate_enterSystem();
+#else
+        /* Disable only local interrupts to place chars in local line buffer */
+        key = (IArg)Hwi_disableCoreInts();
+        coreId = Core_getCoreId();
+#endif
 
+        lineIdx = module->lineBuffers[coreId].lineidx;
+        lineBuf = module->lineBuffers[coreId].linebuf;
+        lineBuf[lineIdx++] = ch;
+        module->lineBuffers[coreId].lineidx = lineIdx;
+
+#ifdef SMP
+        /* Copy line buffer to shared output buffer at EOL or when filled up */
+        if ((ch == '\n') || (lineIdx >= SysMin_LINEBUFSIZE)) {
+            Gate_enterSystem();
+
+            /* Tag core number */
+            SysMin_output('[');
+            SysMin_output(0x30 + coreId);
+            SysMin_output(']');
+#else
         if (module->getTime == TRUE) {
+#endif
             uSec  = Clock_getTicks() * Clock_tickPeriod;
             SysMin_output('[');
             if (uSec) {
@@ -146,16 +187,36 @@ Void SysMin_putch(Char ch)
             }
             SysMin_output(']');
             SysMin_output(' ');
+#ifdef SMP
+            for (i = 0; i < lineIdx; i++) {
+                SysMin_output(lineBuf[i]);
+            }
+            module->writeidx[0] =  module->outidx;
+            module->lineBuffers[coreId].lineidx = 0;
+
+            Gate_leaveSystem(key);
+        }
+        else {
+            /* restore local interrupts */
+            Hwi_restoreCoreInts((UInt)key);
+        }
+#else
             module->getTime = FALSE;
         }
 
-        SysMin_output(ch);
-        if (ch == '\n') {
+        /* Copy line buffer to shared output buffer at EOL or when filled up */
+        if ((ch == '\n') || (lineIdx >= SysMin_LINEBUFSIZE)) {
+            for (i = 0; i < lineIdx; i++) {
+                SysMin_output(lineBuf[i]);
+            }
+            module->lineBuffers[coreId].lineidx = 0;
             module->getTime = TRUE;
-            module->writeidx[0] =  module->outidx;
+            module->writeidx[0] = module->outidx;
         }
 
         Gate_leaveSystem(key);
+#endif
+
     }
 }
 

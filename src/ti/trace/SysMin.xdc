@@ -72,6 +72,15 @@ module SysMin inherits xdc.runtime.ISystemSupport {
         });
 
     /*!
+     *  ======== LINEBUFSIZE ========
+     *  Size (in MAUs) of the line buffer
+     *
+     *  An internal line buffer of this size is allocated. All output is stored
+     *  in this internal buffer until a new line is output.
+     */
+    const SizeT LINEBUFSIZE = 0x100;
+
+    /*!
      *  ======== bufSize ========
      *  Size (in MAUs) of the output.
      *
@@ -183,12 +192,19 @@ module SysMin inherits xdc.runtime.ISystemSupport {
 
 internal:
 
+    struct LineBuffer {
+        UInt lineidx;              /* index within linebuf to write next Char */
+        Char linebuf[LINEBUFSIZE]; /* local line buffer */
+    }
+
     struct Module_State {
-        Char outbuf[];   /* the output buffer */
-        UInt outidx;     /* index within outbuf to next Char to write */
-        Bool getTime;    /* set to true for each new trace */
-        Bool wrapped;    /* has the index (outidx) wrapped */
-        UInt writeidx[]; /* index to the last "\n" char */
-        UInt readidx[];  /* index to the last  char read by external observer */
+        LineBuffer  lineBuffers[];  /* internal line buffers */
+        Char        outbuf[];   /* the output buffer */
+        UInt        outidx;     /* index within outbuf to next Char to write */
+        Bool        getTime;    /* set to true for each new trace */
+        Bool        wrapped;    /* has the index (outidx) wrapped */
+        UInt        writeidx[]; /* index to the last "\n" char */
+        UInt        readidx[];  /* index to the last char read by external
+                                 * observer */
     }
 }

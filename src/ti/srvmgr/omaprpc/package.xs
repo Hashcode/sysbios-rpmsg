@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,41 +29,52 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
- *  ======== InterruptM3.h ========
- *  OMAP4430/Ducati Interrupt Manger
+ *  ======== package.xs ========
+ *
  */
 
-#include <ti/sysbios/hal/Hwi.h>
-
-#define INVALIDPAYLOAD       (0xFFFFFFFF)
-
-
-/*!
- *  ======== InterruptM3_intEnable ========
- *  Enable remote processor interrupt
+/*
+ *  ======== getLibs ========
  */
-Void InterruptM3_intEnable();
+function getLibs(prog)
+{
+    var suffix;
+    var file;
+    var libAry = [];
+    var profile = this.profile;
+    var smp = "";
 
-/*!
- *  ======== InterruptM3_intDisable ========
- */
-Void InterruptM3_intDisable();
+    suffix = prog.build.target.findSuffix(this);
+    if (suffix == null) {
+        return "";  /* nothing to contribute */
+    }
 
-/*!
- *  ======== InterruptM3_intRegister ========
- */
-Void InterruptM3_intRegister(Hwi_FuncPtr fxn);
+    if (prog.platformName.match(/ipu/)) {
+        smp = "_smp";
+    }
 
-/*!
- *  ======== InterruptM3_intSend ========
- *  Send interrupt to the remote processor
- */
-Void InterruptM3_intSend(UInt16 remoteProcId,  UArg arg);
+    /* make sure the library exists, else fallback to a built library */
+    file = "lib/" + profile + "/ti.srvmgr.omaprpc" + smp + ".a" + suffix;
+    if (java.io.File(this.packageBase + file).exists()) {
+        libAry.push(file);
+    }
+    else {
+        file = "lib/release/ti.srvmgr.omaprpc" + smp + ".a" + suffix;
+        if (java.io.File(this.packageBase + file).exists()) {
+            libAry.push(file);
+        }
+        else {
+            /* fallback to a compatible library built by this package */
+            for (var p in this.build.libDesc) {
+                if (suffix == this.build.libDesc[p].suffix) {
+                    libAry.push(p);
+                    break;
+                }
+            }
+        }
+    }
 
-
-/*!
- *  ======== InterruptM3_intClear ========
- *  Clear interrupt
- */
-UInt InterruptM3_intClear();
+    return libAry.join(";");
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,10 @@
 #define _RSC_TABLE_H_
 
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
+#define SZ_64K                          0x00010000
+#define SZ_128K                         0x00020000
+#define SZ_256K                         0x00040000
+#define SZ_512K                         0x00080000
 #define SZ_1M                           0x00100000
 #define SZ_2M                           0x00200000
 #define SZ_4M                           0x00400000
@@ -61,5 +65,6 @@
 #define TYPE_TRACE       4
 #define TYPE_ENTRYPOINT  5
 #define TYPE_CRASHDUMP   6
+#define TYPE_SUSPENDADDR 7
 
 #endif /* _RSC_TABLE_H_ */

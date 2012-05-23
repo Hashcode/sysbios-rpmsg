@@ -377,7 +377,14 @@ typedef struct {
 typedef struct {
     GateThread_Struct   _f1;
     Ptr                 _f2;
+#if USE_MESSAGEQCOPY
+    Ptr                 _f3a;
+    UInt32              _f3b;
+    UInt32              _f3c;
+    UInt32              _f3d;
+#else
     Ptr                 _f3;
+#endif
     Ptr                 _f4;
     struct {
         Int     _f1;

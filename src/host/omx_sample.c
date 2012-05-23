@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@
 #include <pthread.h>
 #include <sys/eventfd.h>
 
-#include "../include/linux/rpmsg_omx.h"
+#include "../../include/linux/rpmsg_omx.h"
 
 #include "omx_packet.h"
 
@@ -82,8 +82,6 @@ typedef enum {
     RPC_OMX_MAP_INFO_THREE_BUF  = 3,
     RPC_OMX_MAP_INFO_MAX        = 0x7FFFFFFF
 } map_info_type;
-
-int num_iterations = 1;
 
 int exec_cmd(int fd, char *msg, size_t len, char *reply_msg, int *reply_len, int cb)
 {
@@ -218,25 +216,44 @@ int test_h264_decoder(int fd, int i)
 int main(int argc, char *argv[])
 {
     int fd;
-    int ret;
+    int ret = 0;
     uint64_t die_event = 1;
     ssize_t s;
     struct omx_conn_req connreq = { .name = "OMX" };
     int i;
+    int num_iterations = 1;
+    int rproc = 0;
+    char rpmsg_dev[20];
 
-    if (argc > 2)  {
-        printf("Usage: omx_sample [<num_iterations>]\n");
-        return ERROR;
+    switch (argc) {
+    case 3:
+       rproc = atoi(argv[1]);
+       num_iterations = atoi(argv[2]);
+       break;
+    case 2:
+       rproc = atoi(argv[1]);
+       break;
+    case 1:
+       break;
+    default:
+        ret = ERROR;
+        break;
     }
-    else if (argc == 2) {
-        num_iterations = atoi(argv[1]);
+
+    if (rproc < 0 || rproc > 2) {
+        printf("Incorrect input argument for processor, should be 0, 1 or 2\n");
+        ret = ERROR;
     }
-    else {
-        num_iterations = 1;
+
+    if (ret) {
+       printf("Usage: omx_sample [<processor> [<num_iterations>]]\n");
+       return ret;
     }
+
+    sprintf(rpmsg_dev, "/dev/rpmsg-omx%d", rproc);
 
     /* Connect to the OMX ServiceMgr on Ducati core 1: */
-    fd = open("/dev/rpmsg-omx1", O_RDWR);
+    fd = open(rpmsg_dev, O_RDWR);
     if (fd < 0) {
         perror("Can't open OMX device");
         return ERROR;

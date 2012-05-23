@@ -206,6 +206,10 @@ Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 token);
  */
 Void VirtQueue_postCrashToMailbox(Void);
 
+/*!
+ *  @brief      Post a init done message to host
+ */
+Void VirtQueue_postInitDone(Void);
 
 #if defined (__cplusplus)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,38 +38,58 @@
 /* explicit references to global objects */
 var Build = xdc.useModule('xdc.bld.BuildEnvironment');
 var Pkg = xdc.useModule('xdc.bld.PackageContents');
+var smpBuild = java.lang.System.getenv("BUILD_SMP");
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
-Pkg.generatedFiles.$add("nocfg/");
-Pkg.generatedFiles.$add("nocfg.mak");
 Pkg.libDir = "package/";
-
-/* add custom makefiles to build model */
-Pkg.makePrologue =
-    "-include prologue.mak\n" +
-    "-include docs.mak\n";
 
 /* add custom files to all releases */
 Pkg.attrs.exportSrc = false;
+Pkg.attrs.exportCfg = true;
 Pkg.otherFiles = [
     "Deh.h"
 ];
 
 /* list of libraries to build */
 var libArray = new Array();
+if (smpBuild == "1") {
+    /* deh library for IPU SMP target */
+    libArray.push(
+        {
+            name: "ti.deh_smp",
+            sources: [
+                "Deh.c"
+            ],
+            isas: [ "v7M" ],
+        }
+    );
+}
+else {
+    /* deh library for IPU non-SMP target */
+    libArray.push(
+        {
+            name: "ti.deh",
+            sources: [
+                "Deh.c"
+            ],
+            isas: [ "v7M" ],
+        }
+    );
 
-libArray.push(
-    {
-        name: "Deh",
-        sources: [
-            "Deh.c"
-        ],
-    }
-);
+    /* deh library for DSP target */
+    libArray.push(
+        {
+            name: "ti.deh",
+            sources: [
+                "DehDsp.c"
+            ],
+            isas: [ "64T" ],
+        }
+    );
+}
 
 /* generate the package libraries */
-var Pkg = xdc.useModule('xdc.bld.PackageContents');
 /* check if profile specified in XDCARGS */
 /* XDCARGS="... profile=debug ..." */
 var cmdlProf = (" " + arguments.join(" ") + " ").match(/ profile=([^ ]+) /);
@@ -82,11 +102,6 @@ for (var i = 0; i < libArray.length; i++) {
     /* ==== loop over all targets in build array ==== */
     for (var j = 0; j < Build.targets.length; j++) {
         var targ = Build.targets[j];
-
-        /* invoke user supplied target predicate function */
-        if (this.skipTarget != undefined)  {
-            continue;
-        }
 
         /* skip target if not compatible with source code */
         if ("icw" in lib) {

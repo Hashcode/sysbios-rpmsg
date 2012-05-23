@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,11 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
  *  ======== package.xs ========
  *
  */
-
 
 /*
  *  ======== getLibs ========
@@ -44,24 +44,29 @@ function getLibs(prog)
     var file;
     var libAry = [];
     var profile = this.profile;
+    var smp = "";
 
     suffix = prog.build.target.findSuffix(this);
     if (suffix == null) {
-        return "";  // nothing to contribute
+        return "";  /* nothing to contribute */
     }
 
-    // make sure the library exists, else fallback to a built library
-    file = "lib/" + profile + "/Deh" + ".a" + suffix;
+    if (prog.platformName.match(/ipu/)) {
+        smp = "_smp";
+    }
+
+    /* make sure the library exists, else fallback to a built library */
+    file = "lib/" + profile + "/ti.deh" + smp +".a" + suffix;
     if (java.io.File(this.packageBase + file).exists()) {
         libAry.push(file);
     }
     else {
-        file = "lib/release/Deh" + ".a" + suffix;
+        file = "lib/release/ti.deh" + smp +".a" + suffix;
         if (java.io.File(this.packageBase + file).exists()) {
             libAry.push(file);
         }
         else {
-            // fallback to a compatible library built by this package
+            /* fallback to a compatible library built by this package */
             for (var p in this.build.libDesc) {
                 if (suffix == this.build.libDesc[p].suffix) {
                     libAry.push(p);

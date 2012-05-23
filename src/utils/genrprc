@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2011, Texas Instruments Incorporated
+# Copyright (c) 2011-2012, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 # Usage: genrprc [--e0=core0 entry point] [--e1=core1 entry point]
 #          [--t0=core0 trace buffer symbol] [--t1=core1 trace buffer symbol]
 #          [--d0=core0 error buffer symbol] [--d1=core1 error buffer symbol]
+#          [--s0=core0 suspend symbol]      [--s1=core1 suspend symbol]
 #          core0_filename [core1_filename] output_filename
 #
 # Default values for:
@@ -46,6 +47,9 @@
 #   core1 trace buffer symbol: SysMin_Module_State_0_outbuf__A
 #   core0 error buffer symbol: Deh_Module_State_0_outbuf__A
 #   core1 error buffer symbol: Deh_Module_State_0_outbuf__A
+#   core0 suspend addr symbol: ti_sysbios_family_arm_ducati_omap4430_readyIdleCore0
+#                              ti_sysbios_family_c64p_tesla_Power_readyIdle (DSP)
+#   core1 suspend addr symbol: ti_sysbios_family_arm_ducati_omap4430_readyIdleCore1
 #
 #===============================================================================
 
@@ -53,6 +57,7 @@ usage=\
 "Usage: genrprc [--e0=core0 entry point] [--e1=core1 entry point]
         [--t0=core0 trace buffer symbol] [--t1=core1 trace buffer symbol]
         [--d0=core0 error buffer symbol] [--d1=core1 error buffer symbol]
+        [--s0=core0 suspend symbol]      [--s1=core1 suspend symbol]
         core0_filename [core1_filename] output_filename"
 
 dir=`dirname $0`
@@ -63,8 +68,10 @@ entryname0=
 entryname1=
 errbufname0=Deh_Module_State_0_outbuf__A
 errbufname1=Deh_Module_State_0_outbuf__A
+suspname0=ti_sysbios_family_arm_ducati_omap4430_readyIdleCore0
+suspname1=ti_sysbios_family_arm_ducati_omap4430_readyIdleCore1
 
-cmdline=`getopt -o "" --long e0:,e1:,t0:,t1:,d0:,d1: --name $0 -- "$@"`
+cmdline=`getopt -o "" --long e0:,e1:,t0:,t1:,d0:,d1:,s0:,s1: --name $0 -- "$@"`
 err=$?
 if [[ $err != 0 ]]
 then
@@ -83,9 +90,25 @@ while true ; do
 	--t1) tracename1=$2; shift 2;;
 	--d0) errbufname0=$2; shift 2;;
 	--d1) errbufname1=$2; shift 2;;
+	--s0) suspname0=$2; shift 2;;
+	--s1) suspname1=$2; shift 2;;
 	--) shift; break;;
     esac
 done
+
+ext=`basename $1 | awk -F . '{print $NF}'`
+if [[ $ext == "xe64T" ]]
+then
+	if  [[ $entryname0 == "" ]]
+	then
+		echo warning: ti_sysbios_family_c64p_Hwi0 is being set as entry point for dsp
+		entryname0=ti_sysbios_family_c64p_Hwi0
+	fi
+	if [[ $suspname0 == "ti_sysbios_family_arm_ducati_omap4430_readyIdleCore0" ]]
+	then
+		suspname0=ti_sysbios_family_c64p_tesla_Power_readyIdle
+	fi
+fi
 
 if [[ $# == 3 ]]
 then
@@ -98,6 +121,8 @@ then
 	traceaddr1=`nm $core1file | grep $tracename1 | cut -d ' ' -f 1`
 	errbufaddr0=`nm $core0file | grep $errbufname0 | cut -d ' ' -f 1`
 	errbufaddr1=`nm $core1file | grep $errbufname1 | cut -d ' ' -f 1`
+	suspaddr0=`nm $core0file | grep $suspname0 | cut -d ' ' -f 1`
+	suspaddr1=`nm $core1file | grep $suspname1 | cut -d ' ' -f 1`
 	if [[ $entryname0 == "" ]]
 	then
 		entryaddr0=`readelf -h $core0file | \
@@ -123,6 +148,7 @@ else
 
 	traceaddr0=`nm $core0file | grep $tracename0 | cut -d ' ' -f 1`
 	errbufaddr0=`nm $core0file | grep $errbufname0 | cut -d ' ' -f 1`
+	suspaddr0=`nm $core0file | grep $suspname0 | cut -d ' ' -f 1`
 	if [[ $entryname0 == "" ]]
 	then
 		entryaddr0=`readelf -h $core0file | \
@@ -137,31 +163,57 @@ else
     fi
 fi
 
-if [[ $entryaddr0 == "" ]]
+if [[ -f $core0file ]]
 then
-	echo warning: null entry point for core 0
-fi
-if [[ $entryaddr1 == "" ]]
-then
-	echo warning: null entry point for core 1
-fi
-if [[ $traceaddr0 == "" ]]
-then
-	echo warning: null trace buffer address for core 0
-fi
-if [[ $traceaddr1 == "" ]]
-then
-	echo warning: null trace buffer address for core 1
-fi
-if [[ $errbufaddr0 == "" ]]
-then
-	echo warning: null error buffer address for core 0
-fi
-if [[ $errbufaddr1 == "" ]]
-then
-	echo warning: null error buffer address for core 1
+	if [[ $entryaddr0 == "" ]]
+	then
+		echo warning: null entry point for core 0
+	fi
+
+	if [[ $traceaddr0 == "" ]]
+	then
+		echo warning: null trace buffer address for core 0
+	fi
+
+	if [[ $errbufaddr0 == "" ]]
+	then
+		echo warning: null error buffer address for core 0
+	fi
+	if [[ $suspaddr0 == "" ]]
+	then
+		echo warning: null suspend address
+	fi
 fi
 
+if [[ -f $core1file ]]
+then
+	if [[ $entryaddr1 == "" ]]
+	then
+		echo warning: null entry point for core 1
+	fi
+	if [[ $traceaddr1 == "" ]]
+	then
+		echo warning: null trace buffer address for core 1
+	fi
+	if [[ $errbufaddr1 == "" ]]
+	then
+		echo warning: null error buffer address for core 1
+	fi
+	if [[ $suspaddr1 == "" ]]
+	then
+		if [[ $suspaddr0 != "" ]]
+		then
+			echo error: pm package should be included in both/none of the cores
+			exit 1
+		fi
+	else
+		if [[ $suspaddr0 == "" ]]
+		then
+			echo error: pm package should be included in both/none of the cores
+			exit 1
+		fi
+	fi
+fi
 
 file_info=`file $outfile`
 foo=`echo $file_info | grep executable`
@@ -177,9 +229,16 @@ then
 fi
 
 tmp=/tmp/genrprc-$$
+if [[ -f $core1file ]]
+then
+	echo $dir/mkheader $core0file $core1file $outfile
+	$dir/mkheader $core0file $core1file $outfile
+else
+	echo $dir/mkheader $core0file $outfile
+	$dir/mkheader $core0file $outfile
+fi
 
-echo $dir/mkheader $core0file $core1file $outfile
-$dir/mkheader $core0file $core1file $outfile
+
 if [[ $? != 0 ]]
 then
 	echo mkheader failed
@@ -224,43 +283,6 @@ fi
 # resource gets the value of entry1, etc.).
 #
 
-if [[ $traceaddr0 == "" ]]
-then
-	trace0=
-else
-	trace0="trace0:$traceaddr0"
-fi
-if [[ $traceaddr1 == "" ]]
-then
-	trace1=
-else
-	trace1="trace1:$traceaddr1"
-fi
-if [[ $errbufaddr0 == "" ]]
-then
-	errbuf0=
-else
-	errbuf0="errbuf0:$errbufaddr0"
-fi
-if [[ $errbufaddr1 == "" ]]
-then
-	errbuf1=
-else
-	errbuf1="errbuf1:$errbufaddr1"
-fi
-if [[ $entryaddr0 == "" ]]
-then
-	entry0=
-else
-	entry0="entry0:$entryaddr0"
-fi
-if [[ $entryaddr1 == "" ]]
-then
-	entry1=
-else
-	entry1="entry1:$entryaddr1"
-fi
-
 if [[ -f $core0file ]]
 then
 	t0Size=`readelf -S $core0file | \
@@ -293,6 +315,40 @@ else
 	d1Size=0
 fi
 
+args=
+if [[ $traceaddr0 != "" ]]
+then
+	args="$args trace0:$traceaddr0:$t0Size"
+fi
+if [[ $traceaddr1 != "" ]]
+then
+	args="$args trace1:$traceaddr1:$t1Size"
+fi
+if [[ $errbufaddr0 != "" ]]
+then
+	args="$args errbuf0:$errbufaddr0:$d0Size"
+fi
+if [[ $errbufaddr1 != "" ]]
+then
+	args="$args errbuf1:$errbufaddr1:$d1Size"
+fi
+if [[ $entryaddr0 != "" ]]
+then
+	args="$args entry0:$entryaddr0:0"
+fi
+if [[ $entryaddr1 != "" ]]
+then
+	args="$args entry1:$entryaddr1:0"
+fi
+if [[ $suspaddr0 != "" ]]
+then
+	args="$args susp0:$suspaddr0:0"
+fi
+if [[ $suspaddr1 != "" ]]
+then
+	args="$args susp1:$suspaddr1:0"
+fi
+
 if [[ -f $core0file ]]
 then
 	resource_tab=`readelf -S $core0file | \
@@ -305,14 +361,9 @@ then
 		echo $dir/genbase $core0file $tmp $*
 		$dir/genbase $core0file $tmp $*
 	else
-		echo $dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
-		$dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
+		echo $dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
+		$dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
 	fi
-
 	cat $tmp >> $outfile
 	rm $tmp
 fi
@@ -330,12 +381,8 @@ then
 		echo $dir/genbase $core1file $tmp $*
 		$dir/genbase $core1file $tmp $*
 	else
-		echo $dir/genbase $core1file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
-		$dir/genbase $core1file $tmp $* restab:$resource_tab:$r_size \
-		  $trace0:$t0Size $trace1:$t1Size $entry0:0 $entry1:0 \
-		  $errbuf0:$d0Size $errbuf1:$d1Size
+		echo $dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
+		$dir/genbase $core0file $tmp $* restab:$resource_tab:$r_size $args
 	fi
 
 	cat $tmp >> $outfile

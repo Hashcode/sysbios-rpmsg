@@ -64,7 +64,7 @@ echo -n RPRC > $outfile
 $dir/wrints $version 1012 >> $outfile
 
 cd $dir
-rpmsgversion=$(git describe --dirty)
+rpmsgversion=$(git describe --dirty --tags)
 cd $OLDPWD
 
 if [[ -f $corefile0 ]]
@@ -73,7 +73,7 @@ then
 	stat -c "%s %z" $corefile0 >> $outfile
 	nm $corefile0 | grep SysMin_Module_State_0_outbuf__A | cut -d ' ' -f 1 >> $outfile
 	cd $(dirname $corefile0)
-	core0version=$(git describe --dirty)
+	core0version=$(git describe --dirty --tags)
 	cd $OLDPWD
 fi
 
@@ -83,7 +83,7 @@ then
 	stat -c "%s %z" $corefile1 >> $outfile
 	nm $corefile1 | grep SysMin_Module_State_0_outbuf__A | cut -d ' ' -f 1 >> $outfile
 	cd $(dirname $corefile1)
-	core1version=$(git describe --dirty)
+	core1version=$(git describe --dirty --tags)
 	cd $OLDPWD
 fi
 

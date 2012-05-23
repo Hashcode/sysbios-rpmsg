@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *  ======== Interrupt.c ========
- *  OMAP4430/Ducati Interrupt Manger
+ *  ======== InterruptIpu.c ========
+ *  IPU Interrupt Manger
  */
 
 #include <xdc/std.h>
@@ -40,11 +40,13 @@
 #include <xdc/runtime/Diags.h>
 
 #include <ti/sysbios/hal/Hwi.h>
+#ifndef SMP
 #include <ti/sysbios/family/arm/ducati/Core.h>
+#endif
 
 #include <ti/ipc/MultiProc.h>
 
-#include "InterruptM3.h"
+#include <ti/ipc/rpmsg/InterruptIpu.h>
 
 /* Register access method. */
 #define REG16(A)   (*(volatile UInt16 *) (A))
@@ -56,10 +58,11 @@
 #define M3INT                   19
 
 /* Assigned mailboxes */
-#define SYSM3_MBX               0
-#define HOST_MBX                1
-#define APPM3_MBX               2
-#define DSP_MBX                 3
+#define HOST_TO_SYSM3_MBX       0 /* Rx on SysM3 from Host */
+#define M3_TO_HOST_MBX          1 /* Tx to Host from M3 */
+#define DSP_TO_HOST_MBX         2 /* Tx to Host from DSP */
+#define HOST_TO_DSP_MBX         3 /* Rx on DSP from Host */
+#define SYSM3_TO_APPM3_MBX      4 /* Rx on AppM3 from Host/SysM3 */
 
 #define MAILBOX_BASEADDR        (0xAA0F4000)
 
@@ -83,13 +86,14 @@
 
 Hwi_FuncPtr userFxn = NULL;
 
-Void InterruptM3_isr(UArg arg);
+Void InterruptIpu_isr(UArg arg);
 
+#ifndef SMP
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
+#endif
 static UInt16 hostProcId;
 static UInt16 dspProcId;
-
 
 /*
  *************************************************************************
@@ -98,55 +102,65 @@ static UInt16 dspProcId;
  */
 
 /*!
- *  ======== InterruptM3_intEnable ========
+ *  ======== InterruptIpu_intEnable ========
  *  Enable remote processor interrupt
  */
-Void InterruptM3_intEnable()
+Void InterruptIpu_intEnable()
 {
     /*
      *  If the remote processor communicates via mailboxes, we should enable
      *  the Mailbox IRQ instead of enabling the Hwi because multiple mailboxes
      *  share the same Hwi
      */
+#ifndef SMP
     if (Core_getId() == 0) {
-        REG32(MAILBOX_IRQENABLE_SET_M3) = MAILBOX_REG_VAL(SYSM3_MBX);
+#endif
+        REG32(MAILBOX_IRQENABLE_SET_M3) = MAILBOX_REG_VAL(HOST_TO_SYSM3_MBX);
+#ifndef SMP
     }
     else {
         Hwi_enableInterrupt(M3INT);
     }
+#endif
 }
 
 /*!
- *  ======== InterruptM3_intDisable ========
+ *  ======== InterruptIpu_intDisable ========
  *  Disables remote processor interrupt
  */
-Void InterruptM3_intDisable()
+Void InterruptIpu_intDisable()
 {
     /*
      *  If the remote processor communicates via mailboxes, we should disable
      *  the Mailbox IRQ instead of disabling the Hwi because multiple mailboxes
      *  share the same Hwi
      */
+#ifndef SMP
     if (Core_getId() == 0) {
-        REG32(MAILBOX_IRQENABLE_CLR_M3) = MAILBOX_REG_VAL(SYSM3_MBX);
+#endif
+        REG32(MAILBOX_IRQENABLE_CLR_M3) = MAILBOX_REG_VAL(HOST_TO_SYSM3_MBX);
+#ifndef SMP
     }
     else {
         Hwi_disableInterrupt(M3INT);
     }
+#endif
 }
 
 /*!
- *  ======== InterruptM3_intRegister ========
+ *  ======== InterruptIpu_intRegister ========
  */
-Void InterruptM3_intRegister(Hwi_FuncPtr fxn)
+Void InterruptIpu_intRegister(Hwi_FuncPtr fxn)
 {
     Hwi_Params  hwiAttrs;
     UInt        key;
 
     hostProcId      = MultiProc_getId("HOST");
     dspProcId       = MultiProc_getId("DSP");
+#ifndef SMP
     sysm3ProcId     = MultiProc_getId("CORE0");
     appm3ProcId     = MultiProc_getId("CORE1");
+#endif
 
     /* Disable global interrupts */
     key = Hwi_disable();
@@ -155,55 +169,63 @@ Void InterruptM3_intRegister(Hwi_FuncPtr fxn)
     Hwi_Params_init(&hwiAttrs);
     hwiAttrs.maskSetting = Hwi_MaskingOption_LOWER;
 
+#ifndef SMP
     if (Core_getId() == 0) {
+#endif
         Hwi_create(M3INT_MBX,
-                   (Hwi_FuncPtr)InterruptM3_isr,
+                   (Hwi_FuncPtr)InterruptIpu_isr,
                    &hwiAttrs,
                    NULL);
-        /* InterruptM3_intEnable won't enable the Hwi */
+        /* InterruptIpu_intEnable won't enable the Hwi */
         Hwi_enableInterrupt(M3INT_MBX);
+#ifndef SMP
     }
     else {
         Hwi_create(M3INT,
-                   (Hwi_FuncPtr)InterruptM3_isr,
+                   (Hwi_FuncPtr)InterruptIpu_isr,
                    &hwiAttrs,
                    NULL);
     }
+#endif
 
     /* Enable the mailbox interrupt to the M3 core */
-    InterruptM3_intEnable();
+    InterruptIpu_intEnable();
 
     /* Restore global interrupts */
     Hwi_restore(key);
 }
 
 /*!
- *  ======== InterruptM3_intSend ========
+ *  ======== InterruptIpu_intSend ========
  *  Send interrupt to the remote processor
  */
-Void InterruptM3_intSend(UInt16 remoteProcId, UArg arg)
+Void InterruptIpu_intSend(UInt16 remoteProcId, UArg arg)
 {
     Log_print2(Diags_USER1,
-        "InterruptM3_intSend: Sending interrupt with payload 0x%x to proc #%d",
+        "InterruptIpu_intSend: Sending interrupt with payload 0x%x to proc #%d",
         (IArg)arg, (IArg)remoteProcId);
+
+#ifndef SMP
     if (remoteProcId == sysm3ProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(SYSM3_MBX)));
-        REG32(MAILBOX_MESSAGE(SYSM3_MBX)) = arg;
+        while(REG32(MAILBOX_FIFOSTATUS(HOST_TO_SYSM3_MBX)));
+        REG32(MAILBOX_MESSAGE(HOST_TO_SYSM3_MBX)) = arg;
     }
     else if (remoteProcId == appm3ProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(APPM3_MBX)));
+        while(REG32(MAILBOX_FIFOSTATUS(SYSM3_TO_APPM3_MBX)));
         /* Write to the mailbox, but this won't trigger an interrupt */
-        REG32(MAILBOX_MESSAGE(APPM3_MBX)) = arg;
+        REG32(MAILBOX_MESSAGE(SYSM3_TO_APPM3_MBX)) = arg;
         /* Actually trigger the interrupt */
         REG16(INTERRUPT_CORE_1) |= 0x1;
     }
-    else if (remoteProcId == dspProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(DSP_MBX)));
-        REG32(MAILBOX_MESSAGE(DSP_MBX)) = arg;
+    else
+#endif
+    if (remoteProcId == dspProcId) {
+        while(REG32(MAILBOX_FIFOSTATUS(HOST_TO_DSP_MBX)));
+        REG32(MAILBOX_MESSAGE(HOST_TO_DSP_MBX)) = arg;
     }
     else if (remoteProcId == hostProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(HOST_MBX)));
-        REG32(MAILBOX_MESSAGE(HOST_MBX)) = arg;
+        while(REG32(MAILBOX_FIFOSTATUS(M3_TO_HOST_MBX)));
+        REG32(MAILBOX_MESSAGE(M3_TO_HOST_MBX)) = arg;
     }
     else {
         /* Should never get here */
@@ -212,24 +234,28 @@ Void InterruptM3_intSend(UInt16 remoteProcId, UArg arg)
 }
 
 /*!
- *  ======== InterruptM3_intClear ========
+ *  ======== InterruptIpu_intClear ========
  *  Clear interrupt and return payload
  */
-UInt InterruptM3_intClear()
+UInt InterruptIpu_intClear()
 {
     UInt arg = INVALIDPAYLOAD;
 
     /* First check whether incoming mailbox has a message */
+#ifndef SMP
     if (Core_getId() == 0) {
+#endif
         /* If FIFO is empty, return INVALIDPAYLOAD */
-        if (REG32(MAILBOX_STATUS(SYSM3_MBX)) == 0) {
+        if (REG32(MAILBOX_STATUS(HOST_TO_SYSM3_MBX)) == 0) {
             return (arg);
         }
         else {
             /* If there is a message, return the argument to the caller */
-            arg = REG32(MAILBOX_MESSAGE(SYSM3_MBX));
-            REG32(MAILBOX_IRQSTATUS_CLR_M3) = MAILBOX_REG_VAL(SYSM3_MBX);
+            arg = REG32(MAILBOX_MESSAGE(HOST_TO_SYSM3_MBX));
+            REG32(MAILBOX_IRQSTATUS_CLR_M3) =
+                                        MAILBOX_REG_VAL(HOST_TO_SYSM3_MBX);
         }
+#ifndef SMP
     }
     else {
         /* Clear the inter-M3 interrupt if necessary */
@@ -238,36 +264,38 @@ UInt InterruptM3_intClear()
         }
 
         /* If FIFO is empty, return INVALIDPAYLOAD */
-        if (REG32(MAILBOX_STATUS(APPM3_MBX)) == 0) {
+        if (REG32(MAILBOX_STATUS(SYSM3_TO_APPM3_MBX)) == 0) {
             return (arg);
         }
         else {
             /* If there is a message, return the argument to the caller */
-            arg = REG32(MAILBOX_MESSAGE(APPM3_MBX));
-            REG32(MAILBOX_IRQSTATUS_CLR_M3) = MAILBOX_REG_VAL(APPM3_MBX);
+            arg = REG32(MAILBOX_MESSAGE(SYSM3_TO_APPM3_MBX));
+            REG32(MAILBOX_IRQSTATUS_CLR_M3) =
+                                        MAILBOX_REG_VAL(SYSM3_TO_APPM3_MBX);
 
-            if (REG32(MAILBOX_STATUS(APPM3_MBX)) != 0) {
+            if (REG32(MAILBOX_STATUS(SYSM3_TO_APPM3_MBX)) != 0) {
                 /* Trigger our own interrupt since another interrupt pending */
                 REG16(INTERRUPT_CORE_1) |= 0x1;
             }
         }
     }
+#endif
 
     return (arg);
 }
 
 /*!
- *  ======== InterruptM3_isr ========
+ *  ======== InterruptIpu_isr ========
  *  Calls the function supplied by the user in intRegister
  */
-Void InterruptM3_isr(UArg arg)
+Void InterruptIpu_isr(UArg arg)
 {
     UArg payload;
 
-    payload = InterruptM3_intClear();
+    payload = InterruptIpu_intClear();
     if (payload != INVALIDPAYLOAD) {
         Log_print1(Diags_USER1,
-            "InterruptM3_isr: Interrupt received, payload = 0x%x\n",
+            "InterruptIpu_isr: Interrupt received, payload = 0x%x\n",
             (IArg)payload);
         userFxn(payload);
     }

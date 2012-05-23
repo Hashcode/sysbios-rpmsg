@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008 Texas Instruments. All rights reserved.
+ *  Copyright (c) 2008-2012 Texas Instruments. All rights reserved.
  *  This program and the accompanying materials are made available under the
  *  terms of the Eclipse Public License v1.0 and Eclipse Distribution License
  *  v. 1.0 which accompanies this distribution. The Eclipse Public License is
@@ -13,6 +13,9 @@
 /*
  *  ======== SysMin.xs ========
  */
+
+var SysMin = this;
+var Core = null;
 
 /*
  *  ======== module$static$init ========
@@ -29,14 +32,32 @@ function module$static$init(obj, params)
                        " the bufSize appropriately.", this);
     }
 
+    if (params.bufSize - 8 < this.LINEBUFSIZE) {
+        this.$logError("Buffer Size need to be larger than line buffer of size"
+                       + " = 0x" + Number(this.LINEBUFSIZE).toString(16), this);
+    }
+
+    if (Program.platformName.match(/ipu/)) {
+        obj.lineBuffers.length = Core.numCores;
+    }
+    else {
+        obj.lineBuffers.length = 1;
+    }
+    for (var i = 0; i < obj.lineBuffers.length; i++) {
+        obj.lineBuffers[i].lineidx = 0;
+        for (var j = 0; j < this.LINEBUFSIZE; j++) {
+            obj.lineBuffers[i].linebuf[j] = 0;
+        }
+    }
+
     obj.outbuf.length = params.bufSize - 8;
     obj.writeidx.length = 0x1;
     obj.readidx.length = 0x1;
     if (params.bufSize != 0) {
         var Memory = xdc.module('xdc.runtime.Memory');
         Memory.staticPlace(obj.outbuf, 0x1000, params.sectionName);
-        Memory.staticPlace(obj.writeidx, 0x0, params.sectionName);
-        Memory.staticPlace(obj.readidx, 0x0, params.sectionName);
+        Memory.staticPlace(obj.writeidx, 0x4, params.sectionName);
+        Memory.staticPlace(obj.readidx, 0x4, params.sectionName);
     }
 
     obj.outidx = 0;
@@ -49,6 +70,9 @@ function module$static$init(obj, params)
  */
 function module$use(obj, params)
 {
+    if (Program.platformName.match(/ipu/)) {
+        Core = xdc.module("ti.sysbios.hal.Core");
+    }
 }
 
 /*

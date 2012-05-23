@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,7 @@
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/hal/Cache.h>
 
-#include <ti/ipc/rpmsg/InterruptM3.h>
+#include <ti/ipc/rpmsg/InterruptProxy.h>
 #include <ti/ipc/rpmsg/VirtQueue.h>
 #include <ti/pm/IpcPower.h>
 
@@ -77,11 +77,14 @@
 #include "virtio_ring.h"
 
 /* Used for defining the size of the virtqueue registry */
-#define NUM_QUEUES                      5
+#define NUM_QUEUES                      6
 
-/* Predefined addresses */
-#define RP_MSG_A9_SYSM3_VRING_PHYS      0xA0000000U
-#define RP_MSG_SYSM3_A9_VRING_PHYS      0xA0002000U
+/* Predefined device addresses */
+#define RP_MSG_A9_SYSM3_VRING_DA        0xA0000000U
+#define RP_MSG_SYSM3_A9_VRING_DA        0xA0002000U
+
+#define RP_MSG_A9_DSP_VRING_DA          0xA0000000U
+#define RP_MSG_DSP_A9_VRING_DA          0xA0002000U
 
 /*
  * enum - Predefined Mailbox Messages
@@ -106,6 +109,11 @@
  * is received.
  *
  * @RP_MBOX_ABORT_REQUEST:  tells the M3 to crash on demand
+ *
+ * @RP_MBOX_BOOTINIT_DONE: this message indicates the BIOS side has reached a
+ * certain state during the boot process. This message is used to inform the
+ * host that the basic BIOS initialization is done, and lets the host use this
+ * notification to perform certain actions.
  */
 enum {
     RP_MSG_MBOX_READY           = (Int)0xFFFFFF00,
@@ -115,7 +123,8 @@ enum {
     RP_MBOX_ECHO_REPLY          = (Int)0xFFFFFF04,
     RP_MBOX_ABORT_REQUEST       = (Int)0xFFFFFF05,
     RP_MSG_FLUSH_CACHE          = (Int)0xFFFFFF06,
-    RP_MSG_HIBERNATION          = (Int)0xFFFFFF07
+    RP_MSG_HIBERNATION          = (Int)0xFFFFFF07,
+    RP_MSG_BOOTINIT_DONE        = (Int)0xFFFFFF08
 };
 
 #define DIV_ROUND_UP(n,d)   (((n) + (d) - 1) / (d))
@@ -142,6 +151,8 @@ enum {
 #define ID_A9_TO_SYSM3      1
 #define ID_APPM3_TO_A9      2
 #define ID_A9_TO_APPM3      3
+#define ID_DSP_TO_A9        4
+#define ID_A9_TO_DSP        5
 
 typedef struct VirtQueue_Object {
     /* Id for this VirtQueue_Object */
@@ -167,7 +178,7 @@ typedef struct VirtQueue_Object {
 } VirtQueue_Object;
 
 static UInt initStage = 0;
-static Ptr buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+static Ptr bufAddr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
 static Semaphore_Handle semHandle = NULL;
 
 static UInt numQueues = 0;
@@ -176,7 +187,14 @@ static struct VirtQueue_Object *queueRegistry[NUM_QUEUES] = {NULL};
 static UInt16 hostProcId;
 static UInt16 dspProcId;
 static UInt16 sysm3ProcId;
+#ifndef SMP
 static UInt16 appm3ProcId;
+#endif
+
+#if defined(M3_ONLY) && !defined(SMP)
+extern Void OffloadM3_init();
+extern Int OffloadM3_processSysM3Tasks(UArg msg);
+#endif
 
 static inline Void * mapPAtoVA(UInt pa)
 {
@@ -203,7 +221,7 @@ Void VirtQueue_kick(VirtQueue_Handle vq)
     Log_print2(Diags_USER1,
             "VirtQueue_kick: Sending interrupt to proc %d with payload 0x%x\n",
             (IArg)vq->procId, (IArg)vq->id);
-    InterruptM3_intSend(vq->procId, vq->id);
+    InterruptProxy_intSend(vq->procId, vq->id);
 }
 
 /*!
@@ -332,7 +350,9 @@ Void VirtQueue_isr(UArg msg)
 
     Log_print1(Diags_USER1, "VirtQueue_isr received msg = 0x%x\n", msg);
 
-    if (MultiProc_self() == sysm3ProcId) {
+#ifndef SMP
+    if (MultiProc_self() == sysm3ProcId || MultiProc_self() == dspProcId) {
+#endif
         switch(msg) {
             case (UInt)RP_MSG_MBOX_READY:
                 /* Start the initialization sequence */
@@ -343,7 +363,7 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             case (UInt)RP_MBOX_ECHO_REQUEST:
-                InterruptM3_intSend(hostProcId, (UInt)(RP_MBOX_ECHO_REPLY));
+                InterruptProxy_intSend(hostProcId, (UInt)(RP_MBOX_ECHO_REPLY));
                 return;
 
             case (UInt)RP_MBOX_ABORT_REQUEST:
@@ -359,12 +379,25 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             case (UInt)RP_MSG_HIBERNATION:
-                /* Notify Core1 */
-                InterruptM3_intSend(appm3ProcId, (UInt)(RP_MSG_HIBERNATION));
-                IpcPower_suspend();
+                if (IpcPower_canHibernate() == TRUE) {
+#ifndef SMP
+                    /* Core0 should notify Core1 */
+                    if (MultiProc_self() == sysm3ProcId) {
+                        InterruptProxy_intSend(appm3ProcId,
+                                               (UInt)(RP_MSG_HIBERNATION));
+                    }
+#endif
+                    IpcPower_suspend();
+                }
                 return;
 
             default:
+#if defined(M3_ONLY) && !defined(SMP)
+                /* Check and process any Inter-M3 Offload messages */
+                if (OffloadM3_processSysM3Tasks(msg))
+                    return;
+#endif
+
                 /*
                  *  If the message isn't one of the above, it's either part of the
                  *  2-message synchronization sequence or it a virtqueue message
@@ -378,8 +411,13 @@ Void VirtQueue_isr(UArg msg)
                 return;
 
             case 1:
-                //buf_addr = (Ptr)msg;
-                buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+                //bufAddr = (Ptr)msg;
+                if ((MultiProc_self() == dspProcId)) {
+                    bufAddr = (Ptr)RP_MSG_A9_DSP_VRING_DA;
+                }
+                else {
+                    bufAddr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
+                }
                 initStage++;
 
                 /* Post the thread calling VirtQueue_startup */
@@ -391,6 +429,7 @@ Void VirtQueue_isr(UArg msg)
                 /* Init is complete, treat payload as a VirtQueue message */
                 break;
         }
+#ifndef SMP
     }
     else if (msg & 0xFFFF0000) {
         if (msg == (UInt)RP_MSG_HIBERNATION) {
@@ -400,14 +439,25 @@ Void VirtQueue_isr(UArg msg)
     }
 
     if (MultiProc_self() == sysm3ProcId && (msg == ID_A9_TO_APPM3 || msg == ID_APPM3_TO_A9)) {
-        InterruptM3_intSend(appm3ProcId, (UInt)msg);
+        InterruptProxy_intSend(appm3ProcId, (UInt)msg);
     }
     else {
+#endif
+        /* Don't let unknown messages to pass as a virtqueue index */
+        if (msg >= NUM_QUEUES) {
+            /* Adding print here deliberately, we should never see this */
+            System_printf("VirtQueue_isr: Invalid mailbox message 0x%x "
+                          "received\n", msg);
+            return;
+        }
+
         vq = queueRegistry[msg];
         if (vq) {
             vq->callback(vq);
         }
+#ifndef SMP
     }
+#endif
 }
 
 
@@ -418,7 +468,7 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
         UInt16 remoteProcId)
 {
     VirtQueue_Object *vq;
-    void *vring_phys;
+    Void *vringAddr;
     Error_Block eb;
 
     Error_init(&eb);
@@ -433,43 +483,52 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     vq->procId = remoteProcId;
     vq->last_avail_idx = 0;
 
+#ifndef SMP
     if (MultiProc_self() == appm3ProcId) {
         vq->id += 2;
+    }
+#endif
+    if (MultiProc_self() == dspProcId) {
+        vq->id += 4;
     }
 
     switch (vq->id) {
         case ID_SYSM3_TO_A9:
-            /* SYSM3 -> A9 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE);
+        case ID_DSP_TO_A9:
+            /* SYSM3/DSP -> A9 */
+            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE);
             break;
         case ID_A9_TO_SYSM3:
-            /* SYSM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr +
+        case ID_A9_TO_DSP:
+            /* A9 -> SYSM3/DSP */
+            vringAddr = (struct vring *)((UInt)bufAddr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
             break;
+#ifndef SMP
         case ID_APPM3_TO_A9:
             /* APPM3 -> A9 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE +
+            vringAddr = (struct vring *)((UInt)bufAddr + RP_MSG_BUFS_SPACE +
                     RPMSG_IPC_MEM);
             break;
         case ID_A9_TO_APPM3:
-            /* APPM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr +
+            /* A9 -> APPM3 */
+            vringAddr = (struct vring *)((UInt)bufAddr +
                     RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE + RPMSG_IPC_MEM);
             break;
+#endif
     }
 
     Log_print3(Diags_USER1,
-            "vring: %d 0x%x (0x%x)\n", vq->id, (IArg)vring_phys,
+            "vring: %d 0x%x (0x%x)\n", vq->id, (IArg)vringAddr,
             RP_MSG_RING_SIZE);
 
-    vring_init(&(vq->vring), RP_MSG_NUM_BUFS, vring_phys, RP_MSG_VRING_ALIGN);
+    vring_init(&(vq->vring), RP_MSG_NUM_BUFS, vringAddr, RP_MSG_VRING_ALIGN);
 
     /*
-     *  Don't trigger a mailbox message every time A8 makes another buffer
+     *  Don't trigger a mailbox message every time MPU makes another buffer
      *  available
      */
-    if (vq->procId == hostProcId || vq->procId == dspProcId) {
+    if (vq->procId == hostProcId) {
         vq->vring.used->flags |= VRING_USED_F_NO_NOTIFY;
     }
 
@@ -486,41 +545,34 @@ Void VirtQueue_startup()
     hostProcId      = MultiProc_getId("HOST");
     dspProcId       = MultiProc_getId("DSP");
     sysm3ProcId     = MultiProc_getId("CORE0");
+#ifndef SMP
     appm3ProcId     = MultiProc_getId("CORE1");
+#endif
 
     /* Initilize the IpcPower module */
     IpcPower_init();
 
-    /*
-     *  DSP can be used to prototype communications with CORE0 instead of
-     *  HOST
-     */
-    if (MultiProc_self() == dspProcId) {
-        memset((void *)RP_MSG_A9_SYSM3_VRING_PHYS, 0,
-                RP_MSG_RING_SIZE * 2 + RP_MSG_BUFS_SPACE);
-        InterruptM3_intRegister(VirtQueue_isr);
-
-        InterruptM3_intSend(sysm3ProcId, (UInt)RP_MSG_MBOX_READY);
-        InterruptM3_intSend(sysm3ProcId, (0xA0000000));
-        InterruptM3_intSend(appm3ProcId, (UInt)RP_MSG_MBOX_READY);
-        InterruptM3_intSend(appm3ProcId, (0xA0000000));
-
-        buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
-    }
-    else if (MultiProc_self() == sysm3ProcId) {
+    if (MultiProc_self() == sysm3ProcId || MultiProc_self() == dspProcId) {
         semHandle = Semaphore_create(0, NULL, NULL);
-        InterruptM3_intRegister(VirtQueue_isr);
+        InterruptProxy_intRegister(VirtQueue_isr);
 
         /* Wait for 2 interrupts to come in from HOST/CORE1 */
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
         Log_print0(Diags_USER1, "VirtQueue_startup: RP_MSG_MBOX_READY received\n");
 
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
-        System_printf("VirtQueue_startup: buf_addr address of 0x%x received\n", buf_addr);
+        System_printf("VirtQueue_startup: bufAddr address of 0x%x received\n",
+                        bufAddr);
+
+#if defined(M3_ONLY) && !defined(SMP)
+        OffloadM3_init();
+#endif
     }
+#ifndef SMP
     else if (MultiProc_self() == appm3ProcId) {
-        InterruptM3_intRegister(VirtQueue_isr);
+        InterruptProxy_intRegister(VirtQueue_isr);
     }
+#endif
 }
 
 /*!
@@ -528,7 +580,15 @@ Void VirtQueue_startup()
  */
 Void VirtQueue_postCrashToMailbox(Void)
 {
-    InterruptM3_intSend(0, (UInt)RP_MSG_MBOX_CRASH);
+    InterruptProxy_intSend(0, (UInt)RP_MSG_MBOX_CRASH);
+}
+
+/*!
+ * ======== VirtQueue_postInitDone ========
+ */
+Void VirtQueue_postInitDone(Void)
+{
+    InterruptProxy_intSend(0, (UInt)RP_MSG_BOOTINIT_DONE);
 }
 
 #define CACHE_WB_TICK_PERIOD    5
@@ -540,12 +600,16 @@ Void VirtQueue_postCrashToMailbox(Void)
  */
 Void VirtQueue_cacheWb()
 {
-    static UInt32 oldticks;
+    static UInt32 oldticks = 0;
+    UInt32 newticks;
 
-    if (Clock_getTicks() >= (oldticks + CACHE_WB_TICK_PERIOD)) {
+    newticks = Clock_getTicks();
+    if (newticks - oldticks < (UInt32)CACHE_WB_TICK_PERIOD) {
         /* Don't keep flushing cache */
         return;
     }
+
+    oldticks = newticks;
 
     /* Flush the cache */
     Cache_wbAll();

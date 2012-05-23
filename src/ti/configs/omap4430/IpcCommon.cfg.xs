@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,7 @@ BIOS.libType    = BIOS.LibType_Custom;
 
 xdc.loadPackage('ti.ipc.rpmsg');
 xdc.loadPackage('ti.srvmgr');
+xdc.useModule('ti.srvmgr.omx.OmxSrvMgr');
 xdc.loadPackage('ti.resmgr');
 
 /* Enable Memory Translation module that operates on the BIOS Resource Table */
@@ -62,12 +63,6 @@ xdc.loadPackage('ti.pm');
 var Power = xdc.useModule('ti.sysbios.family.arm.ducati.omap4430.Power');
 Power.loadSegment = "PM_DATA";
 
-/* Idle function that periodically flushes the unicache */
-var Idle = xdc.useModule('ti.sysbios.knl.Idle');
-Idle.addFunc('&VirtQueue_cacheWb');
-Idle.addFunc('&ti_deh_Deh_idleBegin'); /* must be placed before pwr mgmt */
-Idle.addFunc('&IpcPower_idle');        /* IpcPower_idle must be at the end */
-
 var HeapBuf   = xdc.useModule('ti.sysbios.heaps.HeapBuf');
 var List      = xdc.useModule('ti.sdo.utils.List');
 
@@ -79,7 +74,7 @@ xdc.useModule('ti.sysbios.xdcruntime.GateThreadSupport');
 var GateSwi   = xdc.useModule('ti.sysbios.gates.GateSwi');
 
 var Task          = xdc.useModule('ti.sysbios.knl.Task');
-Task.deleteTerminatedTasks = true;
+Task.common$.namedInstance = true;
 
 var Assert = xdc.useModule('xdc.runtime.Assert');
 var Defaults = xdc.useModule('xdc.runtime.Defaults');

@@ -51,6 +51,7 @@
 #include <xdc/runtime/Log.h>
 #include <xdc/runtime/Diags.h>
 
+#include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Swi.h>
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/heaps/HeapBuf.h>
@@ -132,6 +133,7 @@ static UInt8 recv_buffers[MAXHEAPSIZE];
 
 /* Module ref count: */
 static Int curInit = 0;
+extern Semaphore_Handle MessageQCopy_semHandle;
 
 /*
  *  ======== MessageQCopy_swiFxn ========
@@ -211,8 +213,9 @@ Void MessageQCopy_init(UInt16 remoteProcId)
     Log_print1(Diags_ENTRY, "--> "FXNN": (remoteProcId=%d)",
                 (IArg)remoteProcId);
 
-    if (curInit++ != 0) {
-        return; /* module already initialized */
+    Semaphore_pend(MessageQCopy_semHandle, BIOS_WAIT_FOREVER);
+    if (curInit++) {
+        goto exit;  /* module already initialized */
     }
 
     /* register with xdc.runtime to get a diags mask */
@@ -259,6 +262,9 @@ Void MessageQCopy_init(UInt16 remoteProcId)
     /* construct the Swi to process incoming messages: */
     transport.swiHandle = Swi_create(MessageQCopy_swiFxn, NULL, NULL);
 
+exit:
+    Semaphore_post(MessageQCopy_semHandle);
+
     Log_print0(Diags_EXIT, "<-- "FXNN);
 }
 #undef FXNN
@@ -269,18 +275,22 @@ Void MessageQCopy_init(UInt16 remoteProcId)
 #define FXNN "MessageQCopy_finalize"
 Void MessageQCopy_finalize()
 {
+    Log_print0(Diags_ENTRY, "--> "FXNN);
 
-   Log_print0(Diags_ENTRY, "--> "FXNN);
-   if (--curInit != 0) {
-        return; /* module still in use */
-   }
+    Semaphore_pend(MessageQCopy_semHandle, BIOS_WAIT_FOREVER);
+    if (!curInit || --curInit) {
+         goto exit; /* module still in use, or uninitialized */
+    }
 
-   /* Tear down Module: */
-   HeapBuf_delete(&(module.heap));
+    /* Tear down Module */
+    HeapBuf_delete(&(module.heap));
 
-   Swi_delete(&(transport.swiHandle));
+    Swi_delete(&(transport.swiHandle));
 
-   GateSwi_delete(&module.gateSwi);
+    GateSwi_delete(&module.gateSwi);
+
+exit:
+    Semaphore_post(MessageQCopy_semHandle);
 
     Log_print0(Diags_EXIT, "<-- "FXNN);
 }

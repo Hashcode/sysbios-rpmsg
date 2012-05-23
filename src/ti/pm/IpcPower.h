@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -104,6 +104,26 @@ Void IpcPower_wakeLock();
  */
 Void IpcPower_wakeUnlock();
 
+/*!
+ *  @brief      Disable the core to go to suspend / hibernate
+ *
+ *  @sa         IpcPower_hibernateUnlock, IpcPower_canHibernate
+ */
+UInt IpcPower_hibernateLock();
+
+/*!
+ *  @brief      Enable the core to go to suspend / hibernate
+ *
+ *  @sa         IpcPower_hibernateLock, IpcPower_canHibernate
+ */
+UInt IpcPower_hibernateUnlock();
+
+/*!
+ *  @brief      Return TRUE if hibernation is allowed
+ *
+ *  @sa         IpcPower_hibernateLock, IpcPower_hibernateUnlock
+ */
+Bool IpcPower_canHibernate();
 
 #if defined (__cplusplus)
 }
