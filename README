@@ -26,6 +26,8 @@ TOOLS
     o SYS/BIOS RPMSG build requires the following tools to be installed at the
       minimum:
         - SYS/BIOS: RTOS running on the target slave processor
+        - SMP/BIOS: SMP-mode RTOS running on dual-processor target slave
+                    processor subsystems (needed only for SMP-mode)
         - XDC: RTSC tools used for building and configuration of images
         - IPC: Base Inter-Processor Communication Package
         - CGT: Code Generation Tools for compiling code for M3 & C64x targets
@@ -44,20 +46,23 @@ TOOLS
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
             Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
 
-       2) XDC:  3.23.02.47
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_02_47/exports/xdctools_setuplinux_3_23_02_47.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_02_47/exports/xdctools_setupwin32_3_23_02_47.exe
+       2) SMP/BIOS: 1.00.00.23_eng
+            SMP/BIOS is currently not available for public download.
 
-       3) IPC:  1.24.02.27
+       3) XDC:  3.23.03.53
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_03_53/exports/xdctools_setuplinux_3_23_03_53.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_03_53/exports/xdctools_setupwin32_3_23_03_53.exe
+
+       4) IPC:  1.24.02.27
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_02_27/exports/ipc_setuplinux_1_24_02_27.bin
             Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_02_27/exports/ipc_setupwin32_1_24_02_27.exe
 
-       4) CGT TMS470: 4.9.0
+       5) CGT TMS470: 4.9.0
             TMS470 Compiler is not available for free publicly. Please contact
             your TI representative. A TMS470 Compiler is supplied with Code
             Composer Studio (CCS), and can be used if you have a valid license.
 
-       5) CGT C6000: 7.2.0
+       6) CGT C6000: 7.2.0
             Please pick the appropriate version from the above public link.
 
 

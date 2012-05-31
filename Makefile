@@ -35,7 +35,7 @@ BIOSTOOLSROOT   ?= /usr/local
 REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
-XDCVERSION      ?= xdctools_3_23_02_47
+XDCVERSION      ?= xdctools_3_23_03_53
 BIOSVERSION     ?= bios_6_32_01_38
 IPCVERSION      ?= ipc_1_24_02_27
 
@@ -59,7 +59,7 @@ clean:
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
 
 smp_config:
-	@echo BIOSVERSION=smpbios_1_00_00_21_eng >> bldcfg.mk
+	@echo BIOSVERSION=smpbios_1_00_00_23_eng >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 
 unconfig:
