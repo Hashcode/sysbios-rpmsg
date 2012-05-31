@@ -65,6 +65,18 @@ extern "C" {
  */
 #define IpcPower_E_MEMORY                -2
 
+/*!
+ *  @brief  Event types for power management callbacks
+ */
+typedef enum IpcPower_Event {
+    IpcPower_Event_SUSPEND  = 0, /*! Callback event for Power suspend */
+    IpcPower_Event_RESUME   = 1  /*! Callback event for Power resume  */
+} IpcPower_Event;
+
+/*!
+ *  @brief  Power Event Callback function type definition
+ */
+typedef Void (*IpcPower_CallbackFuncPtr)(Int event, Ptr data);
 
 /* =============================================================================
  *  IpcPower Functions:
@@ -124,6 +136,32 @@ UInt IpcPower_hibernateUnlock();
  *  @sa         IpcPower_hibernateLock, IpcPower_hibernateUnlock
  */
 Bool IpcPower_canHibernate();
+
+/*!
+ *  @brief      Register callback function for a Power event
+ *
+ *  @param[in]  event  Power Management callback event type.
+ *  @param[in]  fxn    Function being registered.
+ *  @param[in]  data   Data to be passed as argument to function.
+ *
+ *  @Returns    Returns SUCCESS or FAIL
+ *
+ *  @sa         IpcPower_registerCallback
+ */
+Int IpcPower_registerCallback(Int event, IpcPower_CallbackFuncPtr fxn,
+                              Ptr data);
+
+/*!
+ *  @brief      Unregister callback function for a Power event
+ *
+ *  @param[in]  event  Power Management callback event type.
+ *  @param[in]  fxn    Function being unregistered.
+ *
+ *  @Returns    Returns SUCCESS or FAIL
+ *
+ *  @sa         IpcPower_unregisterCallback
+ */
+Int IpcPower_unregisterCallback(Int event, IpcPower_CallbackFuncPtr fxn);
 
 #if defined (__cplusplus)
 }

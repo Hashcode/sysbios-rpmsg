@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,20 @@ extern "C" {
 #define SLEEPONEXIT_BIT                 1
 #define DEEPSLEEP_BIT                   2
 #define SEVONPEND_BIT                   4
+
+/* User registered functions storage element */
+typedef struct IpcPower_CallbackElem {
+    IpcPower_Event                  event;
+    IpcPower_CallbackFuncPtr        callback;
+    Ptr                             data;
+    struct IpcPower_CallbackElem    *next;
+} IpcPower_CallbackElem;
+
+/* Pre-suspend function managing user callbacks */
+Void IpcPower_preSuspend(Void);
+
+/* Post-suspend function managing user callbacks */
+Void IpcPower_postResume(Void);
 
 #if defined (__cplusplus)
 }

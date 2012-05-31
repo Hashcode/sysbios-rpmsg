@@ -85,6 +85,9 @@ static UInt16 appm3ProcId;
 #endif
 static Int32 refWakeLockCnt;
 
+/* List for storing all registered callback functions */
+static IpcPower_CallbackElem *IpcPower_callbackList = NULL;
+
 /* Module ref count: */
 static Int curInit = 0;
 
@@ -96,6 +99,23 @@ typedef enum IpcPower_SleepMode {
 
 /* Deep sleep state variable for IpcPower module */
 static Bool IpcPower_deepSleep = TRUE;
+
+
+/*
+ *  ======== IpcPower_callUserFxns ========
+ */
+static Void IpcPower_callUserFxns(IpcPower_Event event)
+{
+    IpcPower_CallbackElem *node = IpcPower_callbackList;
+
+    /* Call the registered functions matching the event */
+    while (node != NULL) {
+        if (node->event == event) {
+            (*(node->callback))(event, node->data);
+        }
+        node = node->next;
+    }
+}
 
 static inline Void IpcPower_sleepMode(IpcPower_SleepMode opt)
 {
@@ -147,10 +167,20 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
     if (refWakeLockCnt) {
         System_printf("Warning: Wake locks in use\n");
     }
+
+#ifndef SMP
+    /* Call pre-suspend preparation function */
+    IpcPower_preSuspend();
+#endif
+
     Power_suspend(&PowerSuspArgs);
 #ifndef SMP
     IpcPower_sleepMode(IpcPower_SLEEP_MODE_DEEPSLEEP);
     IpcPower_setWugen();
+
+    /* Call post-resume preparation function */
+    IpcPower_postResume();
+
     Log_print0(Diags_INFO, FXNN":Resume");
 #endif
 }
@@ -318,4 +348,111 @@ Bool IpcPower_canHibernate()
     }
 
     return (TRUE);
+}
+
+/*
+ *  ======== IpcPower_registerCallback ========
+ */
+#define FXNN "IpcPower_registerCallback"
+Int IpcPower_registerCallback(Int event, IpcPower_CallbackFuncPtr cbck,
+                              Ptr data)
+{
+    IArg hwiKey;
+    IpcPower_CallbackElem **list, *node;
+    BIOS_ThreadType context = BIOS_getThreadType();
+
+    if ((context != BIOS_ThreadType_Task) &&
+        (context != BIOS_ThreadType_Main)) {
+        Log_print0(Diags_ERROR, FXNN":Invalid context\n");
+        return (IpcPower_E_FAIL);
+    }
+
+    list = &IpcPower_callbackList;
+
+    /* Allocate and update new element */
+    node = Memory_alloc(NULL, sizeof(IpcPower_CallbackElem), 0, NULL);
+    if (node == NULL) {
+        Log_print0(Diags_ERROR, FXNN":out of memory\n");
+        return (IpcPower_E_MEMORY);
+    }
+
+    node->next     = NULL;
+    node->event    = (IpcPower_Event) event;
+    node->callback = cbck;
+    node->data     = data;
+
+    hwiKey = Hwi_disable();  /* begin: critical section */
+    while (*list != NULL) {
+        list = &(*list)->next;
+    }
+    *list = node;
+    Hwi_restore(hwiKey);  /* end: critical section */
+
+    return (IpcPower_S_SUCCESS);
+}
+#undef FXNN
+
+/*
+ *  ======== IpcPower_unregisterCallback ========
+ */
+#define FXNN "IpcPower_unregisterCallback"
+Int IpcPower_unregisterCallback(Int event, IpcPower_CallbackFuncPtr cbck)
+{
+    IArg hwiKey;
+    IpcPower_CallbackElem **list, *node;
+    Int status = IpcPower_E_FAIL;
+    BIOS_ThreadType context = BIOS_getThreadType();
+
+    if ((context != BIOS_ThreadType_Task) &&
+        (context != BIOS_ThreadType_Main)) {
+        Log_print0(Diags_ERROR, FXNN":Invalid context\n");
+        return (status);
+    }
+
+
+    list = &IpcPower_callbackList;
+    node  = NULL;
+
+    hwiKey = Hwi_disable();  /* begin: critical section */
+    while (*list != NULL) {
+        if ( ((*list)->callback == cbck) &&
+             ((*list)->event == event) ) {
+            node   = *list;
+            *list  = (*list)->next;
+            status = IpcPower_S_SUCCESS;
+            break;
+        }
+        list = &(*list)->next;
+    }
+    Hwi_restore(hwiKey);  /* end: critical section */
+
+    if (status == IpcPower_S_SUCCESS) {
+        if (node != NULL) {
+            Memory_free(NULL, node, sizeof(IpcPower_CallbackElem));
+        }
+        else {
+            Log_print0(Diags_ERROR, FXNN":Invalid pointer\n");
+        }
+    }
+
+    return (status);
+}
+#undef FXNN
+
+/*
+ *  ======== IpcPower_preSuspend ========
+ */
+Void IpcPower_preSuspend(Void)
+{
+    /* Call all user registered suspend callback functions */
+    IpcPower_callUserFxns(IpcPower_Event_SUSPEND);
+}
+
+/*
+ *  ======== IpcPower_postResume ========
+ */
+Void IpcPower_postResume(Void)
+{
+    /* Call all user registered resume callback functions */
+    IpcPower_callUserFxns(IpcPower_Event_RESUME);
 }

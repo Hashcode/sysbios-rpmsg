@@ -44,6 +44,14 @@ function init()
         var Power = xdc.useModule('ti.sysbios.family.c64p.tesla.Power');
     }
 
+    /* plug-in the power event hooks for SMP/BIOS */
+    if (Program.build.target.name.match(/M3/) &&
+        Program.platformName.match(/ipu/)) {
+        var Power = xdc.useModule('ti.sysbios.family.arm.ducati.omap4430.Power');
+        Power.preSuspendHooks.$add("&IpcPower_preSuspend");
+        Power.postSuspendHooks.$add("&IpcPower_postResume");
+    }
+
     if (Program.build.target.name.match(/M3/) &&
         !Program.platformName.match(/ipu/)) {
         Program.sectMap[".ipcpower_data"] = new Program.SectionSpec();
