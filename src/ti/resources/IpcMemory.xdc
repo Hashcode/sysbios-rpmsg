@@ -79,7 +79,7 @@ module IpcMemory {
         UInt32 ver;
         UInt32 num;
         UInt32 reserved[2];
-        UInt32 offset[];
+        UInt32 offset[1];
     };
 
     /*!
