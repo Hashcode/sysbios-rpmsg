@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,12 +56,18 @@ enum rpmsg_ns_flags {
 static void sendMessage(Char * name, UInt32 port, enum rpmsg_ns_flags flags)
 {
     struct rpmsg_ns_msg nsMsg;
+    Int s;
 
     strncpy(nsMsg.name, name, RPMSG_NAME_SIZE);
     nsMsg.addr = port;
     nsMsg.flags = flags;
 
-    MessageQCopy_send(MultiProc_getId("HOST"), 53, port, &nsMsg, sizeof(nsMsg));
+    s = MessageQCopy_send(MultiProc_getId("HOST"), 53, port, &nsMsg,
+                                                                sizeof(nsMsg));
+    if (s < 0) {
+        System_abort("Fatal ERROR in NameMap sendMessage: MessageQCopy_send()"
+                        " failed! Aborting...\n");
+    }
 }
 
 void NameMap_register(Char * name, UInt32 port)
