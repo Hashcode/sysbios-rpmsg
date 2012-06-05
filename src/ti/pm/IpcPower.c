@@ -49,6 +49,9 @@
 #include <xdc/runtime/Log.h>
 #include <xdc/runtime/Diags.h>
 
+#include <ti/sysbios/BIOS.h>
+#include <ti/sysbios/knl/Semaphore.h>
+#include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/hal/Hwi.h>
 #include <ti/sysbios/knl/Swi.h>
 #ifndef SMP
@@ -80,6 +83,9 @@ static UInt32 IpcPower_hibLocks; /* Only one lock in SMP mode */
 static Power_SuspendArgs PowerSuspArgs;
 static Swi_Handle suspendResumeSwi;
 #ifndef SMP
+static Semaphore_Handle IpcPower_semSuspend = NULL;
+static Semaphore_Handle IpcPower_semExit = NULL;
+static Task_Handle IpcPower_tskSuspend = NULL;
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
 #endif
@@ -168,18 +174,10 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
         System_printf("Warning: Wake locks in use\n");
     }
 
-#ifndef SMP
-    /* Call pre-suspend preparation function */
-    IpcPower_preSuspend();
-#endif
-
     Power_suspend(&PowerSuspArgs);
 #ifndef SMP
     IpcPower_sleepMode(IpcPower_SLEEP_MODE_DEEPSLEEP);
     IpcPower_setWugen();
-
-    /* Call post-resume preparation function */
-    IpcPower_postResume();
 
     Log_print0(Diags_INFO, FXNN":Resume");
 #endif
@@ -191,6 +189,32 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
  * =============================================================================
  */
 
+#ifndef SMP
+/*
+ *  ======== IpcPower_suspendTaskFxn ========
+ */
+Void IpcPower_suspendTaskFxn(UArg arg0, UArg arg1)
+{
+    while (curInit) {
+        /* Wait for suspend notification from host-side */
+        Semaphore_pend(IpcPower_semSuspend, BIOS_WAIT_FOREVER);
+
+        if (curInit) {
+            /* Call pre-suspend preparation function */
+            IpcPower_preSuspend();
+
+            Swi_post(suspendResumeSwi);
+
+            /* Call post-resume preparation function */
+            IpcPower_postResume();
+        }
+    }
+
+    /* Signal the task end */
+    Semaphore_post(IpcPower_semExit);
+}
+#endif
+
 /*
  *  ======== IpcPower_init ========
  */
@@ -198,6 +222,7 @@ Void IpcPower_init()
 {
     Swi_Params swiParams;
 #ifndef SMP
+    Task_Params taskParams;
     UInt coreIdx = Core_getId();
 #endif
 
@@ -214,6 +239,17 @@ Void IpcPower_init()
     IpcPower_hibLocks = 0;
 #endif
     refWakeLockCnt = 0;
+
+#ifndef SMP
+    IpcPower_semSuspend = Semaphore_create(0, NULL, NULL);
+    IpcPower_semExit = Semaphore_create(0, NULL, NULL);
+
+    Task_Params_init(&taskParams);
+    taskParams.priority = Task_numPriorities - 1; /* Highest priority */
+    taskParams.instance->name = "ti.pm.IpcPower_tskSuspend";
+    IpcPower_tskSuspend = Task_create(IpcPower_suspendTaskFxn, &taskParams,
+                                                                        NULL);
+#endif
 
     Swi_Params_init(&swiParams);
     swiParams.priority = Swi_numPriorities - 1; /* Max Priority Swi */
@@ -239,6 +275,21 @@ Void IpcPower_init()
 Void IpcPower_exit()
 {
     --curInit;
+
+    if (curInit == 0) {
+#ifndef SMP
+        /* Unblock PM suspend task */
+        Semaphore_post(IpcPower_semSuspend);
+
+        /* Wait for task completion */
+        Semaphore_pend(IpcPower_semExit, BIOS_WAIT_FOREVER);
+
+        /* Delete the suspend task and semaphore */
+        Task_delete(&IpcPower_tskSuspend);
+        Semaphore_delete(&IpcPower_semSuspend);
+        Semaphore_delete(&IpcPower_semExit);
+#endif
+    }
 }
 
 /*
@@ -248,7 +299,11 @@ Void IpcPower_suspend()
 {
     Assert_isTrue((curInit > 0) , NULL);
 
+#ifndef SMP
+    Semaphore_post(IpcPower_semSuspend);
+#else
     Swi_post(suspendResumeSwi);
+#endif
 }
 
 /*

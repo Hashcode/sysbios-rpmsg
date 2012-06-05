@@ -48,6 +48,9 @@
 #include <xdc/runtime/Log.h>
 #include <xdc/runtime/Diags.h>
 
+#include <ti/sysbios/BIOS.h>
+#include <ti/sysbios/knl/Semaphore.h>
+#include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/hal/Hwi.h>
 #include <ti/sysbios/knl/Swi.h>
 #include <ti/sysbios/family/c64p/tesla/Power.h>
@@ -69,6 +72,9 @@ static UInt32 IpcPower_hibLock;
 #define MBX_DSP_IRQ     55
 
 static Swi_Handle suspendResumeSwi;
+static Semaphore_Handle IpcPower_semSuspend = NULL;
+static Semaphore_Handle IpcPower_semExit = NULL;
+static Task_Handle IpcPower_tskSuspend = NULL;
 
 /* List for storing all registered callback functions */
 static IpcPower_CallbackElem *IpcPower_callbackList = NULL;
@@ -103,9 +109,6 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
     Wugen_disableEvent(GPT6_IRQ);
     Wugen_disableEvent(MBX_DSP_IRQ);
 
-    /* Call pre-suspend preparation function */
-    IpcPower_preSuspend();
-
     /* Invoke the BIOS suspend routine */
     Power_suspend(Power_Suspend_HIBERNATE);
 
@@ -113,9 +116,6 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
     Wugen_enableEvent(GPT5_IRQ);
     Wugen_enableEvent(GPT6_IRQ);
     Wugen_enableEvent(MBX_DSP_IRQ);
-
-    /* Call post-resume preparation function */
-    IpcPower_postResume();
 }
 
 /*
@@ -125,17 +125,51 @@ static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
  */
 
 /*
+ *  ======== IpcPower_suspendTaskFxn ========
+ */
+Void IpcPower_suspendTaskFxn(UArg arg0, UArg arg1)
+{
+    while (curInit) {
+        /* Wait for suspend notification from host-side */
+        Semaphore_pend(IpcPower_semSuspend, BIOS_WAIT_FOREVER);
+
+        if (curInit) {
+            /* Call pre-suspend preparation function */
+            IpcPower_preSuspend();
+
+            Swi_post(suspendResumeSwi);
+
+            /* Call post-resume preparation function */
+            IpcPower_postResume();
+        }
+    }
+
+    /* Signal the task end */
+    Semaphore_post(IpcPower_semExit);
+}
+
+/*
  *  ======== IpcPower_init ========
  */
 Void IpcPower_init()
 {
     Swi_Params swiParams;
+    Task_Params taskParams;
 
     if (curInit++) {
         return;
     }
 
     IpcPower_hibLock = 0;
+
+    IpcPower_semSuspend = Semaphore_create(0, NULL, NULL);
+    IpcPower_semExit = Semaphore_create(0, NULL, NULL);
+
+    Task_Params_init(&taskParams);
+    taskParams.priority = Task_numPriorities - 1; /* Highest priority */
+    taskParams.instance->name = "ti.pm.IpcPower_tskSuspend";
+    IpcPower_tskSuspend = Task_create(IpcPower_suspendTaskFxn, &taskParams,
+                                                                        NULL);
 
     Swi_Params_init(&swiParams);
     swiParams.priority = Swi_numPriorities - 1; /* Max Priority Swi */
@@ -148,6 +182,19 @@ Void IpcPower_init()
 Void IpcPower_exit()
 {
     --curInit;
+
+    if (curInit == 0) {
+        /* Unblock PM suspend task */
+        Semaphore_post(IpcPower_semSuspend);
+
+        /* Wait for task completion */
+        Semaphore_pend(IpcPower_semExit, BIOS_WAIT_FOREVER);
+
+        /* Delete the suspend task and semaphore */
+        Task_delete(&IpcPower_tskSuspend);
+        Semaphore_delete(&IpcPower_semSuspend);
+        Semaphore_delete(&IpcPower_semExit);
+    }
 }
 
 /*
@@ -157,7 +204,7 @@ Void IpcPower_suspend()
 {
     Assert_isTrue((curInit > 0) , NULL);
 
-    Swi_post(suspendResumeSwi);
+    Semaphore_post(IpcPower_semSuspend);
 }
 
 /*
