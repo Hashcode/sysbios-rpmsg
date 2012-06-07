@@ -54,14 +54,14 @@
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/hal/Hwi.h>
 #include <ti/sysbios/knl/Swi.h>
+#include <ti/sysbios/knl/Clock.h>
+#include <ti/sysbios/timers/dmtimer/Timer.h>
+#include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
 #ifndef SMP
 #include <ti/sysbios/family/arm/ducati/Core.h>
-#endif
-#include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
-
-#ifndef SMP
 #include <ti/ipc/MultiProc.h>
 #endif
+
 #include <ti/pm/IpcPower.h>
 #include "_IpcPower.h"
 
@@ -84,6 +84,12 @@ static UInt32 IpcPower_hibLocks; /* Only one lock in SMP mode */
 UInt32 IpcPower_idleCount = 0;
 UInt32 IpcPower_suspendCount = 0;
 UInt32 IpcPower_resumeCount = 0;
+
+/* Clock function pointer to handle custom clock functions */
+Void *IpcPower_clockFxn = NULL;
+
+/* Handle to store BIOS Tick Timer */
+static Timer_Handle tickTimerHandle = NULL;
 
 static Power_SuspendArgs PowerSuspArgs;
 static Swi_Handle suspendResumeSwi;
@@ -230,6 +236,10 @@ Void IpcPower_init()
     Task_Params taskParams;
     UInt coreIdx = Core_getId();
 #endif
+    Int i;
+    UArg arg;
+    UInt func;
+    Timer_Handle tHandle = NULL;
 
     if (curInit++) {
         return;
@@ -244,6 +254,21 @@ Void IpcPower_init()
     IpcPower_hibLocks = 0;
 #endif
     refWakeLockCnt = 0;
+
+    for (i = 0; i < Timer_Object_count(); i++) {
+        tHandle = Timer_Object_get(NULL, i);
+        func = (UInt) Timer_getFunc(tHandle, &arg);
+        if (func && ((func == (UInt) ti_sysbios_knl_Clock_doTick__I) ||
+                     (func == (UInt) Clock_tick) ||
+                     (func == (UInt) IpcPower_clockFxn))) {
+            tickTimerHandle = tHandle;
+            break;
+        }
+    }
+    if (tickTimerHandle == NULL) {
+        System_abort("IpcPower_init: Cannot find tickTimer Handle. Custom"
+                        " clock timer functions currently not supported.\n");
+    }
 
 #ifndef SMP
     IpcPower_semSuspend = Semaphore_create(0, NULL, NULL);
@@ -517,6 +542,18 @@ Void IpcPower_preSuspend(Void)
  */
 Void IpcPower_postResume(Void)
 {
+#ifdef SMP
+    /*
+     * Restore timer registers (available currently only in SMP/BIOS).
+     * SYS/BIOS does not have this API available yet, so we have to rely
+     * on context save/restore on the host-side */
+    Timer_restoreRegisters(tickTimerHandle, NULL);
+    Timer_start(tickTimerHandle);
+#else
+    System_printf("IpcPower_postResume: BIOS Tick Timer may lose context "
+                  "across Device OFF (depending on host-side code)\n");
+#endif
+
     /* Call all user registered resume callback functions */
     IpcPower_callUserFxns(IpcPower_Event_RESUME);
 
