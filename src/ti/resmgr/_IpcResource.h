@@ -102,19 +102,6 @@ typedef struct {
     Char name[16];
 } IpcResource_Processor;
 
-typedef struct {
-    Char    name[24];
-    UInt32  clkRate;
-    Char    parentName[24];
-    UInt32  parentSrcClkRate;
-} _IpcResource_Auxclk;
-
-typedef struct {
-    Char    name[16];
-    UInt32  minUV;
-    UInt32  maxUV;
-} _IpcResource_Regulator;
-
 /*!
  *  @brief  IpcResource_Object type
  */
@@ -143,20 +130,6 @@ static Char * IpcResource_names[] = {
     "ipu_c0",
     "dsp_c0",
     "i2c"
-};
-
-/* Names to translate auxclk parent IDs */
-static Char *auxclkSrcNames[] = {
-    "sys_clkin_ck",
-    "dpll_core_m3x2_ck",
-    "dpll_per_m3x2_ck",
-};
-
-/* Names to translate regulator names */
-#define NUM_REGULATORS   2
-static Char *regulatorNames[] = {
-    "cam2pwr",
-    "cam2csi",
 };
 
 static inline Char *IpcResource_toName(UInt type)
