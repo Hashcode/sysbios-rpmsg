@@ -93,9 +93,9 @@
  */
 /* This address is derived from current IPU & ION carveouts */
 #ifdef OMAP5
-#define PHYS_MEM_IPC_VRING      0xA4800000
+#define PHYS_MEM_IPC_VRING      0x95000000
 #else
-#define PHYS_MEM_IPC_VRING      0xA8800000
+#define PHYS_MEM_IPC_VRING      0x99000000
 #endif
 
 /* Need to be identical to that of Ducati */
