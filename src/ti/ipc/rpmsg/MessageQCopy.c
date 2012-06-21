@@ -213,17 +213,20 @@ Void MessageQCopy_init(UInt16 remoteProcId)
     int     i;
     Registry_Result result;
 
-    Log_print1(Diags_ENTRY, "--> "FXNN": (remoteProcId=%d)",
-                (IArg)remoteProcId);
-
     Semaphore_pend(MessageQCopy_semHandle, BIOS_WAIT_FOREVER);
     if (curInit++) {
+        Log_print1(Diags_ENTRY, "--> "FXNN": (remoteProcId=%d)",
+                    (IArg)remoteProcId);
         goto exit;  /* module already initialized */
     }
 
     /* register with xdc.runtime to get a diags mask */
     result = Registry_addModule(&Registry_CURDESC, MODULE_NAME);
     Assert_isTrue(result == Registry_SUCCESS, (Assert_Id)NULL);
+
+    /* Log should be after the Registry_CURDESC is initialized */
+    Log_print1(Diags_ENTRY, "--> "FXNN": (remoteProcId=%d)",
+                (IArg)remoteProcId);
 
     /* Gate to protect module object and lists: */
     GateSwi_Params_init(&gatePrms);
