@@ -145,17 +145,35 @@ Void InterruptDsp_intRegister(Hwi_FuncPtr fxn)
  */
 Void InterruptDsp_intSend(UInt16 remoteProcId, UArg arg)
 {
-    if (remoteProcId == MultiProc_getId("CORE0")) {
+    static Bool configured = FALSE;
+    static UInt16 sysm3ProcId = MultiProc_INVALIDID;
+    static UInt16 appm3ProcId = MultiProc_INVALIDID;
+    static UInt16 hostProcId = MultiProc_INVALIDID;
+    static UInt16 dspProcId = MultiProc_INVALIDID;
+
+    if (!configured) {
+        hostProcId  = MultiProc_getId("HOST");
+        dspProcId   = MultiProc_getId("DSP");
+        sysm3ProcId = MultiProc_getId("CORE0");
+        appm3ProcId = MultiProc_getId("CORE1");
+        configured  = TRUE;
+    }
+
+    if (remoteProcId == sysm3ProcId) {
         REG32(MAILBOX_MESSAGE(HOST_TO_SYSM3_MBX)) = arg;
     }
-    else if (remoteProcId == MultiProc_getId("CORE1")) {
+    else if (remoteProcId == appm3ProcId) {
         REG32(MAILBOX_MESSAGE(SYSM3_TO_APPM3_MBX)) = arg;
     }
-    else if (remoteProcId == MultiProc_getId("HOST")) {
+    else if (remoteProcId == hostProcId) {
         REG32(MAILBOX_MESSAGE(DSP_TO_HOST_MBX)) = arg;
     }
-    else if (remoteProcId == MultiProc_getId("DSP")) {
+    else if (remoteProcId == dspProcId) {
         REG32(MAILBOX_MESSAGE(HOST_TO_DSP_MBX)) = arg;
+    }
+    else {
+        /* Should never get here */
+        Assert_isTrue(FALSE, NULL);
     }
 }
 

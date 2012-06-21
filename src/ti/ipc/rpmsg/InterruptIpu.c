@@ -88,12 +88,6 @@ Hwi_FuncPtr userFxn = NULL;
 
 Void InterruptIpu_isr(UArg arg);
 
-#ifndef SMP
-static UInt16 sysm3ProcId;
-static UInt16 appm3ProcId;
-#endif
-static UInt16 hostProcId;
-static UInt16 dspProcId;
 
 /*
  *************************************************************************
@@ -155,13 +149,6 @@ Void InterruptIpu_intRegister(Hwi_FuncPtr fxn)
     Hwi_Params  hwiAttrs;
     UInt        key;
 
-    hostProcId      = MultiProc_getId("HOST");
-    dspProcId       = MultiProc_getId("DSP");
-#ifndef SMP
-    sysm3ProcId     = MultiProc_getId("CORE0");
-    appm3ProcId     = MultiProc_getId("CORE1");
-#endif
-
     /* Disable global interrupts */
     key = Hwi_disable();
 
@@ -201,9 +188,27 @@ Void InterruptIpu_intRegister(Hwi_FuncPtr fxn)
  */
 Void InterruptIpu_intSend(UInt16 remoteProcId, UArg arg)
 {
+    static Bool configured = FALSE;
+#ifndef SMP
+    static UInt16 sysm3ProcId = MultiProc_INVALIDID;
+    static UInt16 appm3ProcId = MultiProc_INVALIDID;
+#endif
+    static UInt16 hostProcId = MultiProc_INVALIDID;
+    static UInt16 dspProcId = MultiProc_INVALIDID;
+
     Log_print2(Diags_USER1,
         "InterruptIpu_intSend: Sending interrupt with payload 0x%x to proc #%d",
         (IArg)arg, (IArg)remoteProcId);
+
+    if (!configured) {
+        hostProcId  = MultiProc_getId("HOST");
+        dspProcId   = MultiProc_getId("DSP");
+#ifndef SMP
+        sysm3ProcId = MultiProc_getId("CORE0");
+        appm3ProcId = MultiProc_getId("CORE1");
+#endif
+        configured  = TRUE;
+    }
 
 #ifndef SMP
     if (remoteProcId == sysm3ProcId) {
