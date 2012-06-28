@@ -174,27 +174,32 @@ function module$static$init(mod, params)
     }
 
     mod.device.length = 1;
+    mod.status.length   = 1;
     mod.wdtCores      = 1;
     if (Program.build.target.name.match(/C64T/)) {
         mod.device[0].baseAddr = Watchdog.timerSettings[0].baseAddr;
         mod.device[0].clkCtrl  = Watchdog.timerSettings[0].clkCtrl;
         mod.device[0].intNum   = Watchdog.timerSettings[0].intNum;
         mod.device[0].eventId  = Watchdog.timerSettings[0].eventId;
+        mod.status[0]          = Watchdog.Mode_DISABLED;
     }
     else {
         if (Program.platformName.match(/ipu/)) {
             mod.device.length       = Core.numCores;
+            mod.status.length       = Core.numCores;
             mod.wdtCores            = Core.numCores;
 
             mod.device[0].baseAddr  = Watchdog.timerSettings[0].baseAddr;
             mod.device[0].clkCtrl   = Watchdog.timerSettings[0].clkCtrl;
             mod.device[0].intNum    = Watchdog.timerSettings[0].intNum;
             mod.device[0].eventId   = Watchdog.timerSettings[0].eventId;
+            mod.status[0]           = Watchdog.Mode_DISABLED;
 
             mod.device[1].baseAddr  = Watchdog.timerSettings[1].baseAddr;
             mod.device[1].clkCtrl   = Watchdog.timerSettings[1].clkCtrl;
             mod.device[1].intNum    = Watchdog.timerSettings[1].intNum;
             mod.device[1].eventId   = Watchdog.timerSettings[1].eventId;
+            mod.status[1]           = Watchdog.Mode_DISABLED;
         }
         else {
             if (MultiProc.id == MultiProc.getIdMeta("CORE0")) {
@@ -209,6 +214,7 @@ function module$static$init(mod, params)
                 mod.device[0].intNum    = Watchdog.timerSettings[1].intNum;
                 mod.device[0].eventId   = Watchdog.timerSettings[1].eventId;
             }
+            mod.status[0]               = Watchdog.Mode_DISABLED;
         }
     }
 }

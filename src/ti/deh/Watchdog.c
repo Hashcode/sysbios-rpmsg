@@ -133,6 +133,7 @@ Void Watchdog_init( Void (*timerFxn)(Void) )
 
         /* Enable timer */
         timer->tclr |= 1;
+        Watchdog_module->status[i] = Watchdog_Mode_ENABLED;
 
 #ifdef SMP
         System_printf("Watchdog enabled: TimerBase = 0x%x SMP-Core = %d "
@@ -232,7 +233,7 @@ Void Watchdog_stop(Int core)
 {
     Watchdog_TimerRegs *timer = Watchdog_module->device[core].baseAddr;
 
-    if (timer) {
+    if ((Watchdog_module->status[core] == Watchdog_Mode_ENABLED) && timer) {
         while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TCLR);
         timer->tclr &= ~1;
     }
@@ -245,7 +246,7 @@ Void Watchdog_start(Int core)
 {
     Watchdog_TimerRegs *timer = Watchdog_module->device[core].baseAddr;
 
-    if (timer) {
+    if ((Watchdog_module->status[core] == Watchdog_Mode_ENABLED) && timer) {
         while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TCLR);
         timer->tclr |= 1;
 
@@ -262,7 +263,7 @@ Void Watchdog_kick(Int core)
 {
     Watchdog_TimerRegs *timer = Watchdog_module->device[core].baseAddr;
 
-    if (timer) {
+    if ((Watchdog_module->status[core] == Watchdog_Mode_ENABLED) && timer) {
         while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TGRR);
         timer->ttgr = 0;
     }

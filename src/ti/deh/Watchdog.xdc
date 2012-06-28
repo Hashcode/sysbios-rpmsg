@@ -92,6 +92,12 @@ module Watchdog {
         Int     eventId;
     };
 
+    /*! Watchdog Timer device status */
+    enum Mode {
+        Mode_DISABLED,      /*! Watchdog Timer is disabled. */
+        Mode_ENABLED        /*! Watchdog Timer is enabled.  */
+    };
+
     /*!
      *  Watchdog timer period (in seconds)
      */
@@ -190,6 +196,7 @@ internal:   /* not for client use */
     /*! Module state structure */
     struct Module_State {
         TimerDevice device[];   /* watchdog timer specific data */
+        Mode        status[];   /* watchdog timer status */
         Int         wdtCores;   /* number of watchdog timers (usually 1) */
     };
 }
