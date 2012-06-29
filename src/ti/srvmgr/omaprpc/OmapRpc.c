@@ -53,14 +53,15 @@
 #include "OmapRpc.h"
 
 typedef struct OmapRpc_Object {
-    Char                channelName[OMAPRPC_MAX_CHANNEL_NAMELEN];
-    UInt16              dstProc;
-    UInt32              port;
-    MessageQCopy_Handle msgq;
-    UInt32              localEndPt;
-    Task_Handle         taskHandle;
-    Bool                shutdown;
-    Semaphore_Handle    exitSem;
+    Char                    channelName[OMAPRPC_MAX_CHANNEL_NAMELEN];
+    UInt16                  dstProc;
+    UInt32                  port;
+    MessageQCopy_Handle     msgq;
+    UInt32                  localEndPt;
+    Task_Handle             taskHandle;
+    Bool                    shutdown;
+    Semaphore_Handle        exitSem;
+    OmapRpc_SrvDelNotifyFxn srvDelCB;
 } OmapRpc_Object;
 
 
@@ -146,6 +147,10 @@ static Void omapRpcTask(UArg arg0, UArg arg1)
                 OmapRpc_InstanceHandle *handle =
                                 OmapRpc_PAYLOAD(msg, OmapRpc_InstanceHandle);
 
+                if (obj->srvDelCB != NULL) {
+                    obj->srvDelCB();
+                }
+
                 /* don't clear out the old data... */
                 System_printf("OMAPRPC: destroying instance addr: %d\n",
                                                     handle->endpointAddress);
@@ -206,7 +211,8 @@ static Void omapRpcTask(UArg arg0, UArg arg1)
 }
 
 OmapRpc_Handle OmapRpc_createChannel(String channelName, UInt16 dstProc,
-                                    UInt32 port, RcmServer_Params *rcmSrvParams)
+                                    UInt32 port, RcmServer_Params *rcmSrvParams,
+                                    OmapRpc_SrvDelNotifyFxn srvDelCBFunc)
 
 {
     Task_Params taskParams;
@@ -222,6 +228,7 @@ OmapRpc_Handle OmapRpc_createChannel(String channelName, UInt16 dstProc,
     obj->port = port;
     strncpy(obj->channelName, channelName, OMAPRPC_MAX_CHANNEL_NAMELEN-1);
     obj->channelName[OMAPRPC_MAX_CHANNEL_NAMELEN-1]='\0';
+    obj->srvDelCB = srvDelCBFunc;
 
     ServiceMgr_init();
     if (ServiceMgr_register(channelName, rcmSrvParams) == TRUE) {

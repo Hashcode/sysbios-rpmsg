@@ -220,10 +220,12 @@ typedef struct OmapRpc_Packet{
 } OmapRpc_Packet;
 
 typedef struct OmapRpc_Object *OmapRpc_Handle;
+typedef Void (*OmapRpc_SrvDelNotifyFxn)(Void);
 
 
 OmapRpc_Handle OmapRpc_createChannel(String channelName, UInt16 dstProc,
-                                     UInt32 port, RcmServer_Params* rcmSrvParams);
+                                     UInt32 port, RcmServer_Params* rcmSrvParams,
+                                     OmapRpc_SrvDelNotifyFxn func);
 
 Int OmapRpc_deleteChannel(OmapRpc_Handle handle);
 
