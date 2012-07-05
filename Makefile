@@ -58,7 +58,7 @@ all:
 clean:
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
 
-smp_config:
+smp_config: unconfig
 	@echo BIOSVERSION=smpbios_1_00_00_23_eng >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 
