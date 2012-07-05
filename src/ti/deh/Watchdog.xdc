@@ -193,6 +193,14 @@ internal:   /* not for client use */
      */
     Void kick(Int core);
 
+    /*!
+     *  ======== restore ========
+     *  @_nodoc
+     *  Restore the context of the Watchdog timer after a hibernation/suspend.
+     *  in case the context is lost.
+     */
+    Void restore(Int event, Ptr data);
+
     /*! Module state structure */
     struct Module_State {
         TimerDevice device[];   /* watchdog timer specific data */

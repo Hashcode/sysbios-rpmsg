@@ -62,6 +62,8 @@
 #include <ti/sysbios/hal/Core.h>
 #endif
 
+#include <ti/pm/IpcPower.h>
+
 #include "package/internal/Watchdog.xdc.h"
 
 /* Macro to write to GP timer registers */
@@ -82,6 +84,33 @@
 /* GP Timers Clock Control register bit mask */
 #define WATCHDOG_WDT_CLKCTRL_IDLEST_MASK    (3 << 16)
 
+/*
+ *  ======== initTimer ========
+ */
+static Void initTimer(Watchdog_TimerRegs *timer, Bool boot)
+{
+    Timer_Handle    tHandle;
+    Types_FreqHz    tFreq;
+
+    /* Get timer frequency */
+    tHandle = Timer_Object_get(NULL, 0);
+    Timer_getFreq(tHandle, &tFreq);
+
+    timer->tisr = ~0;
+    timer->tier = 2;
+    timer->twer = 2;
+    timer->tldr = (0 - (tFreq.lo * Watchdog_TIME_SEC));
+
+    /* Booting can take more time, so set CRR to WDT_BOOT_TIME */
+    if (boot) {
+        timer->tcrr = (0 - (tFreq.lo * Watchdog_BOOT_TIME_SEC));
+    }
+    else {
+        timer->tcrr = (0 - (tFreq.lo * Watchdog_TIME_SEC));
+    }
+
+    timer->tsicr |= 4; /* enable posted write mode */
+}
 
 /*
  *  ======== Watchdog_init ========
@@ -110,15 +139,8 @@ Void Watchdog_init( Void (*timerFxn)(Void) )
             continue;  /* for next core */
         }
 
-        /* Update timer registers */
-        timer->tisr = ~0;
-        timer->tier = 2;
-        timer->twer = 2;
-        timer->tldr = (0 - (tFreq.lo * Watchdog_TIME_SEC));
-        timer->tsicr |= 4; /* enable posted write mode */
-
-        /* Booting can take more time, so set CRR to WDT_TIME_BOOT */
-        timer->tcrr = (0 - (tFreq.lo * Watchdog_BOOT_TIME_SEC));
+        /* Configure the timer */
+        initTimer(timer, TRUE);
 
         /* Enable interrupt in BIOS */
         Hwi_Params_init(&hwiParams);
@@ -132,6 +154,7 @@ Void Watchdog_init( Void (*timerFxn)(Void) )
         Hwi_restore(key);
 
         /* Enable timer */
+        while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TCLR);
         timer->tclr |= 1;
         Watchdog_module->status[i] = Watchdog_Mode_ENABLED;
 
@@ -142,6 +165,12 @@ Void Watchdog_init( Void (*timerFxn)(Void) )
         System_printf("Watchdog enabled: TimerBase = 0x%x Freq = %d\n",
                                                             timer, tFreq.lo);
 #endif
+    }
+
+    /* Register callback function */
+    if (!IpcPower_registerCallback(IpcPower_Event_RESUME, Watchdog_restore,
+                                    NULL)) {
+        System_printf("Watchdog_restore registered as a resume callback\n");
     }
 
     return;
@@ -266,5 +295,28 @@ Void Watchdog_kick(Int core)
     if ((Watchdog_module->status[core] == Watchdog_Mode_ENABLED) && timer) {
         while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TGRR);
         timer->ttgr = 0;
+    }
+}
+
+/*
+ *  ======== Watchdog_restore ========
+ *  Refresh/restart the watchdog timer
+ */
+Void Watchdog_restore(Int event, Ptr data)
+{
+    Int                 i;
+    Watchdog_TimerRegs  *timer;
+
+    for (i = 0; i < Watchdog_module->wdtCores; i++) {  /* loop for SMP cores */
+        timer = (Watchdog_TimerRegs *) Watchdog_module->device[i].baseAddr;
+
+        if (Watchdog_module->status[i] == Watchdog_Mode_ENABLED) {
+            /* Configure the timer */
+            initTimer(timer, FALSE);
+
+            /* Enable timer */
+            while (timer->twps & WATCHDOG_TIMER_TWPS_W_PEND_TCLR);
+            timer->tclr |= 1;
+        }
     }
 }
