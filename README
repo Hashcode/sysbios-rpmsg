@@ -62,7 +62,7 @@ TOOLS
             your TI representative. A TMS470 Compiler is supplied with Code
             Composer Studio (CCS), and can be used if you have a valid license.
 
-       6) CGT C6000: 7.2.0
+       6) CGT C6000: 7.2.9
             Please pick the appropriate version from the above public link.
 
 
@@ -77,7 +77,7 @@ BUILD (Linux Environment)
        Eg:
            export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
                                -- and/or --
-           export C6000CGTOOLPATH=/data/omapts/linux/dsp-tc/cgt6x-7.2.0
+           export C6000CGTOOLPATH=/data/omapts/linux/dsp-tc/cgt6x-7.2.9
 
     2) Export the proper environment variable to point to your installation path
        for all the BIOS-side tools (optional, MUST set if your installation path
