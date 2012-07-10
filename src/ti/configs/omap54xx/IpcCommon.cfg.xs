@@ -132,3 +132,6 @@ dmTimer.intFreq.lo = 19200000;
 /* Override the internal sysTick timer with dmTimer for Bios Timer */
 var halTimer = xdc.useModule('ti.sysbios.hal.Timer');
 halTimer.TimerProxy = dmTimer;
+
+/* Version module */
+xdc.useModule('ti.utils.Version');
