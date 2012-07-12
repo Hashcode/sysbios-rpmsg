@@ -1,0 +1,88 @@
+%%{
+/*
+ * Copyright (c) 2012, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+%%}
+
+%%{
+var Version = xdc.module("ti.utils.Version");
+var mobj = '(&ti_utils_Version_Module__state__V)';
+
+var str = "\""
+if (Version.custom.length) {
+    /* custom version string */
+    str += Version.custom;
+}
+else { /* git-based version string */
+    str += "\\n-- firmware image --"
+    if (Version.imageInfo.length) {
+        str += Version.imageInfo;
+    }
+    if (!Version.isRpmsg) {
+        if (Version.tag.length) {
+            str += "\\ntag      : " + Version.tag;
+        }
+        if (Version.branch.length) {
+            str += "\\nbranch   : " + Version.branch;
+        }
+        if (Version.topCommit.length) {
+            str += "\\ncommit   : " + Version.topCommit;
+        }
+        if (Version.tools.length) {
+            str += "\\ntools    :" + Version.tools;
+        }
+    }
+
+    str += "\\n\\n-- sysbios-rpmsg --"
+    if (Version.tagRpmsg.length) {
+        str += "\\ntag      : " + Version.tagRpmsg;
+    }
+    if (Version.branchRpmsg.length) {
+        str += "\\nbranch   : " + Version.branchRpmsg;
+    }
+    if (Version.topCommitRpmsg.length) {
+        str += "\\ncommit   : " + Version.topCommitRpmsg;
+    }
+    if (Version.toolsRpmsg.length) {
+        str += "\\ntools    :" + Version.toolsRpmsg + "\\n";
+    }
+}
+str += "\\0\"";
+%%}
+
+#pragma DATA_SECTION(version, ".version");
+Char version[] = `str`;
+
+Void ti_utils_Version_init__I()
+{
+    `mobj`->pVersion = (Char *)&version;
+}
