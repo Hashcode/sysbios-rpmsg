@@ -80,6 +80,11 @@ UInt32 IpcPower_hibLocks[2]; /* One lock for each of the IPU cores */
 static UInt32 IpcPower_hibLocks; /* Only one lock in SMP mode */
 #endif
 
+/* PM transition debug counters */
+UInt32 IpcPower_idleCount = 0;
+UInt32 IpcPower_suspendCount = 0;
+UInt32 IpcPower_resumeCount = 0;
+
 static Power_SuspendArgs PowerSuspArgs;
 static Swi_Handle suspendResumeSwi;
 #ifndef SMP
@@ -311,6 +316,8 @@ Void IpcPower_suspend()
  */
 Void IpcPower_idle()
 {
+    IpcPower_idleCount++;
+
     REG32(M3_SCR_REG) = IpcPower_deepSleep ? SET_DEEPSLEEP : CLR_DEEPSLEEP;
     asm(" wfi");
 }
@@ -499,6 +506,8 @@ Int IpcPower_unregisterCallback(Int event, IpcPower_CallbackFuncPtr cbck)
  */
 Void IpcPower_preSuspend(Void)
 {
+    IpcPower_suspendCount++;
+
     /* Call all user registered suspend callback functions */
     IpcPower_callUserFxns(IpcPower_Event_SUSPEND);
 }
@@ -510,4 +519,6 @@ Void IpcPower_postResume(Void)
 {
     /* Call all user registered resume callback functions */
     IpcPower_callUserFxns(IpcPower_Event_RESUME);
+
+    IpcPower_resumeCount++;
 }

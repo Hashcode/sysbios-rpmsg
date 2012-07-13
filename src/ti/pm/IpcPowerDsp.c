@@ -82,6 +82,10 @@ static IpcPower_CallbackElem *IpcPower_callbackList = NULL;
 /* Module ref count: */
 static Int curInit = 0;
 
+/* PM transition debug counters */
+UInt32 IpcPower_idleCount = 0;
+UInt32 IpcPower_suspendCount = 0;
+UInt32 IpcPower_resumeCount = 0;
 
 /*
  *  ======== IpcPower_callUserFxns ========
@@ -212,6 +216,8 @@ Void IpcPower_suspend()
  */
 Void IpcPower_idle()
 {
+    IpcPower_idleCount++;
+
     REG32(PDCCMD_REG) = SLEEP_MODE;
     REG32(PDCCMD_REG);
 
@@ -367,6 +373,8 @@ Int IpcPower_unregisterCallback(Int event, IpcPower_CallbackFuncPtr cbck)
  */
 Void IpcPower_preSuspend(Void)
 {
+    IpcPower_suspendCount++;
+
     /* Call all user registered suspend callback functions */
     IpcPower_callUserFxns(IpcPower_Event_SUSPEND);
 }
@@ -378,4 +386,6 @@ Void IpcPower_postResume(Void)
 {
     /* Call all user registered resume callback functions */
     IpcPower_callUserFxns(IpcPower_Event_RESUME);
+
+    IpcPower_resumeCount++;
 }
