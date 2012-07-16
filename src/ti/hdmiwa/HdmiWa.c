@@ -87,6 +87,8 @@
 
 extern const Timer_Handle SysM3TickTmr;
 
+extern Void *IpcPower_clockFxn;
+
 /*
  *  ======== HdmiWa_taskFxn ========
  */
@@ -189,6 +191,9 @@ Int HdmiWa_Module_startup(Int phase)
 {
     /* This should be populated in the start/stop callback */
     Task_Params params;
+
+    /* Configure the custom clock function pointer in IpcPower */
+    IpcPower_clockFxn = HdmiWa_tick;
 
     Task_Params_init(&params);
     params.instance->name = "HdmiWa_taskFxn";
