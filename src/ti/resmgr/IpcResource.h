@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -134,7 +134,11 @@ typedef enum {
     IpcResource_TYPE_I2C
 } IpcResource_Type;
 
+typedef enum {
+    IpcResource_ReqDataType_MAX_FREQ
+} IpcResource_ReqDataType;
 
+/* Resource request structures */
 typedef struct {
     UInt32 id;
     UInt32 srcClk;
@@ -166,12 +170,18 @@ typedef struct {
     UInt32 id;
 } IpcResource_I2c;
 
+/* Constraint request data structures */
 typedef struct {
     Int32 mask;
     Int32 frequency;
     Int32 bandwidth;
     Int32 latency;
 } IpcResource_ConstraintData;
+
+/* Resource data request structures */
+typedef struct {
+    UInt32 value;
+} IpcResource_Freq;
 
 /*!
  *  @brief  IpcResource_Object type
@@ -198,6 +208,11 @@ Int IpcResource_releaseConstraints(IpcResource_Handle handle,
                                    IpcResource_ResHandle resHandle,
                                    Void *constraints);
 Int IpcResource_disconnect(IpcResource_Handle handle);
+Int IpcResource_requestData(IpcResource_Handle handle,
+                            IpcResource_ResHandle resHandle,
+                            IpcResource_ReqDataType dataType,
+                            Void *data);
+
 
 #if defined (__cplusplus)
 }

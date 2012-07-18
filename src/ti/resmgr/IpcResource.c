@@ -72,6 +72,15 @@ static UInt16 IpcResource_resLen(IpcResource_Type type)
     return 0;
 }
 
+static UInt16 IpcResource_reqDataLen(IpcResource_ReqDataType type)
+{
+    switch (type) {
+        case IpcResource_ReqDataType_MAX_FREQ:
+            return sizeof(IpcResource_Freq);
+    }
+    return 0;
+}
+
 static Int _IpcResource_translateError(Int kstatus)
 {
     switch (kstatus) {
@@ -269,6 +278,73 @@ Int IpcResource_request(IpcResource_Handle handle,
 
     *resHandle = adata->resHandle;
     memcpy(resParams, adata->resParams, rlen);
+
+end:
+    return status;
+}
+
+Int IpcResource_requestData(IpcResource_Handle handle,
+                            IpcResource_ResHandle resHandle,
+                            IpcResource_ReqDataType dataType,
+                            Void *data)
+{
+    Char msg[MAXMSGSIZE];
+    IpcResource_Ack *ack = (Void *)msg;
+    IpcResource_Req *req = (Void *)msg;
+    IpcResource_ReqData *reqData = (Void *)req->data;
+    UInt16 hlen = sizeof(*reqData);
+    UInt16 alen = sizeof(*ack);
+    UInt16 rlen = IpcResource_reqDataLen(dataType);
+    UInt16 len;
+    UInt32 remote;
+    Int status;
+
+    if (!handle) {
+        System_printf("IpcResource_requestData: Invalid handle\n");
+        return IpcResource_E_INVALARGS;
+    }
+
+    if (rlen && !data) {
+        System_printf("IpcResource_requestData: needs data struct\n");
+        return IpcResource_E_INVALARGS;
+    }
+
+    req->reqType = IpcResource_ReqType_REQ_DATA;
+    reqData->resHandle = resHandle;
+    reqData->type = dataType;
+
+    Semaphore_pend(handle->sem, BIOS_WAIT_FOREVER);
+    status = MessageQCopy_send(MultiProc_getId("HOST"), handle->remote,
+                        handle->endPoint, req, sizeof(*req) + hlen + rlen);
+    if (status) {
+        Semaphore_post(handle->sem);
+        System_printf("IpcResource_requestData: MessageQCopy_send "
+                      "failed status %d\n", status);
+        status = IpcResource_E_FAIL;
+        goto end;
+    }
+
+    status = MessageQCopy_recv(handle->msgq, ack, &len, &remote,
+                               handle->timeout);
+    Semaphore_post(handle->sem);
+    if (status) {
+        System_printf("IpcResource_requestData: MessageQCopy_recv "
+                      "failed status %d\n", status);
+        status = (status == MessageQCopy_E_TIMEOUT) ? IpcResource_E_TIMEOUT :
+                 IpcResource_E_FAIL;
+        goto end;
+    }
+
+    status = _IpcResource_translateError(ack->status);
+    if (status) {
+        System_printf("IpcResource_requestData: error from Host "
+                      "failed status %d\n", status);
+        goto end;
+    }
+
+    Assert_isTrue(len == (rlen + alen), NULL);
+
+    memcpy(data, ack->data, rlen);
 
 end:
     return status;

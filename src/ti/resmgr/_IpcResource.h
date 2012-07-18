@@ -64,7 +64,8 @@ typedef enum {
     IpcResource_ReqType_ALLOC,
     IpcResource_ReqType_FREE,
     IpcResource_ReqType_REQ_CONSTRAINTS,
-    IpcResource_ReqType_REL_CONSTRAINTS
+    IpcResource_ReqType_REL_CONSTRAINTS,
+    IpcResource_ReqType_REQ_DATA
 } IpcResource_ReqType;
 
 typedef struct {
@@ -101,6 +102,12 @@ typedef struct {
 typedef struct {
     Char name[16];
 } IpcResource_Processor;
+
+typedef struct {
+    UInt32 resHandle;
+    UInt32 type;
+    Char   data[];
+} IpcResource_ReqData;
 
 /*!
  *  @brief  IpcResource_Object type
