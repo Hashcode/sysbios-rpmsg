@@ -31,7 +31,7 @@
 #
 
 # Repo
-BIOSTOOLSROOT   ?= /usr/local
+BIOSTOOLSROOT   ?= /opt/ti
 REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make

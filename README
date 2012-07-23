@@ -81,7 +81,7 @@ BUILD (Linux Environment)
 
     2) Export the proper environment variable to point to your installation path
        for all the BIOS-side tools (optional, MUST set if your installation path
-       is different from the default install location - /usr/local). All the
+       is different from the default install location - /opt/ti). All the
        above tools are expected to be installed in the same path. Note that the
        path should not end with a trailing '/'.
        Eg:
