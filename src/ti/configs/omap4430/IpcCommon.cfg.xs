@@ -118,6 +118,9 @@ dmTimer.timerSettings[2].baseAddr = 0xA803E000;
 /* dmTimer 3 mapped to GPT11 */
 dmTimer.timerSettings[3].baseAddr = 0xA8088000;
 
+/* Skip the Timer frequency verification check. Need to remove this later */
+dmTimer.checkFrequency = false;
+
 /* Override the internal sysTick timer with dmTimer for Bios Timer */
 var halTimer = xdc.useModule('ti.sysbios.hal.Timer');
 halTimer.TimerProxy = dmTimer;
