@@ -46,7 +46,7 @@ TOOLS
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_33_06_50/exports/bios_setuplinux_6_33_06_50.bin
             Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_33_06_50/exports/bios_setupwin32_6_33_06_50.exe
 
-       2) SMP/BIOS: 1.00.00.25_eng
+       2) SMP/BIOS: 1.00.00.27_eng
             SMP/BIOS is currently not available for public download.
 
        3) XDC:  3.23.03.53
