@@ -39,10 +39,13 @@ var SysMin      = xdc.useModule('ti.trace.SysMin');
 System.SupportProxy = SysMin;
 SysMin.bufSize  = 0x8000;
 
+/* Define default memory heap properties */
+var Memory      = xdc.useModule('xdc.runtime.Memory');
+Memory.defaultHeapSize = 0x20000;
+
 /* Modules used in the virtqueue/MessageQCopy/ServiceMgr libraries: */
 var Semaphore   = xdc.useModule('ti.sysbios.knl.Semaphore');
 var BIOS        = xdc.useModule('ti.sysbios.BIOS');
-BIOS.heapSize   = 0x20000;
 
 /* Reduces code size, by only pulling in modules explicitly referenced: */
 BIOS.libType    = BIOS.LibType_Custom;
