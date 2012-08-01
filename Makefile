@@ -52,10 +52,10 @@ BUILD_SMP       ?= 0
 export XDCROOT  = $(XDCPROD)
 export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
-all:
+all: checktools
 	$(XDCROOT)/xdc -k -j $(j) BUILD_SMP=$(BUILD_SMP) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
 
-clean:
+clean: checktools
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
 
 smp_config: unconfig
@@ -66,6 +66,52 @@ unconfig:
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
 	@rm bldcfg.mk
 endif
+
+.checktools:
+ifeq ($(wildcard $(REPO)),)
+	@echo "Invalid or absent BIOSTOOLSROOT. Please recheck your tools path."
+	@exit 1
+endif
+
+.checkxdc:
+ifeq ($(XDCVERSION),)
+	@echo "XDC version not defined."
+	@exit 1
+else ifeq ($(wildcard $(XDCPROD)),)
+	@echo "XDC version ($(XDCVERSION)) not installed. Please check your XDC installation."
+	@exit 1
+endif
+
+.checkbios:
+ifeq ($(BIOSVERSION),)
+	@echo "BIOS version not defined."
+	@exit 1
+else ifeq ($(wildcard $(BIOSPROD)),)
+	@echo "BIOS version ($(BIOSVERSION)) not installed. Please check your BIOS installation."
+	@exit 1
+endif
+
+.checkipc:
+ifeq ($(IPCVERSION),)
+	@echo "IPC version not defined."
+	@exit 1
+else ifeq ($(wildcard $(IPCPROD)),)
+	@echo "IPC version ($(IPCVERSION)) not installed. Please check your IPC installation."
+	@exit 1
+endif
+
+.checkcodegen:
+ifeq ($(wildcard $(TMS470CGTOOLPATH)),)
+	@echo "ARM Code Gen Tools $(TMS470CGTOOLPATH) not installed. Skipping ARM targets..."
+endif
+ifeq ($(BUILD_SMP),0)
+ifeq ($(wildcard $(C6000CGTOOLPATH)),)
+	@echo "C6x Code Gen Tools $(C6000CGTOOLPATH) not installed. Skipping C6x targets..."
+endif
+endif
+
+checktools: .checktools .checkxdc .checkbios .checkipc .checkcodegen
+	@echo ""
 
 info: tools
 tools:
