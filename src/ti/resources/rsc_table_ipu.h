@@ -102,7 +102,7 @@
 #ifdef OMAP5
 #define IPU_MEM_DATA_SIZE       (SZ_1M * 156)
 #else
-#define IPU_MEM_DATA_SIZE       (SZ_1M * 96)
+#define IPU_MEM_DATA_SIZE       (SZ_1M * 98)
 #endif
 #define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 90)
 
