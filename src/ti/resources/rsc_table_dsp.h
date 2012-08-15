@@ -83,9 +83,9 @@
 
 #define DSP_MEM_IPC_VRING_SIZE  SZ_1M
 #define DSP_MEM_IPC_DATA_SIZE   SZ_1M
-#define DSP_MEM_TEXT_SIZE       SZ_512K
-#define DSP_MEM_DATA_SIZE       SZ_512K
-#define DSP_MEM_HEAP_SIZE       SZ_2M
+#define DSP_MEM_TEXT_SIZE       SZ_1M
+#define DSP_MEM_DATA_SIZE       SZ_1M
+#define DSP_MEM_HEAP_SIZE       (SZ_1M * 3)
 #define DSP_MEM_IOBUFS_SIZE     (SZ_1M * 90)
 
 /*
