@@ -177,9 +177,9 @@ void test_exec_call(int fd, int num_iterations)
 
         /* Exec command: */
         packet_len = sizeof(omx_packet) + packet->data_size;
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+        clock_gettime(CLOCK_REALTIME, &start);
         exec_cmd(fd, (char *)packet, packet_len, (char *)rtn_packet, &reply_len);
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+        clock_gettime(CLOCK_REALTIME, &end);
         delta = diff(start,end);
         elapsed += delta;
 
