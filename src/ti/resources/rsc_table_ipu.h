@@ -113,7 +113,7 @@
 #ifdef OMAP5
 #define PHYS_MEM_IPC_VRING      0x95800000
 #else
-#define PHYS_MEM_IPC_VRING      0x99800000
+#define PHYS_MEM_IPC_VRING      0x99000000
 #endif
 
 #define PHYS_MEM_IOBUFS         0xBA300000
