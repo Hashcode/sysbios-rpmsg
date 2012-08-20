@@ -56,12 +56,12 @@ var testArray = [
     {name: 'test_omx_sysm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0", copts: "-D CORE0 -D OMAP4xxx", buildPlatforms: ["ti.platform.omap4430.core0"]},
     {name: 'test_omx_sysm3_hdmi', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0_hdmi", copts: "-D CORE0 -D OMAP4xxx", buildPlatforms: ["ti.platform.omap4430.core0"]},
     {name: 'test_omx_appm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core1", copts: "-D CORE1 -D OMAP4xxx", buildPlatforms: ["ti.platform.omap4430.core1"]},
-    {name: 'test_omx_dsp',   sources: ["test_omx", "ping_tasks", "resmgr_task"], config: "test_omx_dsp",   copts: "-D DSP -D OMAP4xxx",   buildPlatforms: ["ti.platform.omap4430.dsp"]},
-    {name: 'test_omx_ipu',   sources: ["test_omx", "ping_tasks", "resmgr_task"], config: "test_omx_ipu", copts: "-D IPU -D OMAP4xxx", buildPlatforms: ["ti.platform.omap4430.ipu"]},
+    {name: 'test_omx_dsp',   sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_dsp",   copts: "-D DSP -D OMAP4xxx",   buildPlatforms: ["ti.platform.omap4430.dsp"]},
+    {name: 'test_omx_ipu',   sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_ipu", copts: "-D IPU -D OMAP4xxx", buildPlatforms: ["ti.platform.omap4430.ipu"]},
     {name: 'test_omx_sysm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core0_omap5", copts: "-D CORE0 -D OMAP5xxx", buildPlatforms: ["ti.platform.omap54xx.core0"]},
     {name: 'test_omx_appm3', sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_core1_omap5", copts: "-D CORE1 -D OMAP5xxx", buildPlatforms: ["ti.platform.omap54xx.core1"]},
-    {name: 'test_omx_dsp',   sources: ["test_omx", "ping_tasks", "resmgr_task"], config: "test_omx_dsp_omap5", copts: "-D DSP -D OMAP5xxx", buildPlatforms: ["ti.platform.omap54xx.dsp"]},
-    {name: 'test_omx_ipu',   sources: ["test_omx", "ping_tasks", "resmgr_task"], config: "test_omx_ipu_omap5", copts: "-D IPU -D OMAP5xxx", buildPlatforms: ["ti.platform.omap54xx.ipu"]},
+    {name: 'test_omx_dsp',   sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_dsp_omap5", copts: "-D DSP -D OMAP5xxx", buildPlatforms: ["ti.platform.omap54xx.dsp"]},
+    {name: 'test_omx_ipu',   sources: ["test_omx", "ping_tasks", "resmgr_task", "hwspinlock_task"], config: "test_omx_ipu_omap5", copts: "-D IPU -D OMAP5xxx", buildPlatforms: ["ti.platform.omap54xx.ipu"]},
 ];
 
 arguments = ["profile=debug platform=all"];
