@@ -49,13 +49,13 @@ TOOLS
        2) SMP/BIOS: 1.00.00.28_eng
             SMP/BIOS is currently not available for public download.
 
-       3) XDC:  3.23.03.53
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_03_53/exports/xdctools_setuplinux_3_23_03_53.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_03_53/exports/xdctools_setupwin32_3_23_03_53.exe
+       3) XDC:  3.23.04.60
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_04_60/exports/xdctools_setuplinux_3_23_04_60.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_04_60/exports/xdctools_setupwin32_3_23_04_60.exe
 
-       4) IPC:  1.24.02.27
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_02_27/exports/ipc_setuplinux_1_24_02_27.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_02_27/exports/ipc_setupwin32_1_24_02_27.exe
+       4) IPC:  1.24.03.32
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_03_32/exports/ipc_setuplinux_1_24_03_32.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_03_32/exports/ipc_setupwin32_1_24_03_32.exe
 
        5) CGT TMS470: 4.9.0
             TMS470 Compiler is not available for free publicly. Please contact
