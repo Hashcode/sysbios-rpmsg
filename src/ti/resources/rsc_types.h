@@ -73,6 +73,13 @@
 #define TYPE_TRACE       2
 #define TYPE_VDEV        3
 #define TYPE_CRASHDUMP   4
+#define TYPE_CUSTOM      5
+
+union fw_custom {
+    /* add custom resources here */
+    /* maintain reserved as the last element */
+    UInt32 reserved;
+};
 
 /* Common Resource Structure Types */
 struct fw_rsc_carveout {
@@ -121,6 +128,13 @@ struct fw_rsc_vdev {
     Char    status;
     Char    num_of_vrings;
     Char    reserved[2];
+};
+
+struct fw_rsc_custom {
+    UInt32          type;
+    UInt32          sub_type;
+    UInt32          rsc_size;
+    union fw_custom rsc;
 };
 
 #endif /* _RSC_TYPES_H_ */
