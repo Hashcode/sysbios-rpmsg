@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,23 @@
 
 
 static HwSpinlock_Module_State HwSpinlock_module = { 0 };
+
+/* Exposed to the Host side to reset hwspinlock if needed */
+Bits32 ti_gates_HwSpinlock_sharedState
+                            [(HwSpinlock_NUMLOCKS/sizeof(Bits32))] = { 0 };
+const UInt32 ti_gates_HwSpinlock_numLocks = HwSpinlock_NUMLOCKS;
+
+
+/* Helper functions to set and reset status of a lock */
+inline Void _HwSpinlock_set(Int hwlockId)
+{
+    ti_gates_HwSpinlock_sharedState[hwlockId >> 5] |= (1 << (hwlockId % 32));
+}
+
+inline Void _HwSpinlock_clr(Int hwlockId)
+{
+    ti_gates_HwSpinlock_sharedState[hwlockId >> 5] &= ~(1 << (hwlockId % 32));
+}
 
 /*
  *************************************************************************
@@ -208,6 +225,7 @@ Int HwSpinlock_enter(HwSpinlock_Handle handle, HwSpinlock_PreemptGate pType,
             hkey->key = IGateProvider_enter(handle->preemptGates[pType]);
             hkey->valid = TRUE;
             handle->pType = pType;
+            _HwSpinlock_set(handle->params.id);
             return (HwSpinlock_S_SUCCESS);
         }
 
@@ -238,6 +256,7 @@ Void HwSpinlock_leave(HwSpinlock_Handle handle, HwSpinlock_Key *hkey)
        /* Leave the spinlock */
         handle->baseAddr[handle->params.id] = 0;
         handle->state = HwSpinlock_STATE_FREE;
+        _HwSpinlock_clr(handle->params.id);
 
         /* Restore Preemption of pType */
         IGateProvider_leave(handle->preemptGates[handle->pType], hkey->key);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,9 @@
 #if defined (__cplusplus)
 extern "C" {
 #endif
+
+extern UInt32 ti_gates_HwSpinlock_sharedState[];
+extern const UInt32 ti_gates_HwSpinlock_numLocks;
 
 /* =============================================================================
  *  All success and failure codes for the module
