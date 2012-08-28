@@ -43,6 +43,7 @@
 #define _RSC_TABLE_DSP_H_
 
 #include <ti/resources/rsc_types.h>
+#include <ti/gates/hwspinlock/HwSpinlock.h>
 
 /* DSP Memory Map */
 #define L4_44XX_BASE            0x4A000000
@@ -115,7 +116,7 @@ struct resource_table {
     UInt32 version;
     UInt32 num;
     UInt32 reserved[2];
-    UInt32 offset[14];  /* Should match 'num' in actual definition */
+    UInt32 offset[15];  /* Should match 'num' in actual definition */
 
     /* rpmsg vdev entry */
     struct fw_rsc_vdev rpmsg_vdev;
@@ -160,16 +161,21 @@ struct resource_table {
 
     /* devmem entry */
     struct fw_rsc_devmem devmem7;
+
+    /* hwspinlock custom entry */
+    struct fw_rsc_custom hwspin;
 };
 
 #define TRACEBUFADDR (UInt32)&ti_trace_SysMin_Module_State_0_outbuf__A
+#define HWSPINKLOCKSTATEADDR (UInt32)&ti_gates_HwSpinlock_sharedState
+#define HWSPINKLOCKNUMADDR (UInt32)&ti_gates_HwSpinlock_numLocks
 
 #pragma DATA_SECTION(ti_resources_ResourceTable, ".resource_table")
 #pragma DATA_ALIGN(ti_resources_ResourceTable, 4096)
 
 struct resource_table ti_resources_ResourceTable = {
     1,      /* we're the first version that implements this */
-    14,     /* number of entries in the table */
+    15,     /* number of entries in the table */
     0, 0,   /* reserved, must be zero */
     /* offsets to entries */
     {
@@ -187,6 +193,7 @@ struct resource_table ti_resources_ResourceTable = {
         offsetof(struct resource_table, devmem5),
         offsetof(struct resource_table, devmem6),
         offsetof(struct resource_table, devmem7),
+        offsetof(struct resource_table, hwspin),
     },
 
     /* rpmsg vdev entry */
@@ -273,6 +280,12 @@ struct resource_table ti_resources_ResourceTable = {
         TYPE_DEVMEM,
         DSP_PERIPHERAL_DMM, L3_PERIPHERAL_DMM,
         SZ_1M, 0, 0, "DSP_PERIPHERAL_DMM",
+    },
+
+    {
+        TYPE_CUSTOM, TYPE_HWSPIN,
+        sizeof(struct fw_rsc_custom_hwspin),
+        { HWSPINKLOCKNUMADDR, HWSPINKLOCKSTATEADDR, "hwspin"},
     },
 };
 

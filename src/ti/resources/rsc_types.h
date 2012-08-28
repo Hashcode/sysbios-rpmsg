@@ -75,8 +75,19 @@
 #define TYPE_CRASHDUMP   4
 #define TYPE_CUSTOM      5
 
+/* Custom Resource info: Must match drivers/remoteproc/omap_remoteproc.h */
+#define TYPE_HWSPIN      1
+
+/* Resource info specific to hwspinlock */
+struct fw_rsc_custom_hwspin {
+    UInt32  num_da;
+    UInt32  state_da;
+    Char    name[32];
+};
+
 union fw_custom {
     /* add custom resources here */
+    struct fw_rsc_custom_hwspin hwspin;
     /* maintain reserved as the last element */
     UInt32 reserved;
 };
