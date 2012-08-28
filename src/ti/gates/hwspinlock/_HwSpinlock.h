@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,7 +79,11 @@ HwSpinlock_PreemptGateFxn HwSpinlock_GateFxns[] = {
 };
 
 #define HwSpinlock_NUMLOCKS         32
+#ifdef DSP
+#define HwSpinlock_BASEADDR         0x4A0F6800
+#else
 #define HwSpinlock_BASEADDR         0xAA0F6800
+#endif
 #define HwSpinlock_NUMPREEMPTGATES  (sizeof(HwSpinlock_GateFxns) / \
                                         sizeof(HwSpinlock_PreemptGateFxn))
 
