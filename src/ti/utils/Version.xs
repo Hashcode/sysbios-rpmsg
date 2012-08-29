@@ -156,7 +156,7 @@ function getTopCommit(directory)
     }
 
     var lines = status.output.split('\n');
-    var commit = lines[0];
+    var commit = lines[0].replace(/"/g, "\\\"");
     if (commit.length) {
         return (commit)
     }
