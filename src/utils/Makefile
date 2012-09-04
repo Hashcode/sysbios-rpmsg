@@ -47,7 +47,7 @@ ifneq ($(BUILD_SMP),1)
 endif
 endif
 
-all: readrprc wrints genbase genextbin xdep $(DUCATI) $(TESLA) $(IPU) $(DSP)
+all: readrprc wrints genbase genextbin genextelf xdep $(DUCATI) $(TESLA) $(IPU) $(DSP)
 
 ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 wrints genbase
 	#
@@ -83,6 +83,7 @@ CFLAGS = -Wall -m32
 RPRCOBJ = readrprc.o
 WRNTOBJ = wrints.o
 GBINOBJ = genextbin.o
+GELFOBJ = genextelf.o
 XDEPOBJ = xdep.o
 
 readrprc: $(RPRCOBJ)
@@ -103,6 +104,12 @@ genextbin: $(GBINOBJ)
 genextbin.o: genextbin.c
 	gcc $(CFLAGS) -c -o $@ $<
 
+genextelf: $(GELFOBJ)
+	gcc $(CFLAGS) -o $@ $(GELFOBJ)
+
+genextelf.o: genextelf.c
+	gcc $(CFLAGS) -c -o $@ $<
+
 xdep: $(XDEPOBJ)
 	gcc $(CFLAGS) -o $@ $(XDEPOBJ)
 
@@ -116,5 +123,5 @@ elfload/genbase:
 	cd elfload; make
 
 clean:
-	@rm -f genbase readrprc wrints genextbin xdep *.o $(DUCATI) $(TESLA) $(IPU) $(DSP)
+	@rm -f genbase readrprc wrints genextbin genextelf xdep *.o $(DUCATI) $(TESLA) $(IPU) $(DSP)
 	cd elfload; make clean
