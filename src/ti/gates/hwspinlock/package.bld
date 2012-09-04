@@ -56,20 +56,41 @@ if (smpBuild == "1") {
         {
             name: "ti.gates.hwspinlock_smp",
             sources: [
-                "HwSpinlock.c"
+                "HwSpinlock"
             ],
+            libAttrs: {
+                defs: " -DM3_ONLY -DSMP"
+            },
             isas: [ "v7M" ],
         }
     );
 }
 else {
-    /* ti.gates.hwspinlock library for regular targets */
+    /* ti.gates.hwspinlock library for IPU non-SMP target */
     libArray.push(
         {
             name: "ti.gates.hwspinlock",
             sources: [
                 "HwSpinlock",
             ],
+            libAttrs: {
+                defs: " -DM3_ONLY"
+            },
+            isas: [ "v7M" ],
+        }
+    );
+
+    /* ti.gates.hwspinlock library for DSP target */
+    libArray.push(
+        {
+            name: "ti.gates.hwspinlock",
+            sources: [
+                "HwSpinlock",
+            ],
+            libAttrs: {
+                defs: " -DDSP"
+            },
+            isas: [ "64T" ],
         }
     );
 }
