@@ -74,12 +74,6 @@
 #define L3_TILER_MODE_3         0x78000000
 #define IPU_TILER_MODE_3        0x78000000
 
-#define L3_IVAHD_CONFIG         0x5A000000
-#define IPU_IVAHD_CONFIG        0xBA000000
-
-#define L3_IVAHD_SL2            0x5B000000
-#define IPU_IVAHD_SL2           0xBB000000
-
 #define IPU_MEM_TEXT            0x0
 #define IPU_MEM_DATA            0x80000000
 
