@@ -56,10 +56,12 @@
 #include <ti/sysbios/knl/Swi.h>
 #include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/timers/dmtimer/Timer.h>
-#include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
 #ifndef SMP
+#include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
 #include <ti/sysbios/family/arm/ducati/Core.h>
 #include <ti/ipc/MultiProc.h>
+#else
+#include <ti/sysbios/family/arm/ducati/smp/Power.h>
 #endif
 
 #include <ti/pm/IpcPower.h>
