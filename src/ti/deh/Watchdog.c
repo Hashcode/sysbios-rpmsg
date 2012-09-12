@@ -184,7 +184,7 @@ Void Watchdog_idleBegin(Void)
     Int core = 0;
 
 #ifdef SMP
-    core = Core_getCoreId();
+    core = Core_getId();
 
     if (core != 0) {
         Watchdog_stop(core);
@@ -204,7 +204,7 @@ Void Watchdog_swiPrehook(Swi_Handle swi)
     Int core = 0;
 
 #ifdef SMP
-    core = Core_getCoreId();
+    core = Core_getId();
 
     if (core != 0) {
         Watchdog_start(core);
@@ -225,7 +225,7 @@ Void Watchdog_taskSwitch(Task_Handle p, Task_Handle n)
     Int core = 0;
 
 #ifdef SMP
-    core = Core_getCoreId();
+    core = Core_getId();
 
     if (core != 0) {
         Watchdog_start(core);
