@@ -59,13 +59,15 @@ clean: checktools
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
 
 smp_config: unconfig
-	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo BIOSVERSION=bios_6_34_01_14 >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
+	@touch src/config.bld
 
 unconfig:
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
 	@rm bldcfg.mk
 endif
+	@touch src/config.bld
 
 .checktools:
 ifeq ($(wildcard $(REPO)),)

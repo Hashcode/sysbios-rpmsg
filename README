@@ -26,8 +26,10 @@ TOOLS
     o SYS/BIOS RPMSG build requires the following tools to be installed at the
       minimum:
         - SYS/BIOS: RTOS running on the target slave processor
-        - SMP/BIOS: SMP-mode RTOS running on dual-processor target slave
-                    processor subsystems (needed only for SMP-mode)
+        - SMP/BIOS: SMP-mode RTOS running on dual-processor target
+                    slave processor subsystems (needed only for SMP-mode).
+                    SMP/BIOS is obsolete and SMP-mode support has been
+                    absorbed into SYS/BIOS 6.34.
         - XDC: RTSC tools used for building and configuration of images
         - IPC: Base Inter-Processor Communication Package
         - CGT: Code Generation Tools for compiling code for M3 & C64x targets
@@ -46,8 +48,11 @@ TOOLS
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_01_14/exports/bios_setuplinux_6_34_01_14.bin
             Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_01_14/exports/bios_setupwin32_6_34_01_14.exe
 
-       2) SMP/BIOS: 1.00.00.28_eng
-            SMP/BIOS is currently not available for public download.
+       2) BIOS (SMP-mode): 6.34.01.14
+            Applications need to set BIOS.smpEnabled to true to build for
+            SMP-mode. BIOS 6.34.01.14 is the minimum required version to
+            maintain feature compatibility with the previous
+            smpbios_1_00_00_28_eng version.
 
        3) XDC:  3.24.02.30
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_02_30/exports/xdctools_setuplinux_3_24_02_30.bin
