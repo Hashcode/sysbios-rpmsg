@@ -61,11 +61,6 @@ var IpcMemory = xdc.useModule('ti.resources.IpcMemory');
 /* HwSpinlock Module */
 xdc.loadPackage('ti.gates.hwspinlock');
 
-/* Modules used in Power Management */
-xdc.loadPackage('ti.pm');
-var Power = xdc.useModule('ti.sysbios.family.arm.ducati.omap4430.Power');
-Power.loadSegment = "PM_DATA";
-
 var HeapBuf   = xdc.useModule('ti.sysbios.heaps.HeapBuf');
 var List      = xdc.useModule('ti.sdo.utils.List');
 
