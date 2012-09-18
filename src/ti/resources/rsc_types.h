@@ -90,6 +90,20 @@ union fw_custom {
     UInt32 reserved;
 };
 
+/*
+ * Use flags to define memory access for each resource
+ * Must match include/linux/rproc_drm.h
+ */
+enum rproc_memregion {
+    RPROC_MEMREGION_UNKNOWN,
+    RPROC_MEMREGION_2D,
+    RPROC_MEMREGION_SMEM,
+    RPROC_MEMREGION_CODE,
+    RPROC_MEMREGION_DATA,
+    RPROC_MEMREGION_1D,
+    RPROC_MEMREGION_VRING
+};
+
 /* Common Resource Structure Types */
 struct fw_rsc_carveout {
     UInt32  type;
@@ -97,7 +111,7 @@ struct fw_rsc_carveout {
     UInt32  pa;
     UInt32  len;
     UInt32  flags;
-    UInt32  reserved;
+    UInt32  memregion;
     Char    name[32];
 };
 
@@ -107,7 +121,7 @@ struct fw_rsc_devmem {
     UInt32  pa;
     UInt32  len;
     UInt32  flags;
-    UInt32  reserved;
+    UInt32  memregion;
     Char    name[32];
 };
 
