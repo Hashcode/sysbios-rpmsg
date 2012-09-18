@@ -35,7 +35,7 @@ BIOSTOOLSROOT   ?= /opt/ti
 REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
-XDCVERSION      ?= xdctools_3_23_04_60
+XDCVERSION      ?= xdctools_3_24_02_30
 BIOSVERSION     ?= bios_6_33_06_50
 IPCVERSION      ?= ipc_1_24_03_32
 

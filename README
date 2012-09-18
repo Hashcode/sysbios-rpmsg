@@ -49,9 +49,9 @@ TOOLS
        2) SMP/BIOS: 1.00.00.28_eng
             SMP/BIOS is currently not available for public download.
 
-       3) XDC:  3.23.04.60
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_04_60/exports/xdctools_setuplinux_3_23_04_60.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_04_60/exports/xdctools_setupwin32_3_23_04_60.exe
+       3) XDC:  3.24.02.30
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_02_30/exports/xdctools_setuplinux_3_24_02_30.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_02_30/exports/xdctools_setupwin32_3_24_02_30.exe
 
        4) IPC:  1.24.03.32
             Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_03_32/exports/ipc_setuplinux_1_24_03_32.bin
