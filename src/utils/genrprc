@@ -47,7 +47,8 @@
 #   core1 trace buffer symbol: SysMin_Module_State_0_outbuf__A
 #   core0 error buffer symbol: Deh_Module_State_0_outbuf__A
 #   core1 error buffer symbol: Deh_Module_State_0_outbuf__A
-#   core0 suspend addr symbol: ti_sysbios_family_arm_ducati_omap4430_readyIdleCore0
+#   core0 suspend addr symbol: ti_sysbios_family_arm_ducati_omap4430_readyIdleCore0 (non-SMP)
+#                              ti_sysbios_family_arm_ducati_smp_readyIdleCore0 (SMP)
 #                              ti_sysbios_family_c64p_tesla_Power_readyIdle (DSP)
 #   core1 suspend addr symbol: ti_sysbios_family_arm_ducati_omap4430_readyIdleCore1
 #
@@ -70,6 +71,7 @@ errbufname0=Deh_Module_State_0_outbuf__A
 errbufname1=Deh_Module_State_0_outbuf__A
 suspname0=ti_sysbios_family_arm_ducati_omap4430_readyIdleCore0
 suspname1=ti_sysbios_family_arm_ducati_omap4430_readyIdleCore1
+smpsuspname0=ti_sysbios_family_arm_ducati_smp_readyIdleCore0
 
 cmdline=`getopt -o "" --long e0:,e1:,t0:,t1:,d0:,d1:,s0:,s1: --name $0 -- "$@"`
 err=$?
@@ -149,6 +151,10 @@ else
 	traceaddr0=`nm $core0file | grep $tracename0 | cut -d ' ' -f 1`
 	errbufaddr0=`nm $core0file | grep $errbufname0 | cut -d ' ' -f 1`
 	suspaddr0=`nm $core0file | grep $suspname0 | cut -d ' ' -f 1`
+	if [[ $suspaddr0 == "" ]]
+	then
+		suspaddr0=`nm $core0file | grep $smpsuspname0 | cut -d ' ' -f 1`
+	fi
 	if [[ $entryname0 == "" ]]
 	then
 		entryaddr0=`readelf -h $core0file | \
