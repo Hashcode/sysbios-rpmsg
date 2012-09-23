@@ -85,8 +85,7 @@ if (c6x_cgtools_rootdir != null && c6x_cgtools_rootdir != "" &&
     (build_smp == null || build_smp == "0")) {
     Build.targets.$add(C64T);
 }
-if (arm_cgtools_rootdir != null && arm_cgtools_rootdir != "" &&
-    (build_smp == null || build_smp == "0")) {
+if (arm_cgtools_rootdir != null && arm_cgtools_rootdir != "") {
     Build.targets.$add(M3);
 }
 
