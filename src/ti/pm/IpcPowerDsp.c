@@ -117,14 +117,10 @@ static Void IpcPower_callUserFxns(IpcPower_Event event)
  */
 static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
 {
-    /*
-     * Disable wakeup events. The only event allowed is the Mailbox event, a
-     * mailbox message sent from the host-side needs this event to wake up the
-     * DSP.
-     */
+    /* Disable wakeup events */
     Wugen_disableEvent(GPT5_IRQ);
     Wugen_disableEvent(GPT6_IRQ);
-    Wugen_enableEvent(MBX_DSP_IRQ);
+    Wugen_disableEvent(MBX_DSP_IRQ);
 
     /* Invoke the BIOS suspend routine */
     Power_suspend(Power_Suspend_HIBERNATE);
