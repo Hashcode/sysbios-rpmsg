@@ -412,17 +412,9 @@ Void IpcPower_preSuspend(Void)
  */
 Void IpcPower_postResume(Void)
 {
-#if 0
-    /*
-     * Restore timer registers (available currently only in SMP/BIOS).
-     * SYS/BIOS does not have this API available yet, so we have to rely
-     * on context save/restore on the host-side */
+    /* Restore timer registers */
     Timer_restoreRegisters(tickTimerHandle, NULL);
     Timer_start(tickTimerHandle);
-#else
-    System_printf("IpcPower_postResume: BIOS Tick Timer may lose context "
-                  "across Device OFF (depending on host-side code)\n");
-#endif
 
     /* Call all user registered resume callback functions */
     IpcPower_callUserFxns(IpcPower_Event_RESUME);
