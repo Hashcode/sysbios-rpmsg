@@ -35,9 +35,9 @@ BIOSTOOLSROOT   ?= /opt/ti
 REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
-XDCVERSION      ?= xdctools_3_24_02_30
+XDCVERSION      ?= xdctools_3_24_03_33
 BIOSVERSION     ?= bios_6_34_01_14
-IPCVERSION      ?= ipc_1_24_03_32
+IPCVERSION      ?= ipc_1_25_00_04
 
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
 include bldcfg.mk

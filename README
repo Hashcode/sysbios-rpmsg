@@ -54,13 +54,13 @@ TOOLS
             maintain feature compatibility with the previous
             smpbios_1_00_00_28_eng version.
 
-       3) XDC:  3.24.02.30
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_02_30/exports/xdctools_setuplinux_3_24_02_30.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_02_30/exports/xdctools_setupwin32_3_24_02_30.exe
+       3) XDC:  3.24.03.33
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_03_33/exports/xdctools_setuplinux_3_24_03_33.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_03_33/exports/xdctools_setupwin32_3_24_03_33.exe
 
-       4) IPC:  1.24.03.32
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_03_32/exports/ipc_setuplinux_1_24_03_32.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_03_32/exports/ipc_setupwin32_1_24_03_32.exe
+       4) IPC:  1.25.00.04
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_25_00_04/exports/ipc_setuplinux_1_25_00_04.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_25_00_04/exports/ipc_setupwin32_1_25_00_04.exe
 
        5) CGT TMS470: 5.0.1
             TMS470 Compiler is not available for free publicly. Please contact
