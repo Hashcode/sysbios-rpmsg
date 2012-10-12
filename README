@@ -44,11 +44,11 @@ TOOLS
 
     o The following are the current versions and download instructions for these
       tools.
-       1) BIOS: 6.34.01.14
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_01_14/exports/bios_setuplinux_6_34_01_14.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_01_14/exports/bios_setupwin32_6_34_01_14.exe
+       1) BIOS: 6.34.02.18
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_02_18/exports/bios_setuplinux_6_34_02_18.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_02_18/exports/bios_setupwin32_6_34_02_18.exe
 
-       2) BIOS (SMP-mode): 6.34.01.14
+       2) BIOS (SMP-mode): 6.34.02.18
             Applications need to set BIOS.smpEnabled to true to build for
             SMP-mode. BIOS 6.34.01.14 is the minimum required version to
             maintain feature compatibility with the previous

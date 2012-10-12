@@ -36,7 +36,7 @@ REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
 XDCVERSION      ?= xdctools_3_24_03_33
-BIOSVERSION     ?= bios_6_34_01_14
+BIOSVERSION     ?= bios_6_34_02_18
 IPCVERSION      ?= ipc_1_25_00_04
 
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
@@ -59,7 +59,7 @@ clean: checktools
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
 
 smp_config: unconfig
-	@echo BIOSVERSION=bios_6_34_01_14 >> bldcfg.mk
+	@echo BIOSVERSION=bios_6_34_02_18 >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 	@touch src/config.bld
 
