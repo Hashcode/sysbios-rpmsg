@@ -60,6 +60,9 @@
 #define L3_PERIPHERAL_DMM       0x4E000000
 #define DSP_PERIPHERAL_DMM      0x4E000000
 
+#define L3_PERIPHERAL_ISS       0x52000000
+#define DSP_PERIPHERAL_ISS      0x52000000
+
 #define L3_TILER_MODE_0_1       0x60000000
 #define DSP_TILER_MODE_0_1      0x60000000
 
@@ -116,7 +119,7 @@ struct resource_table {
     UInt32 version;
     UInt32 num;
     UInt32 reserved[2];
-    UInt32 offset[15];  /* Should match 'num' in actual definition */
+    UInt32 offset[16];  /* Should match 'num' in actual definition */
 
     /* rpmsg vdev entry */
     struct fw_rsc_vdev rpmsg_vdev;
@@ -162,6 +165,9 @@ struct resource_table {
     /* devmem entry */
     struct fw_rsc_devmem devmem7;
 
+    /* devmem entry */
+    struct fw_rsc_devmem devmem8;
+
     /* hwspinlock custom entry */
     struct fw_rsc_custom hwspin;
 };
@@ -175,7 +181,7 @@ struct resource_table {
 
 struct resource_table ti_resources_ResourceTable = {
     1,      /* we're the first version that implements this */
-    15,     /* number of entries in the table */
+    16,     /* number of entries in the table */
     0, 0,   /* reserved, must be zero */
     /* offsets to entries */
     {
@@ -193,6 +199,7 @@ struct resource_table ti_resources_ResourceTable = {
         offsetof(struct resource_table, devmem5),
         offsetof(struct resource_table, devmem6),
         offsetof(struct resource_table, devmem7),
+        offsetof(struct resource_table, devmem8),
         offsetof(struct resource_table, hwspin),
     },
 
@@ -280,6 +287,12 @@ struct resource_table ti_resources_ResourceTable = {
         TYPE_DEVMEM,
         DSP_PERIPHERAL_DMM, L3_PERIPHERAL_DMM,
         SZ_1M, 0, 0, "DSP_PERIPHERAL_DMM",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_PERIPHERAL_ISS, L3_PERIPHERAL_ISS,
+        SZ_256K, 0, 0, "DSP_PERIPHERAL_ISS",
     },
 
     {
