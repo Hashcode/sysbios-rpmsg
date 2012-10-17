@@ -42,6 +42,7 @@
 #ifndef _RSC_TABLE_IPU_H_
 #define _RSC_TABLE_IPU_H_
 
+#include <xdc/std.h>
 #include <ti/resources/rsc_types.h>
 #include <ti/gates/hwspinlock/HwSpinlock.h>
 

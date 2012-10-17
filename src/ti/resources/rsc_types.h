@@ -41,8 +41,6 @@
 #ifndef _RSC_TYPES_H_
 #define _RSC_TYPES_H_
 
-#include <xdc/std.h>
-
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_64K                          0x00010000
 #define SZ_128K                         0x00020000
