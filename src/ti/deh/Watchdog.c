@@ -84,6 +84,42 @@
 /* GP Timers Clock Control register bit mask */
 #define WATCHDOG_WDT_CLKCTRL_IDLEST_MASK    (3 << 16)
 
+#ifdef M3_ONLY
+/* OMAP IDCode Register to find the version id, 0x4A002204 */
+#define IDCODE_REGISTER                     (0xAA002204)
+
+/*
+ *  ======== adjustGptClkCtrlAddr ========
+ *  Adjust the GPTimer PRCM Clock Register Addresses on OMAP5 ES2.x
+ */
+static Void adjustGptClkCtrlAddr()
+{
+    Int     i;
+    Bool    adjust = FALSE;
+    UInt32  idCode = REG32(IDCODE_REGISTER);
+    UInt32  ramp = (idCode >> 12) & 0xFFFF;
+    UInt32  version = (idCode >> 28) & 0xF;
+
+    /* Change the addresses only for OMAP5 ES2.x */
+    if (ramp == 0xB942 || ramp == 0xB998) {
+        if (version == 1) {
+            adjust = TRUE;
+        }
+    }
+
+    /*
+     * OMAP5 ES 2.x has PER GPT PRCM addresses moved up by 0x400
+     * w.r.t OMAP4 and OMAP5 ES 1.0
+     */
+    if (adjust == TRUE) {
+        for (i = 0; i < Watchdog_module->wdtCores; i++) {
+            Watchdog_module->device[i].clkCtrl =
+                    (Ptr)((UInt32)Watchdog_module->device[i].clkCtrl - 0x400);
+        }
+    }
+}
+#endif
+
 /*
  *  ======== initTimer ========
  */
@@ -127,6 +163,9 @@ Void Watchdog_init( Void (*timerFxn)(Void) )
     tHandle = Timer_Object_get(NULL, 0);
     Timer_getFreq(tHandle, &tFreq);  /* get timer frequency */
 
+#ifdef M3_ONLY
+    adjustGptClkCtrlAddr();
+#endif
     for (i = 0; i < Watchdog_module->wdtCores; i++) {  /* loop for SMP cores */
         timer = (Watchdog_TimerRegs *) Watchdog_module->device[i].baseAddr;
 
