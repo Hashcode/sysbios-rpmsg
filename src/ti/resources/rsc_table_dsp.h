@@ -120,7 +120,7 @@ struct resource_table {
     UInt32 version;
     UInt32 num;
     UInt32 reserved[2];
-    UInt32 offset[16];  /* Should match 'num' in actual definition */
+    UInt32 offset[17];  /* Should match 'num' in actual definition */
 
     /* rpmsg vdev entry */
     struct fw_rsc_vdev rpmsg_vdev;
@@ -169,6 +169,9 @@ struct resource_table {
     /* devmem entry */
     struct fw_rsc_devmem devmem8;
 
+    /* devmem entry */
+    struct fw_rsc_devmem devmem9;
+
     /* hwspinlock custom entry */
     struct fw_rsc_custom hwspin;
 };
@@ -182,7 +185,7 @@ struct resource_table {
 
 struct resource_table ti_resources_ResourceTable = {
     1,      /* we're the first version that implements this */
-    16,     /* number of entries in the table */
+    17,     /* number of entries in the table */
     0, 0,   /* reserved, must be zero */
     /* offsets to entries */
     {
@@ -201,6 +204,7 @@ struct resource_table ti_resources_ResourceTable = {
         offsetof(struct resource_table, devmem6),
         offsetof(struct resource_table, devmem7),
         offsetof(struct resource_table, devmem8),
+        offsetof(struct resource_table, devmem9),
         offsetof(struct resource_table, hwspin),
     },
 
@@ -282,6 +286,12 @@ struct resource_table ti_resources_ResourceTable = {
         TYPE_DEVMEM,
         DSP_PERIPHERAL_L4PER, L4_PERIPHERAL_L4PER,
         SZ_16M, 0, 0, "DSP_PERIPHERAL_L4PER",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_PERIPHERAL_L4EMU, L4_PERIPHERAL_L4EMU,
+        SZ_16M, 0, 0, "DSP_PERIPHERAL_L4EMU",
     },
 
     {
