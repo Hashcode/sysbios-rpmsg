@@ -85,44 +85,8 @@
 #define WATCHDOG_WDT_CLKCTRL_IDLEST_MASK    (3 << 16)
 
 #ifdef M3_ONLY
-/* OMAP Register virtual addresses on IPU to detect the proper version id */
-#define DBG_MPU_C0_DEBUGID                  (0xB4140000)
+/* OMAP IDCode Register to find the version id, 0x4A002204 */
 #define IDCODE_REGISTER                     (0xAA002204)
-#define CM_L3INSTR_L3_MAIN_3_CLKCTRL        (0xAA008E20)
-#define CM_L3INSTR_L3_INSTR_CLKCTRL         (0xAA008E28)
-#define CM_EMU_CLKSTCTRL                    (0xAAE07B00)
-
-/*
- *  ======== checkMpuDebugId ========
- */
-static Bool checkMpuDebugId()
-{
-    UInt32 tmp1, tmp2, tmp3;
-    UInt32 dbgId;
-
-    /* Preserve the original values */
-    tmp1 = REG32(CM_L3INSTR_L3_MAIN_3_CLKCTRL);
-    tmp2 = REG32(CM_L3INSTR_L3_INSTR_CLKCTRL);
-    tmp3 = REG32(CM_EMU_CLKSTCTRL);
-
-    /* Enable clocks, put the EMU domain in SW_Wakeup and read the version */
-    REG32(CM_L3INSTR_L3_MAIN_3_CLKCTRL) = 0x1;
-    REG32(CM_L3INSTR_L3_INSTR_CLKCTRL) = 0x1;
-    REG32(CM_EMU_CLKSTCTRL) = 0x2;
-    dbgId = REG32(DBG_MPU_C0_DEBUGID);
-
-    /* Restore the original values */
-    REG32(CM_EMU_CLKSTCTRL) = (tmp3 & 0x3);
-    REG32(CM_L3INSTR_L3_INSTR_CLKCTRL) = (tmp2 & 0x1);
-    REG32(CM_L3INSTR_L3_MAIN_3_CLKCTRL) = (tmp1 & 0x1);
-
-    /* Check for id version to confirm OMAP5 ES2 */
-    if (dbgId == 0x3515F022) {
-        return TRUE;
-    }
-
-    return FALSE;
-}
 
 /*
  *  ======== adjustGptClkCtrlAddr ========
@@ -140,11 +104,6 @@ static Void adjustGptClkCtrlAddr()
     if (ramp == 0xB942 || ramp == 0xB998) {
         if (version == 1) {
             adjust = TRUE;
-        }
-
-        /* Check MPU version id too to cover all samples */
-        if (!adjust) {
-            adjust = checkMpuDebugId();
         }
     }
 
