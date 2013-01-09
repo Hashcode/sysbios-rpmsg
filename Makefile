@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-2012, Texas Instruments Incorporated
+# Copyright (c) 2011-2013, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all: checktools
 	$(XDCROOT)/xdc -k -j $(j) BUILD_SMP=$(BUILD_SMP) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
-	cd src/utils; make genextelf
+	cd src/utils; make genextelf; make gencmbelf
 
 clean: checktools
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src

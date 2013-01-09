@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-2012, Texas Instruments Incorporated
+# Copyright (c) 2011-2013, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ ifneq ($(BUILD_SMP),1)
 endif
 endif
 
-all: readrprc wrints genbase genextbin genextelf xdep $(DUCATI) $(TESLA) $(IPU) $(DSP)
+all: readrprc wrints genbase genextbin gencmbelf genextelf xdep $(DUCATI) $(TESLA) $(IPU) $(DSP)
 
 ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 wrints genbase
 	#
@@ -84,6 +84,7 @@ RPRCOBJ = readrprc.o
 WRNTOBJ = wrints.o
 GBINOBJ = genextbin.o
 GELFOBJ = genextelf.o
+GCMBOBJ = gencmbelf.o
 XDEPOBJ = xdep.o
 
 readrprc: $(RPRCOBJ)
@@ -110,6 +111,12 @@ genextelf: $(GELFOBJ)
 genextelf.o: genextelf.c
 	gcc $(CFLAGS) -c -o $@ $<
 
+gencmbelf: $(GCMBOBJ)
+	gcc $(CFLAGS) -o $@ $(GCMBOBJ)
+
+gencmbelf.o: gencmbelf.c
+	gcc $(CFLAGS) -c -o $@ $<
+
 xdep: $(XDEPOBJ)
 	gcc $(CFLAGS) -o $@ $(XDEPOBJ)
 
@@ -123,5 +130,5 @@ elfload/genbase:
 	cd elfload; make
 
 clean:
-	@rm -f genbase readrprc wrints genextbin genextelf xdep *.o $(DUCATI) $(TESLA) $(IPU) $(DSP)
+	@rm -f genbase readrprc wrints genextbin gencmbelf genextelf xdep *.o $(DUCATI) $(TESLA) $(IPU) $(DSP)
 	cd elfload; make clean
