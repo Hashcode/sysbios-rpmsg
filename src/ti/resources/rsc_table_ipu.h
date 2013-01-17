@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Texas Instruments Incorporated
+ * Copyright (c) 2012-2013, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,6 +89,8 @@
 #define IPU_MEM_IPC_VRING       0xA0000000
 #define IPU_MEM_RPMSG_VRING0    0xA0000000
 #define IPU_MEM_RPMSG_VRING1    0xA0004000
+#define IPU_MEM_RPMSG_VRING2    0xA0008000
+#define IPU_MEM_RPMSG_VRING3    0xA000C000
 #define IPU_MEM_VRING_BUFS0     0xA0040000
 #define IPU_MEM_VRING_BUFS1     0xA0080000
 
@@ -128,12 +130,23 @@ struct resource_table {
     UInt32 version;
     UInt32 num;
     UInt32 reserved[2];
+#ifdef SMP
     UInt32 offset[17];  /* Should match 'num' in actual definition */
+#else
+    UInt32 offset[19];  /* Should match 'num' in actual definition */
+#endif
 
     /* rpmsg vdev entry */
     struct fw_rsc_vdev rpmsg_vdev;
     struct fw_rsc_vdev_vring rpmsg_vring0;
     struct fw_rsc_vdev_vring rpmsg_vring1;
+
+#ifndef SMP
+    /* rpmsg vdev entry for core1 */
+    struct fw_rsc_vdev rpmsg_vdev1;
+    struct fw_rsc_vdev_vring rpmsg_vring2;
+    struct fw_rsc_vdev_vring rpmsg_vring3;
+#endif
 
     /* text carveout entry */
     struct fw_rsc_carveout text_cout;
@@ -146,6 +159,11 @@ struct resource_table {
 
     /* trace entry */
     struct fw_rsc_trace trace;
+
+#ifndef SMP
+    /* trace entry for core1 */
+    struct fw_rsc_trace trace1;
+#endif
 
     /* devmem entry */
     struct fw_rsc_devmem devmem0;
@@ -193,15 +211,25 @@ struct resource_table {
 
 struct resource_table ti_resources_ResourceTable = {
     1,      /* we're the first version that implements this */
+#ifdef SMP
     17,     /* number of entries in the table */
+#else
+    19,     /* number of entries in the table */
+#endif
     0, 0,   /* reserved, must be zero */
     /* offsets to entries */
     {
         offsetof(struct resource_table, rpmsg_vdev),
+#ifndef SMP
+        offsetof(struct resource_table, rpmsg_vdev1),
+#endif
         offsetof(struct resource_table, text_cout),
         offsetof(struct resource_table, data_cout),
         offsetof(struct resource_table, ipcdata_cout),
         offsetof(struct resource_table, trace),
+#ifndef SMP
+        offsetof(struct resource_table, trace1),
+#endif
         offsetof(struct resource_table, devmem0),
         offsetof(struct resource_table, devmem1),
         offsetof(struct resource_table, devmem2),
@@ -226,6 +254,18 @@ struct resource_table ti_resources_ResourceTable = {
     { IPU_MEM_RPMSG_VRING0, 4096, IPU_RPMSG_VQ0_SIZE, 1, 0 },
     { IPU_MEM_RPMSG_VRING1, 4096, IPU_RPMSG_VQ1_SIZE, 2, 0 },
 
+#ifndef SMP
+    /* rpmsg vdev entry */
+    {
+        TYPE_VDEV, VIRTIO_ID_RPMSG, 0,
+        RPMSG_IPU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
+        /* no config data */
+    },
+    /* the two vrings */
+    { IPU_MEM_RPMSG_VRING2, 4096, IPU_RPMSG_VQ0_SIZE, 3, 0 },
+    { IPU_MEM_RPMSG_VRING3, 4096, IPU_RPMSG_VQ1_SIZE, 4, 0 },
+#endif
+
     {
         TYPE_CARVEOUT,
         IPU_MEM_TEXT, 0,
@@ -247,6 +287,12 @@ struct resource_table ti_resources_ResourceTable = {
     {
         TYPE_TRACE, TRACEBUFADDR, 0x8000, 0, "trace:sysm3",
     },
+
+#ifndef SMP
+    {
+        TYPE_TRACE, 0x9F070000, 0x8000, 0, "trace:appm3",
+    },
+#endif
 
     {
         TYPE_DEVMEM,
