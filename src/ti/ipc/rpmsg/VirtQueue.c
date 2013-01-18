@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2012, Texas Instruments Incorporated
+ * Copyright (c) 2011-2013, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -162,8 +162,8 @@ enum {
 #define ID_A9_TO_SYSM3      ID_A9_TO_SELF
 #define ID_DSP_TO_A9        ID_SELF_TO_A9
 #define ID_A9_TO_DSP        ID_A9_TO_SELF
-#define ID_APPM3_TO_A9      200
-#define ID_A9_TO_APPM3      201
+#define ID_APPM3_TO_A9      2
+#define ID_A9_TO_APPM3      3
 
 typedef struct VirtQueue_Object {
     /* Id for this VirtQueue_Object */
@@ -471,9 +471,9 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
 
 #ifndef SMP
     if (MultiProc_self() == appm3ProcId) {
-        /* vqindices that belong to AppM3 should be big so they don't
-         * collide with SysM3's virtqueues */
-        vq->id += 200;
+        /* vqindices that belong to AppM3 should be next to SysM3.
+         * Care must be taken to not collide with SysM3's virtqueues. */
+        vq->id += 2;
     }
 #endif
 
