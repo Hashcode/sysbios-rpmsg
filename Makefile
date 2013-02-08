@@ -54,11 +54,11 @@ export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all: checktools
 	$(XDCROOT)/xdc -k -j $(j) BUILD_SMP=$(BUILD_SMP) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
-	cd src/utils; make genextelf; make gencmbelf
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP)
 
 clean: checktools
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
-	cd src/utils; make clean
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP) clean
 
 smp_config: unconfig
 	@echo BIOSVERSION=bios_6_34_02_18 >> bldcfg.mk

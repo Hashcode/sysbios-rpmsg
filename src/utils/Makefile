@@ -32,52 +32,52 @@
 
 ifdef TMS470CGTOOLPATH
 ifeq ($(BUILD_SMP),1)
-	DUCATI = smp-ducati-m3.bin
-	IPU = smp-omap5-ducati-m3.bin
+	DUCATI = smp-ducati-m3-core0.xem3
+	IPU = smp-omap5-ducati-m3-core0.xem3
 else
-	DUCATI = ducati-m3.bin
-	IPU = omap5-ducati-m3.bin
+	DUCATI = ducati-m3-core0.xem3
+	IPU = omap5-ducati-m3-core0.xem3
 endif
 endif
 
 ifdef C6000CGTOOLPATH
 ifneq ($(BUILD_SMP),1)
-	TESLA = tesla-dsp.bin
-	DSP = omap5-tesla-dsp.bin
+	TESLA = tesla-dsp.xe64T
+	DSP = omap5-tesla-dsp.xe64T
 endif
 endif
 
 all: readrprc wrints genbase genextbin gencmbelf genextelf xdep $(DUCATI) $(TESLA) $(IPU) $(DSP)
 
-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 wrints genbase
+ducati-m3-core0.xem3: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 gencmbelf
 	#
 	# ensure that ducati's core0 program is listed before ducati's core1
 	# program, the Linux FW loader expects such.
 	#
-	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A  ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A --d1=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 $@
+	./genrprc --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 $@
 
-tesla-dsp.bin: ../ti/examples/srvmgr/ti_platform_omap4430_dsp/debug/test_omx_dsp.xe64T wrints genbase
-	# Generating tesla-dsp-bin...
-	./genrprc --e0=ti_sysbios_family_c64p_Hwi0 --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_dsp/debug/test_omx_dsp.xe64T $@
+tesla-dsp.xe64T: ../ti/examples/srvmgr/ti_platform_omap4430_dsp/debug/test_omx_dsp.xe64T
+	# Generating tesla-dsp.xe64T...
+	$(C6000CGTOOLPATH)/bin/strip6x -p ../ti/examples/srvmgr/ti_platform_omap4430_dsp/debug/test_omx_dsp.xe64T -o $@
 
-omap5-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap54xx_core1/debug/test_omx_appm3.xem3 wrints genbase
+omap5-ducati-m3-core0.xem3: ../ti/examples/srvmgr/ti_platform_omap54xx_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap54xx_core1/debug/test_omx_appm3.xem3 gencmbelf
 	#
 	# ensure that ipu's core0 program is listed before ipu's core1
 	# program, the Linux FW loader expects such.
 	#
-	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A  ../ti/examples/srvmgr/ti_platform_omap54xx_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A --d1=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_core1/debug/test_omx_appm3.xem3 $@
+	./genrprc --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_core1/debug/test_omx_appm3.xem3 $@
 
-omap5-tesla-dsp.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T wrints genbase
-	# Generating omap5-dsp-bin...
-	./genrprc --e0=ti_sysbios_family_c64p_Hwi0 --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T $@
+omap5-tesla-dsp.xe64T: ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T
+	# Generating omap5-dsp binary
+	$(C6000CGTOOLPATH)/bin/strip6x -p ../ti/examples/srvmgr/ti_platform_omap54xx_dsp/debug/test_omx_dsp.xe64T -o $@
 
-smp-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_ipu/debug/test_omx_ipu.xem3 wrints genbase
-	# Generating smp-ducati-m3.bin...
-	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_ipu/debug/test_omx_ipu.xem3 $@
+smp-ducati-m3-core0.xem3: ../ti/examples/srvmgr/ti_platform_omap4430_ipu/debug/test_omx_ipu.xem3
+	# Generating smp-ducati-m3-core0.xem3...
+	$(TMS470CGTOOLPATH)/bin/armstrip -p ../ti/examples/srvmgr/ti_platform_omap4430_ipu/debug/test_omx_ipu.xem3 -o $@
 
-smp-omap5-ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap54xx_ipu/debug/test_omx_ipu.xem3 wrints genbase
-	# Generating smp-omap5-ducati-m3.bin...
-	./genrprc --t0=SysMin_Module_State_0_outbuf__A --d0=Deh_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap54xx_ipu/debug/test_omx_ipu.xem3 $@
+smp-omap5-ducati-m3-core0.xem3: ../ti/examples/srvmgr/ti_platform_omap54xx_ipu/debug/test_omx_ipu.xem3
+	# Generating smp-omap5-ducati-m3-core0.xem3...
+	$(TMS470CGTOOLPATH)/bin/armstrip -p ../ti/examples/srvmgr/ti_platform_omap54xx_ipu/debug/test_omx_ipu.xem3 -o $@
 
 CFLAGS = -Wall -m32
 RPRCOBJ = readrprc.o
