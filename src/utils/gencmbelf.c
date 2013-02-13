@@ -33,6 +33,7 @@
  *  ======== gencmbelf.c ========
  *  Version History:
  *  1.00 - Original Version
+ *  1.01 - Updated to fixup Core1 trace entry in resource table
  */
 
 #include <stdio.h>
@@ -50,7 +51,8 @@
 
 #include "elfload/include/elf32.h"
 
-#define VERSION               "1.00"
+#define VERSION             "1.01"
+#define MAX_TAGS            10
 
 /* String definitions for ELF S-Section */
 #define ELF_S_SECT_RESOURCE ".resource_table"
@@ -59,6 +61,9 @@
 #define ELF_SHDR_SYMTAB     ".symtab"
 #define ELF_SHDR_STRTAB     ".strtab"
 #define ELF_SHDR_SHSTRTAB   ".shstrtab"
+
+/* Core1 resource entry name for trace */
+#define CORE1_TRACENAME     "trace:appm3"
 
 /* Define the ARM attributes section type */
 #define SHT_ARMATTRIBUTES  0x70000003
@@ -100,6 +105,7 @@ typedef struct {
     u32 strtab_size;
     u32 shstrtab_size;
     u32 version_size;
+    u32 rsc_tbl_section;
     void *data;
 
     /* special sections */
@@ -107,6 +113,7 @@ typedef struct {
     void *symtab;
     void *strtab;
     void *shstrtab;
+    void *rsc_table;
 } elf_file_info;
 
 typedef enum {
@@ -117,6 +124,11 @@ typedef enum {
 static elf_file_info core0_info;
 static elf_file_info core1_info;
 static elf_file_info cores_info;
+
+static unsigned int tag_addr[MAX_TAGS];
+static unsigned int tag_size[MAX_TAGS];
+static char *tag_name[MAX_TAGS];
+static int num_tags;
 
 /* Local functions */
 static int prepare_file(char * filename, file_type type, elf_file_info *f_info);
@@ -135,13 +147,18 @@ static void print_help_and_exit(void)
 {
     fprintf(stderr, "\nInvalid arguments!\n"
                   "Usage: ./gencmbelf <[-s] <Core0 ELF image>> "
-                  "<[-a] <Core1 ELF image>> <[-o] <Output ELF image>>\n"
+                  "<[-a] <Core1 ELF image>> <[-o] <Output ELF image>> "
+                  "[<arg1:addr:size> .. <arg10:addr:size>]\n"
                   "Rules: - All files are mandatory, and need to be unique.\n"
                   "       - Arguments can be specified in any order as long\n"
                   "         as the corresponding option is specified.\n"
                   "       - All arguments not preceded by an option are \n"
-                  "         applied as Core0, Core1 and output images in \n"
-                  "         that order.\n"
+                  "         applied as Core0, Core1 and output images in that\n"
+                  "         order if they have .xem3 extension, otherwise\n"
+                  "         they are considered as special token arguments.\n"
+                  "       - The special token arguments need to be in the\n"
+                  "         format of <token_name>:<token_addr>:<token_size>.\n"
+                  "       - Upto 10 additional token arguments can be passed.\n"
                   "Note : - The gencmbelf utility is provided to combine two\n"
                   "         ARM ELF files into a single semi-standard ARM ELF\n"
                   "         file for the M3/M4 processors. The input files for\n"
@@ -162,9 +179,10 @@ int main(int argc, char * argv[])
     int status = 0;
     struct stat st;
     u32 size = 0;
-    int i, o;
+    int i, j, o;
     char *elf_files[] = {NULL, NULL, NULL};
     int num_files = sizeof(elf_files) / sizeof(elf_files[0]);
+    char *tokenstr;
 
     printf("###############################################################\n");
     printf("                     GENCMBELF : %s    \n", VERSION);
@@ -193,14 +211,36 @@ int main(int argc, char * argv[])
         }
     }
 
-    for (i = 0; optind < argc; optind++) {
+    for (i = 0, j = optind; j < argc; j++) {
         while (i < num_files && elf_files[i]) {
             i++;
         }
-        if (i == num_files) {
-            print_help_and_exit();
+        if (strstr(argv[j], ".xem3")) {
+            if (i == num_files) {
+                print_help_and_exit();
+            }
+            elf_files[i++] = argv[j];
         }
-        elf_files[i++] = argv[optind];
+        else {
+            if (num_tags == MAX_TAGS) {
+                print_help_and_exit();
+            }
+            tag_name[num_tags] = strtok(argv[j], ":");
+            tokenstr = strtok(NULL, ":");
+            if (!tokenstr) {
+                print_help_and_exit();
+            }
+            tag_addr[num_tags] = strtoll(tokenstr, NULL, 16);
+            tokenstr = strtok(NULL, ":");
+            if (!tokenstr) {
+                print_help_and_exit();
+            }
+            tag_size[num_tags] = strtoll(tokenstr, NULL, 16);
+
+            DEBUG_PRINT("found tag %d: name '%s' addr 0x%x size %d\n", num_tags,
+                    tag_name[num_tags], tag_addr[num_tags], tag_size[num_tags]);
+            num_tags++;
+        }
     }
 
     if (status || !elf_files[0] || !elf_files[1] || !elf_files[2]) {
@@ -260,7 +300,7 @@ finish0:
     finalize_file(&core0_info, status);
 
     if (size) {
-        printf("\nProcessed Output ELF file: %s of size: %d", elf_files[2],
+        printf("\nProcessed Output ELF file: %s of size: %d\n\n", elf_files[2],
                         size);
     }
 
@@ -393,6 +433,7 @@ static int check_image(void * data, int size)
     }
     printf("done.\n");
 
+    core0_info.rsc_tbl_section = (u32)(-1);
     if (!count) {
         printf("Checking for %s section....", ELF_S_SECT_RESOURCE);
         /* get the string name section offset */
@@ -403,6 +444,7 @@ static int check_image(void * data, int size)
         s = (struct Elf32_Shdr *)(data + hdr->e_shoff);
         for (i = 0; i < hdr->e_shnum; i++, s++) {
             if (strcmp((data + offset + s->sh_name), ELF_S_SECT_RESOURCE) == 0) {
+                core0_info.rsc_tbl_section = i;
                 break;
             }
         }
@@ -479,6 +521,9 @@ static int read_headers(elf_file_info *f_info)
     shstr_offset = s->sh_offset;
     s = (struct Elf32_Shdr *)(f_info->data + hdr->e_shoff);
     for (i = 0; i < hdr->e_shnum; i++) {
+        if (i == f_info->rsc_tbl_section) {
+            f_info->rsc_table = f_info->data + s->sh_offset;
+        }
         if ((s->sh_type == SHT_PROGBITS) &&
             (!strcmp(f_info->data + shstr_offset + s->sh_name,
                                                         ELF_SHDR_VERSION))) {
@@ -582,6 +627,73 @@ static int allocate_headers(elf_file_info *f_info)
 }
 
 /*
+ *  ======== get_tag_index ========
+ */
+static int get_tag_index(char *name)
+{
+    int i, index = -1;
+
+    for (i = 0; i < num_tags; i++) {
+        if (!strcmp(tag_name[i], name)) {
+                index = i;
+                break;
+        }
+    }
+
+    return index;
+}
+
+/*
+ *  ======== fixup_rsc_table ========
+ */
+static void fixup_rsc_table(void *data)
+{
+    struct resource_table *tbl = (struct resource_table *)data;
+    struct fw_rsc_trace *trace;
+    bool processed = true;
+    u32 *rsc_type;
+    int i, tag;
+#if DEBUG_GENCMBELF
+    /* current resource type names as per rsc_types.h */
+    char *rsc_names[6] =
+            { "carveOut", "devmem", "trace", "vdev", "crashdump", "custom" };
+#endif
+
+    DEBUG_PRINT("  fixup resource table entries\n");
+    for (i = 0; i < tbl->num; i++) {
+        rsc_type = (u32 *)((u32)tbl + tbl->offset[i]);
+        if (*rsc_type < 0 || *rsc_type > 6) {
+            DEBUG_PRINT("    resource #%d is invalid\n", i);
+            continue;
+        }
+
+        DEBUG_PRINT("    resource #%d of type_%s ", i, rsc_names[*rsc_type]);
+        processed = true;
+        if (*rsc_type == TYPE_TRACE) {
+            trace = (struct fw_rsc_trace *)rsc_type;
+            if (!strcmp(trace->name, CORE1_TRACENAME)) {
+                processed = false;
+                tag = get_tag_index("trace1");
+                if (tag >= 0) {
+                    DEBUG_PRINT("fixed up (updated from 0x%x:0x%x to ",
+                                    trace->da, trace->len);
+                    trace->da = tag_addr[tag];
+                    trace->len = tag_size[tag];
+                    DEBUG_PRINT("0x%x:0x%x)\n", trace->da, trace->len);
+                }
+                else {
+                    DEBUG_PRINT("fixup failed\n");
+                }
+            }
+        }
+        if (processed) {
+            DEBUG_PRINT("processed\n");
+        }
+    }
+    DEBUG_PRINT("  resource table entries for Core1 fixed up\n");
+}
+
+/*
  *  ======== fill_zero ========
  */
 static int fill_zero(int offset, int align)
@@ -645,6 +757,9 @@ static int process_image()
         /* copy the program data only if file size is non-zero */
         co += fill_zero(co, p->p_align);
         if (p->p_filesz) {
+            if (core0_info.data + p->p_offset == core0_info.rsc_table) {
+                fixup_rsc_table(core0_info.data + p->p_offset);
+            }
             fwrite(core0_info.data + p->p_offset, 1, p->p_filesz,
                                                             cores_info.fp);
         }
