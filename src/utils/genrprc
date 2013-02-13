@@ -209,10 +209,11 @@ $TMS470CGTOOLPATH/bin/armstrip -p $core1file -o $core1stripfile
 
 #
 # invoke gencmbelf to generate a single combined output file
-# using the stripped images
+# using the stripped images. Pass additional arguments to allow
+# the utility to perform some fix-ups.
 #
-echo $dir/gencmbelf $core0stripfile $core1stripfile $outfile
-$dir/gencmbelf $core0stripfile $core1stripfile $outfile
+echo $dir/gencmbelf $core0stripfile $core1stripfile $outfile $args
+$dir/gencmbelf $core0stripfile $core1stripfile $outfile $args
 
 # remove the generated intermediate stripped images
 rm $core0stripfile
