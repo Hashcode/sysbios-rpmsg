@@ -48,6 +48,7 @@ C64T.lnkOpts.prefix += " -e=ti_sysbios_family_c64p_Hwi0";
 C64T.platforms = [
                     "ti.platform.omap4430.dsp",
                     "ti.platform.omap54xx.dsp",
+                    "ti.platform.omap54xx.dsp_512",
                 ];
 C64T.platform = C64T.platforms[0];
 
@@ -62,12 +63,14 @@ M3.lnkOpts.prefix += " --cinit_compression=off";
 var regPlatforms = [
                         "ti.platform.omap4430.core0",
                         "ti.platform.omap54xx.core0",
+                        "ti.platform.omap54xx.core0_512",
                    ];
 
 /* Default platforms for M3 in SMP mode */
 var smpPlatforms = [
                         "ti.platform.omap4430.ipu",
                         "ti.platform.omap54xx.ipu",
+                        "ti.platform.omap54xx.ipu_512",
                    ];
 
 /* Set default platform and list of all interested platforms for M3 */
