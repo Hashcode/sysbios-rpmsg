@@ -95,20 +95,32 @@
 #define IPU_MEM_IPC_DATA_SIZE   SZ_1M
 #define IPU_MEM_TEXT_SIZE       (SZ_1M * 6)
 #ifdef OMAP5
+#ifdef OMAP5_512
+/*74 MB Video Mem + 12MB for general heap*/
+#define IPU_MEM_DATA_SIZE       (SZ_1M * 24)
+
+#else
 #define IPU_MEM_DATA_SIZE       (SZ_1M * 156)
+#endif
 #else
 #define IPU_MEM_DATA_SIZE       (SZ_1M * 98)
 #endif
+
+#ifdef OMAP5_512
+#define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 0)
+
+#else
 #define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 90)
+#endif
 
 /*
  * Assign fixed RAM addresses to facilitate a fixed MMU table.
  * PHYS_MEM_IPC_VRING & PHYS_MEM_IPC_DATA MUST be together.
  */
 #ifdef OMAP5
-#define PHYS_MEM_IPC_VRING      0x95800000
+#define PHYS_MEM_IPC_VRING      0x82000000
 #else
-#define PHYS_MEM_IPC_VRING      0x99000000
+#define PHYS_MEM_IPC_VRING      0x82000000
 #endif
 
 #define PHYS_MEM_IOBUFS         0xBA300000

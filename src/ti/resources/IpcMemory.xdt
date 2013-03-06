@@ -41,6 +41,10 @@
 #define SMP
 %}
 
+%if (prog.platformName.match(/_512/)) {
+#define OMAP5_512
+%}
+
 %var MultiProc = xdc.module('ti.sdo.utils.MultiProc');
 %if (MultiProc.id == MultiProc.getIdMeta("CORE0")) {
 
