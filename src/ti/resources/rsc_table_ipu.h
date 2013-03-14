@@ -148,14 +148,14 @@ struct resource_table {
     struct fw_rsc_vdev_vring rpmsg_vring3;
 #endif
 
+    /* ipcdata carveout entry */
+    struct fw_rsc_carveout ipcdata_cout;
+
     /* text carveout entry */
     struct fw_rsc_carveout text_cout;
 
     /* data carveout entry */
     struct fw_rsc_carveout data_cout;
-
-    /* ipcdata carveout entry */
-    struct fw_rsc_carveout ipcdata_cout;
 
     /* trace entry */
     struct fw_rsc_trace trace;
@@ -223,9 +223,9 @@ struct resource_table ti_resources_ResourceTable = {
 #ifndef SMP
         offsetof(struct resource_table, rpmsg_vdev1),
 #endif
+        offsetof(struct resource_table, ipcdata_cout),
         offsetof(struct resource_table, text_cout),
         offsetof(struct resource_table, data_cout),
-        offsetof(struct resource_table, ipcdata_cout),
         offsetof(struct resource_table, trace),
 #ifndef SMP
         offsetof(struct resource_table, trace1),
@@ -268,6 +268,12 @@ struct resource_table ti_resources_ResourceTable = {
 
     {
         TYPE_CARVEOUT,
+        IPU_MEM_IPC_DATA, 0,
+        IPU_MEM_IPC_DATA_SIZE, 0, RPROC_MEMREGION_SMEM, "IPU_MEM_IPC_DATA",
+    },
+
+    {
+        TYPE_CARVEOUT,
         IPU_MEM_TEXT, 0,
         IPU_MEM_TEXT_SIZE, 0, RPROC_MEMREGION_CODE, "IPU_MEM_TEXT",
     },
@@ -276,12 +282,6 @@ struct resource_table ti_resources_ResourceTable = {
         TYPE_CARVEOUT,
         IPU_MEM_DATA, 0,
         IPU_MEM_DATA_SIZE, 0, RPROC_MEMREGION_DATA, "IPU_MEM_DATA",
-    },
-
-    {
-        TYPE_CARVEOUT,
-        IPU_MEM_IPC_DATA, 0,
-        IPU_MEM_IPC_DATA_SIZE, 0, RPROC_MEMREGION_SMEM, "IPU_MEM_IPC_DATA",
     },
 
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Texas Instruments Incorporated
+ * Copyright (c) 2012-2013, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -127,6 +127,9 @@ struct resource_table {
     struct fw_rsc_vdev_vring rpmsg_vring0;
     struct fw_rsc_vdev_vring rpmsg_vring1;
 
+    /* ipcdata carveout entry */
+    struct fw_rsc_carveout ipcdata_cout;
+
     /* text carveout entry */
     struct fw_rsc_carveout text_cout;
 
@@ -135,9 +138,6 @@ struct resource_table {
 
     /* heap carveout entry */
     struct fw_rsc_carveout heap_cout;
-
-    /* ipcdata carveout entry */
-    struct fw_rsc_carveout ipcdata_cout;
 
     /* trace entry */
     struct fw_rsc_trace trace;
@@ -190,10 +190,10 @@ struct resource_table ti_resources_ResourceTable = {
     /* offsets to entries */
     {
         offsetof(struct resource_table, rpmsg_vdev),
+        offsetof(struct resource_table, ipcdata_cout),
         offsetof(struct resource_table, text_cout),
         offsetof(struct resource_table, data_cout),
         offsetof(struct resource_table, heap_cout),
-        offsetof(struct resource_table, ipcdata_cout),
         offsetof(struct resource_table, trace),
         offsetof(struct resource_table, devmem0),
         offsetof(struct resource_table, devmem1),
@@ -220,6 +220,12 @@ struct resource_table ti_resources_ResourceTable = {
 
     {
         TYPE_CARVEOUT,
+        DSP_MEM_IPC_DATA, 0,
+        DSP_MEM_IPC_DATA_SIZE, 0, 0, "DSP_MEM_IPC_DATA",
+    },
+
+    {
+        TYPE_CARVEOUT,
         DSP_MEM_TEXT, 0,
         DSP_MEM_TEXT_SIZE, 0, 0, "DSP_MEM_TEXT",
     },
@@ -234,12 +240,6 @@ struct resource_table ti_resources_ResourceTable = {
         TYPE_CARVEOUT,
         DSP_MEM_HEAP, 0,
         DSP_MEM_HEAP_SIZE, 0, 0, "DSP_MEM_HEAP",
-    },
-
-    {
-        TYPE_CARVEOUT,
-        DSP_MEM_IPC_DATA, 0,
-        DSP_MEM_IPC_DATA_SIZE, 0, 0, "DSP_MEM_IPC_DATA",
     },
 
     {
