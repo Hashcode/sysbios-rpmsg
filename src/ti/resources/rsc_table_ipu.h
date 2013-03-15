@@ -107,7 +107,7 @@
 #endif
 
 #ifdef OMAP5_512
-#define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 0)
+#define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 20)
 
 #else
 #define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 90)
@@ -123,7 +123,19 @@
 #define PHYS_MEM_IPC_VRING      0x82000000
 #endif
 
-#define PHYS_MEM_IOBUFS         0xBA300000
+#ifdef OMAP5_512M_CFG
+#define PHYS_MEM_IOBUFS         0x9E900000
+#else
+#ifdef OMAP5_384M_CFG
+#define PHYS_MEM_IOBUFS         0x96900000
+#else
+#ifdef OMAP5_256M_CFG
+#define PHYS_MEM_IOBUFS         0x8E900000
+#else
+#define PHYS_MEM_IOBUFS         0xFA2FF000
+#endif
+#endif
+#endif
 
 /*
  * Sizes of the virtqueues (expressed in number of buffers supported,
