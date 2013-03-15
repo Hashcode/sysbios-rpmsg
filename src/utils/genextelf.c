@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012, Texas Instruments Incorporated
+ *  Copyright (c) 2012-2013, Texas Instruments Incorporated
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
  *  ======== genextelf.c ========
  *  Version History:
  *  1.00 - Original Version
+ *  1.01 - Fixed the ELF section offsets for alignment
  */
 
 #include <stdio.h>
@@ -50,17 +51,17 @@
 #include "mmudefs.h"
 #include "elfload/include/elf32.h"
 
-#define VERSION               "1.00"
+#define VERSION               "1.01"
 
 /* String definitions for ELF S-Section */
 #define ELF_S_SECT_RESOURCE ".resource_table"
-#define ELF_S_SECT_CERT     ".certificate"
 #define ELF_S_SECT_MMU      ".iommu_ttbr"
-#define ELF_S_SECT_TTBRS    ".secure_params"
 #define ELF_S_SECT_TTBRD    ".iommu_ttbr_updates"
+#define ELF_S_SECT_TTBRS    ".secure_params"
+#define ELF_S_SECT_CERT     ".certificate"
 /* pad with additional NULL characters for alignment purposes */
 #define ELF_S_SECT_ALL      \
-        ".iommu_ttbr\0.certificate\0.secure_params\0.iommu_ttbr_updates\0\0\0\0"
+        ".iommu_ttbr\0.iommu_ttbr_updates\0.secure_params\0.certificate"
 
 /* Length of string definitions for ELF S-Section Strtab */
 #define ELF_S_SECT_CERT_LEN     (strlen(ELF_S_SECT_CERT) + 1)
@@ -89,7 +90,7 @@
 #define FW_BOOT_SIZE            0x4000
 
 /* Certificate length in bytes not including TOC and alignment */
-#define FW_CERTIFICATE_SIZE     328
+#define FW_CERTIFICATE_SIZE     0x148
 #define FW_CERTIFICATE_ALIGN    4
 
 /* Debug macros */
@@ -160,8 +161,7 @@ typedef struct {
     u32 decoded_buffer_size;
     u32 ducati_base_address;
     u32 ducati_toc_address;
-    u32 ducati_ttbr_address;
-    u32 ducati_ttbr_static;
+    u32 ducati_page_table_address;
 } rproc_drm_sec_params;
 
 static int resource_table_index = 0;
@@ -715,7 +715,6 @@ int map_mem_for_secure_ttb(struct Elf32_Phdr *p_mmu, struct Elf32_Phdr *p,
 
     printf(" (TTBR @ 0x%x)....", c_code->da + c_offset);
     p_mmu->p_paddr = c_offset;
-    p_mmu->p_align = SECURE_DATA_ALIGN;
     p_mmu->p_vaddr = c_offset;
 
     return 0;
@@ -747,16 +746,38 @@ static int print_toc_file(fw_toc_entry *toc, int len, int offset)
 }
 
 /*
+ *  ======== fill_zero ========
+ */
+static int fill_zero(int offset, int align, FILE *fp)
+{
+    int fill;
+    int count = 0;
+
+    fill = align - (offset % align);
+    if (fill != align) {
+        DEBUG_PRINT("\n  fill = 0x%x co = 0x%x align = 0x%x\n", fill, offset, align);
+        while (fill--) {
+            fputc(0, fp);
+            count++;
+        }
+        DEBUG_PRINT("  fill done = 0x%x co = 0x%x align = 0x%x\n", fill,
+                                                        offset + count, align);
+    }
+
+    return count;
+}
+
+/*
  *  ======== process_image ========
  */
 static int process_image(FILE * iofp, void * data, int size)
 {
     struct Elf32_Ehdr *hdr;
     struct Elf32_Shdr *shdr, *s, *str_sect;
-    struct Elf32_Phdr *phdr, *p, p_mmu, p_cert, p_temp;
+    struct Elf32_Phdr *phdr, *p, p_mmu, p_cert;
     struct Elf32_Shdr *res_table, s_mmu, s_cert, sttbr1, sttbr2;
-    int i, j, k, data_start, d_num, data_len, dfill, phdr_len;
-    int shdr_len, phdr_num, shdr_num, boot_fill, co;
+    int i, j, k, d_num, data_len;
+    int phdr_num, shdr_num, co;
     rproc_drm_sec_params sec_params;
     int sectno = 0;
     fw_toc_entry fw_toc_table[RPROC_MAX_FW_SECTIONS];
@@ -772,10 +793,7 @@ static int process_image(FILE * iofp, void * data, int size)
     shdr = (struct Elf32_Shdr *) (data + hdr->e_shoff);
 
     /* store current header variables for reusing */
-    data_start = hdr->e_ehsize;
     data_len   = hdr->e_phoff - hdr->e_ehsize;
-    phdr_len   = (int) hdr->e_phnum * hdr->e_phentsize;
-    shdr_len   = (int) hdr->e_shnum * hdr->e_shentsize;
     phdr_num   = (int) hdr->e_phnum;
     shdr_num   = (int) hdr->e_shnum;
     str_sect   = shdr + hdr->e_shstrndx;
@@ -786,29 +804,14 @@ static int process_image(FILE * iofp, void * data, int size)
         return -1;
     }
 
-    /* determine how much more data is to be added */
-    for (i = 0, p = phdr; i < phdr_num; i++, p++) {
-        if (p->p_vaddr >= FW_BOOT_SIZE) {
-            break;
-        }
-    }
-    /* compute padding to have boot section in final image with actual length */
-    boot_fill = (FW_BOOT_SIZE + hdr->e_ehsize) - p->p_offset;
-    DEBUG_PRINT("\nFill data length for boot fw: 0x%x\n", boot_fill);
-
     /* write new ELF header - adding 2 new prog hdrs and 4 new sections */
     printf("\nWriting ELF header....");
     hdr->e_shnum += 4;
     hdr->e_phnum += 2;
 
     /* extend the offset to account for new string names and boot section */
-    hdr->e_phoff += (ELF_S_SECTS_LEN + boot_fill);
-    dfill = 0;
-    if (hdr->e_phoff & 3) { /* align to 32 bits */
-        dfill = 4 - (hdr->e_phoff & 3);
-        hdr->e_phoff += dfill;
-    }
-    hdr->e_shoff += dfill + ELF_S_SECTS_LEN + boot_fill + (2 * hdr->e_phentsize);
+    hdr->e_phoff += ELF_S_SECTS_LEN;
+    hdr->e_shoff += ELF_S_SECTS_LEN + (2 * hdr->e_phentsize);
 
     fwrite(hdr, 1, hdr->e_ehsize, iofp);
     co += hdr->e_ehsize;
@@ -820,42 +823,21 @@ static int process_image(FILE * iofp, void * data, int size)
                                         hdr->e_phnum, hdr->e_phoff);
 
     /* write program data */
-    printf("Writing all the ELF program data....");
-    /* write all the program data within the fw boot area (< 0x4000) */
-    for (p = phdr, j = hdr->e_ehsize; i > 0; i--) {
-        fwrite((data + p->p_offset), 1, p->p_filesz, iofp);
-        co += p->p_filesz;
-        j += p->p_filesz;
-        p++;
-
-        /* zero-fill the gaps between these sections */
-        while (j < (p->p_vaddr + hdr->e_ehsize)) {
-            fwrite("\0", 1, 1, iofp);
-            j++; co++;
-        }
-    }
-
-    /* write all remaining program data */
+    printf("Writing all the ELF program and section data....");
+    p = phdr;
     fwrite((data + p->p_offset), 1, (data_len - p->p_offset + hdr->e_ehsize),
                                                                         iofp);
     co += (data_len - p->p_offset + hdr->e_ehsize);
 
     /* write the new section names */
-    fwrite(ELF_S_SECT_ALL, 1, ELF_S_SECTS_LEN + dfill, iofp);
-    co += ELF_S_SECTS_LEN + dfill;
+    fwrite(ELF_S_SECT_ALL, 1, ELF_S_SECTS_LEN, iofp);
+    co += ELF_S_SECTS_LEN;
     printf("done.\n");
 
     /* write program headers */
     printf("Writing program headers....");
     for (i = 0, p = phdr; i < phdr_num; i++, p++) {
-        p_temp = *p;
-        if (p->p_vaddr >= FW_BOOT_SIZE) {
-            p_temp.p_offset += boot_fill;
-        }
-        else {
-            p_temp.p_offset = p_temp.p_vaddr + hdr->e_ehsize;
-        }
-        fwrite(&p_temp, 1, hdr->e_phentsize, iofp);
+        fwrite(p, 1, hdr->e_phentsize, iofp);
         co += hdr->e_phentsize;
     }
     printf("done.\n");
@@ -864,39 +846,15 @@ static int process_image(FILE * iofp, void * data, int size)
     DEBUG_PRINT("\nPreparing TOC contents....\n");
     for (i = 0, p = phdr; i < (hdr->e_phnum - 2); i++, p++) {
         if (p->p_filesz > 0) {
-            p_temp = *p;
-            if (p->p_vaddr < FW_BOOT_SIZE) {
-                /*
-                 * boot section, process only once. exclude resource table from
-                 * TOC.
-                 */
-                if (i != 0) {
-                    continue;
-                }
-                p_temp.p_filesz = FW_BOOT_SIZE;
-
-                fw_toc_table[sectno].offset = (u32)hdr->e_ehsize;
-                fw_toc_table[sectno].sect_pa = find_carveout_offset(
-                                data, &p_temp, &fw_toc_table[sectno].memregion);
-                if (fw_toc_table[sectno].sect_pa == -1) {
-                    fprintf(stderr, "Unable to find pa offset for p_vaddr "
-                                    " = 0x%x\n", p_temp.p_vaddr);
-                    return -1;
-                }
-                /* section length hard-coded to match the start of rsc_table */
-                fw_toc_table[sectno++].sect_len = (u32)0x03000;
+            fw_toc_table[sectno].offset = (u32) p->p_offset;
+            fw_toc_table[sectno].sect_pa = find_carveout_offset(
+                                data, p, &fw_toc_table[sectno].memregion);
+            if (fw_toc_table[sectno].sect_pa == -1) {
+                fprintf(stderr, "Unable to find pa offset for p_vaddr = 0x%x\n",
+                                p->p_vaddr);
+                return -1;
             }
-            else {
-                fw_toc_table[sectno].offset = (u32) p->p_offset + boot_fill;
-                fw_toc_table[sectno].sect_pa = find_carveout_offset(
-                                    data, p, &fw_toc_table[sectno].memregion);
-                if (fw_toc_table[sectno].sect_pa == -1) {
-                    fprintf(stderr, "Unable to find pa offset for p_vaddr "
-                                    " = 0x%x\n", p_temp.p_vaddr);
-                    return -1;
-                }
-                fw_toc_table[sectno++].sect_len = (u32) p->p_filesz;
-            }
+            fw_toc_table[sectno++].sect_len = (u32) p->p_filesz;
         }
     }
     DEBUG_PRINT("done.\n");
@@ -910,10 +868,11 @@ static int process_image(FILE * iofp, void * data, int size)
     /* create and write MMU table section Header */
     printf("Writing program header for %s section", ELF_S_SECT_MMU);
     p_mmu.p_type   = PT_LOAD;
-    p_mmu.p_offset = hdr->e_ehsize + data_len + ELF_S_SECTS_LEN + dfill +
+    p_mmu.p_offset = hdr->e_ehsize + data_len + ELF_S_SECTS_LEN +
                         (hdr->e_phnum * hdr->e_phentsize) +
-                        (hdr->e_shnum * hdr->e_shentsize) +
-                        boot_fill;
+                        (hdr->e_shnum * hdr->e_shentsize);
+    p_mmu.p_align  = SECURE_DATA_ALIGN;
+    p_mmu.p_offset += p_mmu.p_align - (p_mmu.p_offset % p_mmu.p_align);
     p_mmu.p_filesz = d_num + sizeof(mmu_l1_table) +
                                 sizeof(rproc_drm_sec_params);
     p_mmu.p_memsz  = p_mmu.p_filesz;
@@ -999,26 +958,19 @@ static int process_image(FILE * iofp, void * data, int size)
 
     /* write S-section headers */
     printf("Writing original S-section headers....");
-    str_sect->sh_size += ELF_S_SECTS_LEN + dfill;
+    str_sect->sh_size += ELF_S_SECTS_LEN;
     for (i = 0, s = shdr; i < shdr_num; i++, s++) {
         if ((s->sh_type == SHT_PROGBITS) || (s->sh_type == SHT_NOBITS)) {
             if (s->sh_offset == 0) {
                 fwrite(s, 1, hdr->e_shentsize, iofp);
                 co += hdr->e_shentsize;
             }
-            else if (s->sh_addr < FW_BOOT_SIZE) {
-                s->sh_offset = s->sh_addr + hdr->e_ehsize;
-                fwrite(s, 1, hdr->e_shentsize, iofp);
-                co += hdr->e_shentsize;
-            }
-            else if (s->sh_addr >= FW_BOOT_SIZE) {
-                s->sh_offset += boot_fill;
-                fwrite(s, 1, hdr->e_shentsize, iofp);
-                co += hdr->e_shentsize;
+            else {
+                    fwrite(s, 1, hdr->e_shentsize, iofp);
+                    co += hdr->e_shentsize;
             }
         }
         else {
-            s->sh_offset += boot_fill;
             fwrite(s, 1, hdr->e_shentsize, iofp);
             co += hdr->e_shentsize;
         }
@@ -1043,9 +995,43 @@ static int process_image(FILE * iofp, void * data, int size)
     DEBUG_PRINT("Details of S-section %s:\n", ELF_S_SECT_MMU);
     print_secthdr_info(&s_mmu);
 
+    printf("Writing S-section header for %s section....", ELF_S_SECT_TTBRD);
+    sttbr1.sh_name = s_mmu.sh_name + ELF_S_SECT_MMU_LEN;
+    sttbr1.sh_type = SHT_PROGBITS;
+    sttbr1.sh_flags = SHF_ALLOC;
+    sttbr1.sh_addr = p_mmu.p_paddr + sizeof(mmu_l1_table);
+    sttbr1.sh_offset = p_mmu.p_offset + sizeof(mmu_l1_table);
+    sttbr1.sh_size = d_num;
+    sttbr1.sh_link = 0;
+    sttbr1.sh_info = 0;
+    sttbr1.sh_addralign = p_cert.p_align;
+    sttbr1.sh_entsize = 0;
+    fwrite(&sttbr1, 1, hdr->e_shentsize, iofp);
+    co += hdr->e_shentsize;
+    printf("done.\n");
+    DEBUG_PRINT("Details of S-section %s:\n", ELF_S_SECT_TTBRD);
+    print_secthdr_info(&sttbr1);
+
+    printf("Writing S-section header for %s section....",
+        ELF_S_SECT_TTBRS);
+    sttbr2.sh_name = sttbr1.sh_name + ELF_S_SECT_TTBRD_LEN;
+    sttbr2.sh_type = SHT_PROGBITS;
+    sttbr2.sh_flags = SHF_ALLOC;
+    sttbr2.sh_addr = p_mmu.p_paddr + sizeof(mmu_l1_table) + d_num;
+    sttbr2.sh_offset = p_mmu.p_offset + sizeof(mmu_l1_table) + d_num;
+    sttbr2.sh_size = sizeof(rproc_drm_sec_params);
+    sttbr2.sh_link = 0;
+    sttbr2.sh_info = 0;
+    sttbr2.sh_addralign = p_cert.p_align;
+    sttbr2.sh_entsize = 0;
+    fwrite(&sttbr2, 1, hdr->e_shentsize, iofp);
+    co += hdr->e_shentsize;
+    printf("done.\n");
+    DEBUG_PRINT("Details of S-section %s:\n", ELF_S_SECT_TTBRS);
+    print_secthdr_info(&sttbr2);
+
     printf("Writing S-section header for .certificate section....");
-    s_cert.sh_name = str_sect->sh_name + strlen(".shstrtab") + 1 +
-                                                            ELF_S_SECT_MMU_LEN;
+    s_cert.sh_name = sttbr2.sh_name + ELF_S_SECT_TTBRS_LEN;
     s_cert.sh_type = SHT_PROGBITS;
     s_cert.sh_flags = SHF_ALLOC;
     s_cert.sh_addr = p_cert.p_paddr;
@@ -1061,44 +1047,9 @@ static int process_image(FILE * iofp, void * data, int size)
     DEBUG_PRINT("Details of S-section %s:\n", ELF_S_SECT_CERT);
     print_secthdr_info(&s_cert);
 
-    printf("Writing S-section header for %s section....",
-        ELF_S_SECT_TTBRS);
-    sttbr1.sh_name = str_sect->sh_name + strlen(".shstrtab") + 1
-            + ELF_S_SECT_MMU_LEN + ELF_S_SECT_CERT_LEN;
-    sttbr1.sh_type = SHT_PROGBITS;
-    sttbr1.sh_flags = SHF_ALLOC;
-    sttbr1.sh_addr = p_mmu.p_paddr + sizeof(mmu_l1_table) + d_num;
-    sttbr1.sh_offset = p_mmu.p_offset + sizeof(mmu_l1_table) + d_num;
-    sttbr1.sh_size = sizeof(rproc_drm_sec_params);
-    sttbr1.sh_link = 0;
-    sttbr1.sh_info = 0;
-    sttbr1.sh_addralign = p_cert.p_align;
-    sttbr1.sh_entsize = 0;
-    fwrite(&sttbr1, 1, hdr->e_shentsize, iofp);
-    co += hdr->e_shentsize;
-    printf("done.\n");
-    DEBUG_PRINT("Details of S-section %s:\n", ELF_S_SECT_TTBRS);
-    print_secthdr_info(&sttbr1);
-
-    printf("Writing S-section header for %s section....", ELF_S_SECT_TTBRD);
-    sttbr2.sh_name = sttbr1.sh_name + ELF_S_SECT_TTBRS_LEN;
-    sttbr2.sh_type = SHT_PROGBITS;
-    sttbr2.sh_flags = SHF_ALLOC;
-    sttbr2.sh_addr = p_mmu.p_paddr + sizeof(mmu_l1_table);
-    sttbr2.sh_offset = p_mmu.p_offset + sizeof(mmu_l1_table);
-    sttbr2.sh_size = d_num;
-    sttbr2.sh_link = 0;
-    sttbr2.sh_info = 0;
-    sttbr2.sh_addralign = p_cert.p_align;
-    sttbr2.sh_entsize = 0;
-    fwrite(&sttbr2, 1, hdr->e_shentsize, iofp);
-    co += hdr->e_shentsize;
-    printf("done.\n");
-    DEBUG_PRINT("Details of S-section %s:\n", ELF_S_SECT_TTBRD);
-    print_secthdr_info(&sttbr1);
-
     /* write the MMU table */
     printf("Writing program data for sections %s", ELF_S_SECT_MMU);
+    co += fill_zero(co, p_mmu.p_align, iofp);
     fwrite(mmu_l1_table, 1, sizeof(mmu_l1_table), iofp);
     co += sizeof(mmu_l1_table);
 
@@ -1123,8 +1074,9 @@ static int process_image(FILE * iofp, void * data, int size)
     printf("done.\n");
 
 #if 0 /* dummy certificate */
-    for (i = 0; i < FW_CERTIFICATE_SIZE; i++)
+    for (i = 0; i < FW_CERTIFICATE_SIZE; i++) {
        fwrite("\0", 1, 1, iofp);
+    }
 #endif
 
     print_toc_file(fw_toc_table, sectno, co);
