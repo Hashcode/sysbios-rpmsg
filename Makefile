@@ -60,6 +60,22 @@ clean: checktools
 
 smp_config: unconfig
 	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo export MEM_CFG= >> bldcfg.mk
+	@echo BUILD_SMP=1 >> bldcfg.mk
+
+smp_512M_config: unconfig
+	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo export MEM_CFG=512M >> bldcfg.mk
+	@echo BUILD_SMP=1 >> bldcfg.mk
+
+smp_384M_config: unconfig
+	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo export MEM_CFG=384M >> bldcfg.mk
+	@echo BUILD_SMP=1 >> bldcfg.mk
+
+smp_256M_config: unconfig
+	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo export MEM_CFG=256M >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 
 unconfig:

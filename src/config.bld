@@ -38,6 +38,7 @@
 var arm_cgtools_rootdir = java.lang.System.getenv("TMS470CGTOOLPATH");
 var c6x_cgtools_rootdir = java.lang.System.getenv("C6000CGTOOLPATH");
 var build_smp = java.lang.System.getenv("BUILD_SMP");
+var mem_cfg = java.lang.System.getenv("MEM_CFG");
 
 /* Setup for C64T target */
 var C64T = xdc.useModule('ti.targets.elf.C64T');
@@ -56,6 +57,15 @@ C64T.platform = C64T.platforms[0];
 var M3 = xdc.useModule('ti.targets.arm.elf.M3');
 M3.rootDir = arm_cgtools_rootdir;
 M3.ccOpts.suffix += " --embed_inline_assembly -ms -pds=71";
+
+if(mem_cfg == "512M") {
+    M3.ccOpts.suffix += " -DOMAP5_512M_CFG";
+} else if(mem_cfg == "384M") {
+    M3.ccOpts.suffix += " -DOMAP5_384M_CFG";
+} else if (mem_cfg == "256M") {
+    M3.ccOpts.suffix += " -DOMAP5_256M_CFG";
+}
+
 M3.lnkOpts.prefix += " --retain=.resource_table";
 M3.lnkOpts.prefix += " --cinit_compression=off";
 
