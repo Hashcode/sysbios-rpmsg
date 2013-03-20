@@ -34,6 +34,7 @@
  *  Version History:
  *  1.00 - Original Version
  *  1.01 - Updated to fixup Core1 trace entry in resource table
+ *  1.02 - Updated to remove Core1 ELF header entry size from Core1 sections
  */
 
 #include <stdio.h>
@@ -51,7 +52,7 @@
 
 #include "elfload/include/elf32.h"
 
-#define VERSION             "1.01"
+#define VERSION             "1.02"
 #define MAX_TAGS            10
 
 /* String definitions for ELF S-Section */
@@ -937,7 +938,8 @@ static int process_image()
         }
 
         if (s->sh_offset && s->sh_offset < core1_info.last_phoffset) {
-            shdr->sh_offset = s->sh_offset + core0_info.last_phoffset;
+            shdr->sh_offset = s->sh_offset - hdr->e_ehsize +
+                                                    core0_info.last_phoffset;
         }
         else if (s->sh_offset >= core1_info.last_phoffset) {
             if ((s->sh_type == SHT_PROGBITS && s->sh_size) ||
