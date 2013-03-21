@@ -35,6 +35,7 @@
  *  1.00 - Original Version
  *  1.01 - Fixed the ELF section offsets for alignment
  *  1.02 - Fixed the MMU TOC entries
+ *  1.03 - Removed the RW entries from TOC table
  */
 
 #include <stdio.h>
@@ -52,7 +53,7 @@
 #include "mmudefs.h"
 #include "elfload/include/elf32.h"
 
-#define VERSION               "1.02"
+#define VERSION               "1.03"
 
 /* String definitions for ELF S-Section */
 #define ELF_S_SECT_RESOURCE ".resource_table"
@@ -847,6 +848,12 @@ static int process_image(FILE * iofp, void * data, int size)
     DEBUG_PRINT("\nPreparing TOC contents....\n");
     for (i = 0, p = phdr; i < (hdr->e_phnum - 2); i++, p++) {
         if (p->p_filesz > 0) {
+             if (p->p_flags & PF_W) {
+                 DEBUG_PRINT("Write section found @ File Offset = 0x%.8x, "
+                             "VA = 0x%.8x & Size = 0x%.8x, skipping it ...\n",
+                             p->p_offset, p->p_paddr, p->p_filesz);
+                 continue;
+             }
             fw_toc_table[sectno].offset = (u32) p->p_offset;
             fw_toc_table[sectno].sect_pa = find_carveout_offset(
                                 data, p, &fw_toc_table[sectno].memregion);
