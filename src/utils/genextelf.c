@@ -34,6 +34,7 @@
  *  Version History:
  *  1.00 - Original Version
  *  1.01 - Fixed the ELF section offsets for alignment
+ *  1.02 - Fixed the MMU TOC entries
  */
 
 #include <stdio.h>
@@ -51,7 +52,7 @@
 #include "mmudefs.h"
 #include "elfload/include/elf32.h"
 
-#define VERSION               "1.01"
+#define VERSION               "1.02"
 
 /* String definitions for ELF S-Section */
 #define ELF_S_SECT_RESOURCE ".resource_table"
@@ -776,7 +777,7 @@ static int process_image(FILE * iofp, void * data, int size)
     struct Elf32_Shdr *shdr, *s, *str_sect;
     struct Elf32_Phdr *phdr, *p, p_mmu, p_cert;
     struct Elf32_Shdr *res_table, s_mmu, s_cert, sttbr1, sttbr2;
-    int i, j, k, d_num, data_len;
+    int i, j, sect_pa, d_num, data_len;
     int phdr_num, shdr_num, co;
     rproc_drm_sec_params sec_params;
     int sectno = 0;
@@ -887,11 +888,11 @@ static int process_image(FILE * iofp, void * data, int size)
     printf("done.\n");
 
     /* update the TOC entries for static entries in MMU table */
-    fw_toc_table[sectno].offset   = (u32) p_mmu.p_offset;
-    fw_toc_table[sectno].sect_pa  = (u32) find_carveout_offset(
-                                data, &p_mmu, &fw_toc_table[sectno].memregion);
-    fw_toc_table[sectno].sect_len = (u32) 0;
-    k = fw_toc_table[sectno].sect_pa;
+    fw_toc_table[sectno].offset   = p_mmu.p_offset;
+    fw_toc_table[sectno].sect_pa  = find_carveout_offset(data, &p_mmu,
+                                              &fw_toc_table[sectno].memregion);
+    fw_toc_table[sectno].sect_len = 0;
+    sect_pa = fw_toc_table[sectno].sect_pa;
     for (i = 0, j = 0; i < RPROC_L1_ENTRIES; i++, j += 4) {
         if (fw_toc_table[sectno].sect_len == 0) {
             if ((mmu_l1_table[i] & MMU_DYNAMIC_FLAG) == MMU_DYNAMIC_FLAG) {
@@ -907,25 +908,30 @@ static int process_image(FILE * iofp, void * data, int size)
             if ((mmu_l1_table[i] & MMU_DYNAMIC_FLAG) == MMU_DYNAMIC_FLAG) {
                 mmu_l1_table[i] &= (~MMU_DYNAMIC_FLAG);
                 sectno++;
-                fw_toc_table[sectno].offset = (u32) p_mmu.p_offset + j;
-                fw_toc_table[sectno].sect_pa  = (u32) k + j;
-                fw_toc_table[sectno].sect_len = (u32) 0;
+                fw_toc_table[sectno].memregion =
+                                            fw_toc_table[sectno - 1].memregion;
+                fw_toc_table[sectno].offset = p_mmu.p_offset + j + sizeof(u32);
+                fw_toc_table[sectno].sect_pa = sect_pa + j + sizeof(u32);
+                fw_toc_table[sectno].sect_len = 0;
             }
             else {
                 fw_toc_table[sectno].sect_len += sizeof(u32);
             }
         }
     }
-    sectno++;
+    if (fw_toc_table[sectno].sect_len) {
+        sectno++;
+    }
 
     /* add another TOC entry for mmu_dynamic entries */
-    fw_toc_table[sectno].offset = (u32) p_mmu.p_offset + sizeof(mmu_l1_table);
-    fw_toc_table[sectno].sect_pa = k + sizeof(mmu_l1_table);
+    fw_toc_table[sectno].memregion = fw_toc_table[sectno - 1].memregion;
+    fw_toc_table[sectno].offset = p_mmu.p_offset + sizeof(mmu_l1_table);
+    fw_toc_table[sectno].sect_pa = sect_pa + sizeof(mmu_l1_table);
     fw_toc_table[sectno].sect_len = d_num;
     sectno++;
 
     /* add the end of section marker to TOC */
-    fw_toc_table[sectno].memregion = sectno + 1;
+    fw_toc_table[sectno].memregion = 0;
     fw_toc_table[sectno].offset = -1;
     fw_toc_table[sectno].sect_pa = -1;
     fw_toc_table[sectno].sect_len = -1;
