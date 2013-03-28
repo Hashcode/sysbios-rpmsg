@@ -36,6 +36,7 @@
  *  1.01 - Fixed the ELF section offsets for alignment
  *  1.02 - Fixed the MMU TOC entries
  *  1.03 - Removed the RW entries from TOC table
+ *  1.04 - Enforce 16K alignment on MMU table
  */
 
 #include <stdio.h>
@@ -53,7 +54,7 @@
 #include "mmudefs.h"
 #include "elfload/include/elf32.h"
 
-#define VERSION               "1.03"
+#define VERSION               "1.04"
 
 /* String definitions for ELF S-Section */
 #define ELF_S_SECT_RESOURCE ".resource_table"
@@ -76,8 +77,8 @@
                                  ELF_S_SECT_TTBRD_LEN)
 
 /* Alignment & size for reserved memory for secure params */
-#define SECURE_DATA_ALIGN       0x1000
-#define SECURE_DATA_SIZE        0x2000
+#define SECURE_DATA_ALIGN       0x4000
+#define SECURE_DATA_SIZE        0x5000
 
 /* Max values used for different types */
 #define RPROC_MAX_MEM_ENTRIES   20
@@ -708,7 +709,7 @@ int map_mem_for_secure_ttb(struct Elf32_Phdr *p_mmu, struct Elf32_Phdr *p,
 
     if ((c_offset + SECURE_DATA_SIZE) > (c_code->da + c_code->len)) {
         fprintf(stderr, "Not enough space in code section for ");
-        fprintf(stderr, "SECURE TTBR table and params. Increase");
+        fprintf(stderr, "SECURE TTBR table and params. Increase ");
         fprintf(stderr, "code carveout region by 0x%x\n",
             (c_offset + p_mmu->p_filesz) - (c_code->da + c_code->len));
         fprintf(stderr, "\n Unable to pre-sign Image \n");
