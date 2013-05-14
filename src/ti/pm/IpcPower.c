@@ -56,10 +56,12 @@
 #include <ti/sysbios/knl/Swi.h>
 #include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/timers/dmtimer/Timer.h>
-#include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
 #ifndef SMP
+#include <ti/sysbios/family/arm/ducati/omap4430/Power.h>
 #include <ti/sysbios/family/arm/ducati/Core.h>
 #include <ti/ipc/MultiProc.h>
+#else
+#include <ti/sysbios/family/arm/ducati/smp/Power.h>
 #endif
 
 #include <ti/pm/IpcPower.h>
@@ -542,17 +544,9 @@ Void IpcPower_preSuspend(Void)
  */
 Void IpcPower_postResume(Void)
 {
-#ifdef SMP
-    /*
-     * Restore timer registers (available currently only in SMP/BIOS).
-     * SYS/BIOS does not have this API available yet, so we have to rely
-     * on context save/restore on the host-side */
+    /* Restore timer registers */
     Timer_restoreRegisters(tickTimerHandle, NULL);
     Timer_start(tickTimerHandle);
-#else
-    System_printf("IpcPower_postResume: BIOS Tick Timer may lose context "
-                  "across Device OFF (depending on host-side code)\n");
-#endif
 
     /* Call all user registered resume callback functions */
     IpcPower_callUserFxns(IpcPower_Event_RESUME);

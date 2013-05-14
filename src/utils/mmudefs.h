@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011, Texas Instruments Incorporated
+ *  Copyright (c) 2011-2012, Texas Instruments Incorporated
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,10 @@
 #define _MMUREGS_H_
 
 /* MMU Entry Sizes */
-#define SZ_16M                  (1 << 24)
-#define SZ_1M                   (1 << 20)
-#define SZ_64K                  (1 << 16)
-#define SZ_4K                   (1 << 12)
+#define MMU_SZ_16M              (1 << 24)
+#define MMU_SZ_1M               (1 << 20)
+#define MMU_SZ_64K              (1 << 16)
+#define MMU_SZ_4K               (1 << 12)
 
 #define MMU_L1_SSECTION         0
 #define MMU_L1_SECTION          1

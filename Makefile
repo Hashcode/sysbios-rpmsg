@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-2012, Texas Instruments Incorporated
+# Copyright (c) 2011-2013, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,9 @@ BIOSTOOLSROOT   ?= /opt/ti
 REPO            := $(BIOSTOOLSROOT)
 
 # Customizable version variables - export them or pass as arguments to make
-XDCVERSION      ?= xdctools_3_23_04_60
-BIOSVERSION     ?= bios_6_33_06_50
-IPCVERSION      ?= ipc_1_24_03_32
+XDCVERSION      ?= xdctools_3_24_03_33
+BIOSVERSION     ?= bios_6_34_02_18
+IPCVERSION      ?= ipc_1_25_00_04
 
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
 include bldcfg.mk
@@ -54,34 +54,38 @@ export XDCPATH  = $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all: checktools
 	$(XDCROOT)/xdc -k -j $(j) BUILD_SMP=$(BUILD_SMP) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP)
 
 clean: checktools
 	$(XDCROOT)/xdc clean BUILD_SMP=$(BUILD_SMP) -Pr src
+	cd src/utils; make BUILD_SMP=$(BUILD_SMP) clean
 
 smp_config: unconfig
-	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo BIOSVERSION=bios_6_34_02_18 >> bldcfg.mk
 	@echo export MEM_CFG= >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 
 smp_512M_config: unconfig
-	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo BIOSVERSION=bios_6_34_02_18 >> bldcfg.mk
 	@echo export MEM_CFG=512M >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 
 smp_384M_config: unconfig
-	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo BIOSVERSION=bios_6_34_02_18 >> bldcfg.mk
 	@echo export MEM_CFG=384M >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
 
 smp_256M_config: unconfig
-	@echo BIOSVERSION=smpbios_1_00_00_28_eng >> bldcfg.mk
+	@echo BIOSVERSION=bios_6_34_02_18 >> bldcfg.mk
 	@echo export MEM_CFG=256M >> bldcfg.mk
 	@echo BUILD_SMP=1 >> bldcfg.mk
+	@touch src/config.bld
 
 unconfig:
 ifeq (bldcfg.mk,$(wildcard bldcfg.mk))
 	@rm bldcfg.mk
 endif
+	@touch src/config.bld
 
 .checktools:
 ifeq ($(wildcard $(REPO)),)

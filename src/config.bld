@@ -74,8 +74,12 @@ M3.lnkOpts.prefix += " --cinit_compression=off";
 var regPlatforms = [
                         "ti.platform.omap4430.core0",
                         "ti.platform.omap4430.core0_512",
+                        "ti.platform.omap4430.core1",
+                        "ti.platform.omap4430.core1_512",
                         "ti.platform.omap54xx.core0",
                         "ti.platform.omap54xx.core0_512",
+                        "ti.platform.omap54xx.core1",
+                        "ti.platform.omap54xx.core1_512",
                    ];
 
 /* Default platforms for M3 in SMP mode */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Texas Instruments Incorporated
+ * Copyright (c) 2012-2013, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #ifndef _RSC_TABLE_DSP_H_
 #define _RSC_TABLE_DSP_H_
 
+#include <xdc/std.h>
 #include <ti/resources/rsc_types.h>
 #include <ti/gates/hwspinlock/HwSpinlock.h>
 
@@ -59,6 +60,9 @@
 
 #define L3_PERIPHERAL_DMM       0x4E000000
 #define DSP_PERIPHERAL_DMM      0x4E000000
+
+#define L3_PERIPHERAL_ISS       0x52000000
+#define DSP_PERIPHERAL_ISS      0x52000000
 
 #define L3_TILER_MODE_0_1       0x60000000
 #define DSP_TILER_MODE_0_1      0x60000000
@@ -120,12 +124,15 @@ struct resource_table {
     UInt32 version;
     UInt32 num;
     UInt32 reserved[2];
-    UInt32 offset[15];  /* Should match 'num' in actual definition */
+    UInt32 offset[17];  /* Should match 'num' in actual definition */
 
     /* rpmsg vdev entry */
     struct fw_rsc_vdev rpmsg_vdev;
     struct fw_rsc_vdev_vring rpmsg_vring0;
     struct fw_rsc_vdev_vring rpmsg_vring1;
+
+    /* ipcdata carveout entry */
+    struct fw_rsc_carveout ipcdata_cout;
 
     /* text carveout entry */
     struct fw_rsc_carveout text_cout;
@@ -135,9 +142,6 @@ struct resource_table {
 
     /* heap carveout entry */
     struct fw_rsc_carveout heap_cout;
-
-    /* ipcdata carveout entry */
-    struct fw_rsc_carveout ipcdata_cout;
 
     /* trace entry */
     struct fw_rsc_trace trace;
@@ -166,6 +170,12 @@ struct resource_table {
     /* devmem entry */
     struct fw_rsc_devmem devmem7;
 
+    /* devmem entry */
+    struct fw_rsc_devmem devmem8;
+
+    /* devmem entry */
+    struct fw_rsc_devmem devmem9;
+
     /* hwspinlock custom entry */
     struct fw_rsc_custom hwspin;
 };
@@ -179,15 +189,15 @@ struct resource_table {
 
 struct resource_table ti_resources_ResourceTable = {
     1,      /* we're the first version that implements this */
-    15,     /* number of entries in the table */
+    17,     /* number of entries in the table */
     0, 0,   /* reserved, must be zero */
     /* offsets to entries */
     {
         offsetof(struct resource_table, rpmsg_vdev),
+        offsetof(struct resource_table, ipcdata_cout),
         offsetof(struct resource_table, text_cout),
         offsetof(struct resource_table, data_cout),
         offsetof(struct resource_table, heap_cout),
-        offsetof(struct resource_table, ipcdata_cout),
         offsetof(struct resource_table, trace),
         offsetof(struct resource_table, devmem0),
         offsetof(struct resource_table, devmem1),
@@ -197,6 +207,8 @@ struct resource_table ti_resources_ResourceTable = {
         offsetof(struct resource_table, devmem5),
         offsetof(struct resource_table, devmem6),
         offsetof(struct resource_table, devmem7),
+        offsetof(struct resource_table, devmem8),
+        offsetof(struct resource_table, devmem9),
         offsetof(struct resource_table, hwspin),
     },
 
@@ -209,6 +221,12 @@ struct resource_table ti_resources_ResourceTable = {
     /* the two vrings */
     { DSP_MEM_RPMSG_VRING0, 4096, DSP_RPMSG_VQ0_SIZE, 1, 0 },
     { DSP_MEM_RPMSG_VRING1, 4096, DSP_RPMSG_VQ1_SIZE, 2, 0 },
+
+    {
+        TYPE_CARVEOUT,
+        DSP_MEM_IPC_DATA, 0,
+        DSP_MEM_IPC_DATA_SIZE, 0, 0, "DSP_MEM_IPC_DATA",
+    },
 
     {
         TYPE_CARVEOUT,
@@ -226,12 +244,6 @@ struct resource_table ti_resources_ResourceTable = {
         TYPE_CARVEOUT,
         DSP_MEM_HEAP, 0,
         DSP_MEM_HEAP_SIZE, 0, 0, "DSP_MEM_HEAP",
-    },
-
-    {
-        TYPE_CARVEOUT,
-        DSP_MEM_IPC_DATA, 0,
-        DSP_MEM_IPC_DATA_SIZE, 0, 0, "DSP_MEM_IPC_DATA",
     },
 
     {
@@ -282,8 +294,20 @@ struct resource_table ti_resources_ResourceTable = {
 
     {
         TYPE_DEVMEM,
+        DSP_PERIPHERAL_L4EMU, L4_PERIPHERAL_L4EMU,
+        SZ_16M, 0, 0, "DSP_PERIPHERAL_L4EMU",
+    },
+
+    {
+        TYPE_DEVMEM,
         DSP_PERIPHERAL_DMM, L3_PERIPHERAL_DMM,
         SZ_1M, 0, 0, "DSP_PERIPHERAL_DMM",
+    },
+
+    {
+        TYPE_DEVMEM,
+        DSP_PERIPHERAL_ISS, L3_PERIPHERAL_ISS,
+        SZ_256K, 0, 0, "DSP_PERIPHERAL_ISS",
     },
 
     {

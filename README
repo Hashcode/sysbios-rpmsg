@@ -26,8 +26,10 @@ TOOLS
     o SYS/BIOS RPMSG build requires the following tools to be installed at the
       minimum:
         - SYS/BIOS: RTOS running on the target slave processor
-        - SMP/BIOS: SMP-mode RTOS running on dual-processor target slave
-                    processor subsystems (needed only for SMP-mode)
+        - SMP/BIOS: SMP-mode RTOS running on dual-processor target
+                    slave processor subsystems (needed only for SMP-mode).
+                    SMP/BIOS is obsolete and SMP-mode support has been
+                    absorbed into SYS/BIOS 6.34.
         - XDC: RTSC tools used for building and configuration of images
         - IPC: Base Inter-Processor Communication Package
         - CGT: Code Generation Tools for compiling code for M3 & C64x targets
@@ -42,22 +44,25 @@ TOOLS
 
     o The following are the current versions and download instructions for these
       tools.
-       1) BIOS: 6.33.06.50
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_33_06_50/exports/bios_setuplinux_6_33_06_50.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_33_06_50/exports/bios_setupwin32_6_33_06_50.exe
+       1) BIOS: 6.34.02.18
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_02_18/exports/bios_setuplinux_6_34_02_18.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_34_02_18/exports/bios_setupwin32_6_34_02_18.exe
 
-       2) SMP/BIOS: 1.00.00.28_eng
-            SMP/BIOS is currently not available for public download.
+       2) BIOS (SMP-mode): 6.34.02.18
+            Applications need to set BIOS.smpEnabled to true to build for
+            SMP-mode. BIOS 6.34.01.14 is the minimum required version to
+            maintain feature compatibility with the previous
+            smpbios_1_00_00_28_eng version.
 
-       3) XDC:  3.23.04.60
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_04_60/exports/xdctools_setuplinux_3_23_04_60.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_23_04_60/exports/xdctools_setupwin32_3_23_04_60.exe
+       3) XDC:  3.24.03.33
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_03_33/exports/xdctools_setuplinux_3_24_03_33.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_24_03_33/exports/xdctools_setupwin32_3_24_03_33.exe
 
-       4) IPC:  1.24.03.32
-            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_03_32/exports/ipc_setuplinux_1_24_03_32.bin
-            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_24_03_32/exports/ipc_setupwin32_1_24_03_32.exe
+       4) IPC:  1.25.00.04
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_25_00_04/exports/ipc_setuplinux_1_25_00_04.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/ipc/1_25_00_04/exports/ipc_setupwin32_1_25_00_04.exe
 
-       5) CGT TMS470: 4.9.5
+       5) CGT TMS470: 5.0.1
             TMS470 Compiler is not available for free publicly. Please contact
             your TI representative. A TMS470 Compiler is supplied with Code
             Composer Studio (CCS), and can be used if you have a valid license.
@@ -75,7 +80,7 @@ BUILD (Linux Environment)
        an existing shell, do 'touch' the
        <sysbios-rpmsg>/src/config.bld for the change to become effective.
        Eg:
-           export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.5
+           export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-5.0.1
                                -- and/or --
            export C6000CGTOOLPATH=/data/omapts/linux/dsp-tc/cgt6x-7.2.9
 
@@ -106,7 +111,7 @@ BUILD (Linux Environment)
     6) Steps 1 to 4 can also be achieved alternatively by defining any of the
        variables on the make invocation line within the shell.
        Eg:
-        1. make TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.5
+        1. make TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-5.0.1
              (define custom installation path for TMS470CGTOOLPATH)
         2. make BIOSTOOLSROOT=/data/omapts/linux/dsp-tc XDCVERSION=xdctools_3_22_01_21
              (define custom BIOSTOOLSROOT location and XDC version)

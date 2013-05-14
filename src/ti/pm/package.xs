@@ -47,7 +47,7 @@ function init()
     /* plug-in the power event hooks for SMP/BIOS */
     if (Program.build.target.name.match(/M3/) &&
         Program.platformName.match(/ipu/)) {
-        var Power = xdc.useModule('ti.sysbios.family.arm.ducati.omap4430.Power');
+        var Power = xdc.useModule('ti.sysbios.family.arm.ducati.smp.Power');
         Power.preSuspendHooks.$add("&IpcPower_preSuspend");
         Power.postSuspendHooks.$add("&IpcPower_postResume");
     }

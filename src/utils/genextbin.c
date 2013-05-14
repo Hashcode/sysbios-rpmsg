@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011, Texas Instruments Incorporated
+ *  Copyright (c) 2011-2012, Texas Instruments Incorporated
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -284,7 +284,7 @@ static void create_ttb(void)
     u32 va, pa;
     u32 va_pa;
     u32 size;
-    u32 mmu_sizes[4] = {SZ_16M, SZ_1M, SZ_64K, SZ_4K};
+    u32 mmu_sizes[4] = {MMU_SZ_16M, MMU_SZ_1M, MMU_SZ_64K, MMU_SZ_4K};
     u32 index;
 
     while (me->pa && me->len) {

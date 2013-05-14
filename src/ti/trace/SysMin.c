@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 Texas Instruments. All rights reserved.
+ *  Copyright (c) 2011-2012 Texas Instruments. All rights reserved.
  *  This program and the accompanying materials are made available under the
  *  terms of the Eclipse Public License v1.0 and Eclipse Distribution License
  *  v. 1.0 which accompanies this distribution. The Eclipse Public License is
@@ -148,8 +148,8 @@ Void SysMin_putch(Char ch)
         key = Gate_enterSystem();
 #else
         /* Disable only local interrupts to place chars in local line buffer */
-        key = (IArg)Hwi_disableCoreInts();
-        coreId = Core_getCoreId();
+        key = (IArg)Core_hwiDisable();
+        coreId = Core_getId();
 #endif
 
         lineIdx = module->lineBuffers[coreId].lineidx;
@@ -198,7 +198,7 @@ Void SysMin_putch(Char ch)
         }
         else {
             /* restore local interrupts */
-            Hwi_restoreCoreInts((UInt)key);
+            Core_hwiRestore((UInt)key);
         }
 #else
             module->getTime = FALSE;

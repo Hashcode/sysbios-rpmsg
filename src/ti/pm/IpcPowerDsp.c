@@ -117,14 +117,10 @@ static Void IpcPower_callUserFxns(IpcPower_Event event)
  */
 static Void IpcPower_suspendSwi(UArg arg0, UArg arg1)
 {
-    /*
-     * Disable wakeup events. The only event allowed is the Mailbox event, a
-     * mailbox message sent from the host-side needs this event to wake up the
-     * DSP.
-     */
+    /* Disable wakeup events */
     Wugen_disableEvent(GPT5_IRQ);
     Wugen_disableEvent(GPT6_IRQ);
-    Wugen_enableEvent(MBX_DSP_IRQ);
+    Wugen_disableEvent(MBX_DSP_IRQ);
 
     /* Invoke the BIOS suspend routine */
     Power_suspend(Power_Suspend_HIBERNATE);
@@ -416,17 +412,9 @@ Void IpcPower_preSuspend(Void)
  */
 Void IpcPower_postResume(Void)
 {
-#if 0
-    /*
-     * Restore timer registers (available currently only in SMP/BIOS).
-     * SYS/BIOS does not have this API available yet, so we have to rely
-     * on context save/restore on the host-side */
+    /* Restore timer registers */
     Timer_restoreRegisters(tickTimerHandle, NULL);
     Timer_start(tickTimerHandle);
-#else
-    System_printf("IpcPower_postResume: BIOS Tick Timer may lose context "
-                  "across Device OFF (depending on host-side code)\n");
-#endif
 
     /* Call all user registered resume callback functions */
     IpcPower_callUserFxns(IpcPower_Event_RESUME);

@@ -45,6 +45,7 @@
 
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Swi.h>
+#define ti_sysbios_knl_Task__internalaccess
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/hal/ammu/AMMU.h>
 #include <ti/sysbios/family/arm/m3/Hwi.h>
