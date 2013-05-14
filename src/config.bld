@@ -48,6 +48,7 @@ C64T.lnkOpts.prefix += " -e=ti_sysbios_family_c64p_Hwi0";
 /* Set default platform and list of all interested platforms for c64T */
 C64T.platforms = [
                     "ti.platform.omap4430.dsp",
+                    "ti.platform.omap4430.dsp_512",
                     "ti.platform.omap54xx.dsp",
                     "ti.platform.omap54xx.dsp_512",
                 ];
@@ -59,11 +60,11 @@ M3.rootDir = arm_cgtools_rootdir;
 M3.ccOpts.suffix += " --embed_inline_assembly -ms -pds=71";
 
 if(mem_cfg == "512M") {
-    M3.ccOpts.suffix += " -DOMAP5_512M_CFG";
+    M3.ccOpts.suffix += " -DOMAP5_512M_CFG -DOMAP4_512M_CFG";
 } else if(mem_cfg == "384M") {
-    M3.ccOpts.suffix += " -DOMAP5_384M_CFG";
+    M3.ccOpts.suffix += " -DOMAP5_384M_CFG -DOMAP4_384M_CFG";
 } else if (mem_cfg == "256M") {
-    M3.ccOpts.suffix += " -DOMAP5_256M_CFG";
+    M3.ccOpts.suffix += " -DOMAP5_256M_CFG -DOMAP4_256M_CFG";
 }
 
 M3.lnkOpts.prefix += " --retain=.resource_table";
@@ -72,6 +73,7 @@ M3.lnkOpts.prefix += " --cinit_compression=off";
 /* Default platforms for M3 in non-SMP mode */
 var regPlatforms = [
                         "ti.platform.omap4430.core0",
+                        "ti.platform.omap4430.core0_512",
                         "ti.platform.omap54xx.core0",
                         "ti.platform.omap54xx.core0_512",
                    ];
@@ -79,6 +81,7 @@ var regPlatforms = [
 /* Default platforms for M3 in SMP mode */
 var smpPlatforms = [
                         "ti.platform.omap4430.ipu",
+                        "ti.platform.omap4430.ipu_512",
                         "ti.platform.omap54xx.ipu",
                         "ti.platform.omap54xx.ipu_512",
                    ];

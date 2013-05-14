@@ -103,10 +103,14 @@
 #define IPU_MEM_DATA_SIZE       (SZ_1M * 156)
 #endif
 #else
+#ifdef OMAP4_512
+#define IPU_MEM_DATA_SIZE       (SZ_1M * 24)
+#else
 #define IPU_MEM_DATA_SIZE       (SZ_1M * 98)
 #endif
+#endif
 
-#ifdef OMAP5_512
+#if defined(OMAP5_512) || defined(OMAP4_512)
 #define IPU_MEM_IOBUFS_SIZE     (SZ_1M * 20)
 
 #else
@@ -123,13 +127,13 @@
 #define PHYS_MEM_IPC_VRING      0x82000000
 #endif
 
-#ifdef OMAP5_512M_CFG
+#if defined(OMAP4_512M_CFG) || defined(OMAP5_512M_CFG)
 #define PHYS_MEM_IOBUFS         0x9E900000
 #else
-#ifdef OMAP5_384M_CFG
+#if defined(OMAP4_384M_CFG) || defined(OMAP5_384M_CFG)
 #define PHYS_MEM_IOBUFS         0x96900000
 #else
-#ifdef OMAP5_256M_CFG
+#if defined(OMAP4_256M_CFG) || defined(OMAP5_256M_CFG)
 #define PHYS_MEM_IOBUFS         0x8E900000
 #else
 #define PHYS_MEM_IOBUFS         0xFA2FF000

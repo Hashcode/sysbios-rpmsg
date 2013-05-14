@@ -87,7 +87,7 @@
 #define DSP_MEM_TEXT_SIZE       SZ_1M
 #define DSP_MEM_DATA_SIZE       SZ_1M
 #define DSP_MEM_HEAP_SIZE       (SZ_1M * 3)
-#ifdef OMAP5_512
+#if defined(OMAP4_512) || defined(OMAP5_512)
 #define DSP_MEM_IOBUFS_SIZE     (SZ_1M * 0)
 #else
 #define DSP_MEM_IOBUFS_SIZE     (SZ_1M * 90)
